@@ -1,0 +1,30 @@
+##### T5b_delay60 amount=100000 delay=60  start=17:10:49
+BEFORE
+buyer USDC=19.211423 SOL=2.5 SOL
+seller USDC=0.538577 SOL=1.49850156 SOL
+Making request to: http://localhost:4023/api/generate?amount=100000&delay=60
+
+{
+  status: 200,
+  paymentStatus: 'settled',
+  body: {
+    result: 'ok',
+    usage: {
+      authorizedMaxAtomic: '250000',
+      actualChargedAtomic: '100000',
+      delaySecs: 60
+    }
+  },
+  header: {
+    success: true,
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+    transaction: '418GpCqCGQLnrgj69sVoEnFfmnmAbZAFKoo86FbPgbt74L3qTKQem3tBHzaYzQ1zupRSwjcWfJ6LzSrHWSQPeu7D',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000'
+  }
+}
+Request completed in 61.899s
+end=17:11:52
+AFTER
+buyer USDC=19.111423 SOL=2.5 SOL
+seller USDC=0.638577 SOL=1.49850156 SOL

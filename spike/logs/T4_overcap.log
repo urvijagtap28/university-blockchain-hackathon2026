@@ -1,0 +1,23 @@
+##### T4_overcap amount=300000 delay=0  start=17:12:11
+BEFORE
+buyer USDC=19.111423 SOL=2.5 SOL
+seller USDC=0.638577 SOL=1.49850156 SOL
+Making request to: http://localhost:4023/api/generate?amount=300000&delay=0
+
+{
+  status: 402,
+  paymentStatus: 'settle_failed',
+  body: {},
+  header: {
+    success: false,
+    errorReason: 'Settlement override amount "300000" resolves to 300000 atomic units, which exceeds the authorized maximum of 250000 in PaymentRequirements.',
+    errorMessage: 'Settlement override amount "300000" resolves to 300000 atomic units, which exceeds the authorized maximum of 250000 in PaymentRequirements.',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    transaction: ''
+  }
+}
+Request completed in 1.035s
+end=17:12:14
+AFTER
+buyer USDC=18.861423 SOL=2.5 SOL
+seller USDC=0.638577 SOL=1.49850156 SOL

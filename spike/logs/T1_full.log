@@ -1,0 +1,30 @@
+##### T1_full amount=250000 delay=0  start=17:07:22
+BEFORE
+buyer USDC=19.911423 SOL=2.5 SOL
+seller USDC=0.088577 SOL=1.49850156 SOL
+Making request to: http://localhost:4023/api/generate?amount=250000&delay=0
+
+{
+  status: 200,
+  paymentStatus: 'settled',
+  body: {
+    result: 'ok',
+    usage: {
+      authorizedMaxAtomic: '250000',
+      actualChargedAtomic: '250000',
+      delaySecs: 0
+    }
+  },
+  header: {
+    success: true,
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+    transaction: '5FaB3yEgiNq3W6zNMruPTA5avzg6ExjGXh96rW5pgFJtC2NX6DwPJNTjju6Ah2ot5eSY3CpomTuEvpUMRopP5hC6',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000'
+  }
+}
+Request completed in 2.178s
+end=17:07:25
+AFTER
+buyer USDC=19.661423 SOL=2.5 SOL
+seller USDC=0.338577 SOL=1.49850156 SOL

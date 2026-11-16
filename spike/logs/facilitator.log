@@ -1,0 +1,2100 @@
+$ tsx index.ts
+(node:5253) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+SVM Facilitator account: FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM
+SVM rent cleanup started (interval=30s, abandonGrace=120s, maxChannelLifetime=3600s)
+🚀 Upto facilitator listening on http://localhost:4022
+   Networks: Solana (devnet)
+
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'FLowD6572CbF6M2TYRAb8EX61N5fXnvnQ7a6BreLLegS',
+      deposit: '100000',
+      expiresAt: 1794867043,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '100000',
+      nonce: '18437948567642235926',
+      openSlot: '523052507',
+      openTransaction: 'gQIACQ8AAAA1U53AZXefeEoBMcSryVJIjf03byMOy0M+As/lEaEroQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMZk7E7boxFnge8eZ0hjldpDs4eveR+05N6w2L3at04pqyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvVFriz1UFGebRMEx2BCa5x8NEeIbToPtBY397gCBeSqwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKARbkPKmIwOD/oIYBAAAAAACEAwAA2yUtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2M4ODQ2N2NjY2UzZDQ2OGM0YWExMTkyYThkNjkyYjQ2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+5TSzJLXYd2M5ebKqyCSXzPvw5gsDdNpI9vQ5SPOuRs3Cbhvo+c53rFa2IjKYGuq6gT5pXELfBNsGwnhRWmwE=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866743,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4021/api/generate',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '100000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'FLowD6572CbF6M2TYRAb8EX61N5fXnvnQ7a6BreLLegS',
+      deposit: '100000',
+      expiresAt: 1794867043,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '100000',
+      nonce: '18437948567642235926',
+      openSlot: '523052507',
+      openTransaction: 'gQIACQ8AAAA1U53AZXefeEoBMcSryVJIjf03byMOy0M+As/lEaEroQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMZk7E7boxFnge8eZ0hjldpDs4eveR+05N6w2L3at04pqyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvVFriz1UFGebRMEx2BCa5x8NEeIbToPtBY397gCBeSqwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKARbkPKmIwOD/oIYBAAAAAACEAwAA2yUtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2M4ODQ2N2NjY2UzZDQ2OGM0YWExMTkyYThkNjkyYjQ2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+5TSzJLXYd2M5ebKqyCSXzPvw5gsDdNpI9vQ5SPOuRs3Cbhvo+c53rFa2IjKYGuq6gT5pXELfBNsGwnhRWmwE=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866743,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4021/api/generate',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '100000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '3DchXV5AHQupJJx7UCoAFU2rwgnC7ptij93eaB3jzBt5CvKkb6Xs8SqkS8m3EYD9H1K9doykNwWkVBuu94HeCTW7',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'FLowD6572CbF6M2TYRAb8EX61N5fXnvnQ7a6BreLLegS',
+      deposit: '100000',
+      expiresAt: 1794867043,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '100000',
+      nonce: '18437948567642235926',
+      openSlot: '523052507',
+      openTransaction: 'gQIACQ8AAAA1U53AZXefeEoBMcSryVJIjf03byMOy0M+As/lEaEroQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMZk7E7boxFnge8eZ0hjldpDs4eveR+05N6w2L3at04pqyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvVFriz1UFGebRMEx2BCa5x8NEeIbToPtBY397gCBeSqwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKARbkPKmIwOD/oIYBAAAAAACEAwAA2yUtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2M4ODQ2N2NjY2UzZDQ2OGM0YWExMTkyYThkNjkyYjQ2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+5TSzJLXYd2M5ebKqyCSXzPvw5gsDdNpI9vQ5SPOuRs3Cbhvo+c53rFa2IjKYGuq6gT5pXELfBNsGwnhRWmwE=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866743,
+      type: 'claim',
+      voucherSignature: '54ZhehZB9WcZtV9hwmhMBbnJY8XSXJ4GLgGY21mLM5mpXw94M1ULBtdahZjXL3dxoWfDGNDBdBoHgxTS3s4SVCAf'
+    },
+    resource: {
+      url: 'http://localhost:4021/api/generate',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '100000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '88577',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'FLowD6572CbF6M2TYRAb8EX61N5fXnvnQ7a6BreLLegS',
+      deposit: '100000',
+      expiresAt: 1794867043,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '100000',
+      nonce: '18437948567642235926',
+      openSlot: '523052507',
+      openTransaction: 'gQIACQ8AAAA1U53AZXefeEoBMcSryVJIjf03byMOy0M+As/lEaEroQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMZk7E7boxFnge8eZ0hjldpDs4eveR+05N6w2L3at04pqyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvVFriz1UFGebRMEx2BCa5x8NEeIbToPtBY397gCBeSqwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKARbkPKmIwOD/oIYBAAAAAACEAwAA2yUtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2M4ODQ2N2NjY2UzZDQ2OGM0YWExMTkyYThkNjkyYjQ2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+5TSzJLXYd2M5ebKqyCSXzPvw5gsDdNpI9vQ5SPOuRs3Cbhvo+c53rFa2IjKYGuq6gT5pXELfBNsGwnhRWmwE=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866743,
+      type: 'claim',
+      voucherSignature: '54ZhehZB9WcZtV9hwmhMBbnJY8XSXJ4GLgGY21mLM5mpXw94M1ULBtdahZjXL3dxoWfDGNDBdBoHgxTS3s4SVCAf'
+    },
+    resource: {
+      url: 'http://localhost:4021/api/generate',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '100000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '88577',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '3NcrkygtTRv4YgFggmpHS19h7Xq4yyXCGopLRP1nqygaKGnPDaiWYEHfCXhPkMaJT7oMBdXL3zACbyMVomSvei3P',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '88577',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '5eDE2Yrn9xqhag4Y8F7QoqeYkuLohqXdDgmigkCe4Xs1',
+      deposit: '250000',
+      expiresAt: 1794867143,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '9193052128867657046',
+      openSlot: '523052924',
+      openTransaction: 'gQIACQ8AAAAEI+55UaCDTDbswfnxpCD7Wmix8Osal19/PZR2sk/iBAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUT3D16zGvds2yGx5kiLWPKujNXaGUOednCMpJFWPNh0s4mqy2rpSbqinTEQz/Dg3WkspnV24l+PxtACCspvawDJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAVYlzk40SJR/kNADAAAAAACEAwAAfCctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2EwNmE3YmRhNGMxMGY0ZjVjYTE0MGY2NTY0MjQ0MzIzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADNb2L4AF9J+ahQ/IxuF2KDMJpgc++1VLg64F3sHorinX+gxisNDodSgZyE2Nb8WJHfKfF3/a6YhvvaZhh3Phgw=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866843,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=250000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '5eDE2Yrn9xqhag4Y8F7QoqeYkuLohqXdDgmigkCe4Xs1',
+      deposit: '250000',
+      expiresAt: 1794867143,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '9193052128867657046',
+      openSlot: '523052924',
+      openTransaction: 'gQIACQ8AAAAEI+55UaCDTDbswfnxpCD7Wmix8Osal19/PZR2sk/iBAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUT3D16zGvds2yGx5kiLWPKujNXaGUOednCMpJFWPNh0s4mqy2rpSbqinTEQz/Dg3WkspnV24l+PxtACCspvawDJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAVYlzk40SJR/kNADAAAAAACEAwAAfCctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2EwNmE3YmRhNGMxMGY0ZjVjYTE0MGY2NTY0MjQ0MzIzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADNb2L4AF9J+ahQ/IxuF2KDMJpgc++1VLg64F3sHorinX+gxisNDodSgZyE2Nb8WJHfKfF3/a6YhvvaZhh3Phgw=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866843,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=250000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '3EqTYEb3qiywyQwDybA6JQYRGgeVJxfCqWQLfqo5BqhRESRDuJyQXbrSL3B8vztCwuHvKZ6qbEuKV1zHReyKXzz5',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '5eDE2Yrn9xqhag4Y8F7QoqeYkuLohqXdDgmigkCe4Xs1',
+      deposit: '250000',
+      expiresAt: 1794867143,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '9193052128867657046',
+      openSlot: '523052924',
+      openTransaction: 'gQIACQ8AAAAEI+55UaCDTDbswfnxpCD7Wmix8Osal19/PZR2sk/iBAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUT3D16zGvds2yGx5kiLWPKujNXaGUOednCMpJFWPNh0s4mqy2rpSbqinTEQz/Dg3WkspnV24l+PxtACCspvawDJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAVYlzk40SJR/kNADAAAAAACEAwAAfCctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2EwNmE3YmRhNGMxMGY0ZjVjYTE0MGY2NTY0MjQ0MzIzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADNb2L4AF9J+ahQ/IxuF2KDMJpgc++1VLg64F3sHorinX+gxisNDodSgZyE2Nb8WJHfKfF3/a6YhvvaZhh3Phgw=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866843,
+      type: 'claim',
+      voucherSignature: '4V8rNGAduDzaWBQTmbUC3UQSYGCcKuwLL8QUv8u9EjfHwHL6cbNbwMWFyRrkCAYkQSQD5ywS6jpeYoaDEm9jKFYL'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=250000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '5eDE2Yrn9xqhag4Y8F7QoqeYkuLohqXdDgmigkCe4Xs1',
+      deposit: '250000',
+      expiresAt: 1794867143,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '9193052128867657046',
+      openSlot: '523052924',
+      openTransaction: 'gQIACQ8AAAAEI+55UaCDTDbswfnxpCD7Wmix8Osal19/PZR2sk/iBAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUT3D16zGvds2yGx5kiLWPKujNXaGUOednCMpJFWPNh0s4mqy2rpSbqinTEQz/Dg3WkspnV24l+PxtACCspvawDJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAVYlzk40SJR/kNADAAAAAACEAwAAfCctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2EwNmE3YmRhNGMxMGY0ZjVjYTE0MGY2NTY0MjQ0MzIzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADNb2L4AF9J+ahQ/IxuF2KDMJpgc++1VLg64F3sHorinX+gxisNDodSgZyE2Nb8WJHfKfF3/a6YhvvaZhh3Phgw=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866843,
+      type: 'claim',
+      voucherSignature: '4V8rNGAduDzaWBQTmbUC3UQSYGCcKuwLL8QUv8u9EjfHwHL6cbNbwMWFyRrkCAYkQSQD5ywS6jpeYoaDEm9jKFYL'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=250000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '5FaB3yEgiNq3W6zNMruPTA5avzg6ExjGXh96rW5pgFJtC2NX6DwPJNTjju6Ah2ot5eSY3CpomTuEvpUMRopP5hC6',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'pZrptwT71eNGQ3f8mDC2QVK1Fq2WFcrU7zHedo43v4c',
+      deposit: '250000',
+      expiresAt: 1794867155,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11177647239054078940',
+      openSlot: '523052977',
+      openTransaction: 'gQIACQ8AAAD8sBczROsV+Fv7nn1o624u2JpOfzSF/ibwPYp6F2sYPAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMcBdjFkNzb77KOGdjwMn+k/lCxxagb32YUVYF9qGy35syYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlsML3OvEQLX284ltuP/dn1Ws0+6/lwUlg3U2cOKpdiXBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKAdyzcTTx+h6bkNADAAAAAACEAwAAsSctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzk0YzQ1YTQ2ODU5NTVjZGNhZWY1YzU1OTMyZTMxMjM0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPL5ejHmBudNRn8vWzqX+jh4KCHFq5VyN3oco0WeVHCLvsULA08vGp/I6fnOPufXFJ85IAqRpOrgssUusRknXwQ=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866855,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'pZrptwT71eNGQ3f8mDC2QVK1Fq2WFcrU7zHedo43v4c',
+      deposit: '250000',
+      expiresAt: 1794867155,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11177647239054078940',
+      openSlot: '523052977',
+      openTransaction: 'gQIACQ8AAAD8sBczROsV+Fv7nn1o624u2JpOfzSF/ibwPYp6F2sYPAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMcBdjFkNzb77KOGdjwMn+k/lCxxagb32YUVYF9qGy35syYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlsML3OvEQLX284ltuP/dn1Ws0+6/lwUlg3U2cOKpdiXBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKAdyzcTTx+h6bkNADAAAAAACEAwAAsSctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzk0YzQ1YTQ2ODU5NTVjZGNhZWY1YzU1OTMyZTMxMjM0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPL5ejHmBudNRn8vWzqX+jh4KCHFq5VyN3oco0WeVHCLvsULA08vGp/I6fnOPufXFJ85IAqRpOrgssUusRknXwQ=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866855,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '2rRsxDUyHYARxtJ23aZgmoBEYFZWbHzssxWSUiKxiTzj7SX2p6yT9mcGN8MTP5y6UUgtiw7PGaR1KAdj8x1n32oH',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'pZrptwT71eNGQ3f8mDC2QVK1Fq2WFcrU7zHedo43v4c',
+      deposit: '250000',
+      expiresAt: 1794867155,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11177647239054078940',
+      openSlot: '523052977',
+      openTransaction: 'gQIACQ8AAAD8sBczROsV+Fv7nn1o624u2JpOfzSF/ibwPYp6F2sYPAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMcBdjFkNzb77KOGdjwMn+k/lCxxagb32YUVYF9qGy35syYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlsML3OvEQLX284ltuP/dn1Ws0+6/lwUlg3U2cOKpdiXBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKAdyzcTTx+h6bkNADAAAAAACEAwAAsSctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzk0YzQ1YTQ2ODU5NTVjZGNhZWY1YzU1OTMyZTMxMjM0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPL5ejHmBudNRn8vWzqX+jh4KCHFq5VyN3oco0WeVHCLvsULA08vGp/I6fnOPufXFJ85IAqRpOrgssUusRknXwQ=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866855,
+      type: 'claim',
+      voucherSignature: '36Jd39294oxo6aDRBK1tMDcxYEpGXsTzPP1cWsBTjkEuE29hqy24oLRVcK6G94YfTRQjsKYCZkcCqTta3pd4rnWJ'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'pZrptwT71eNGQ3f8mDC2QVK1Fq2WFcrU7zHedo43v4c',
+      deposit: '250000',
+      expiresAt: 1794867155,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11177647239054078940',
+      openSlot: '523052977',
+      openTransaction: 'gQIACQ8AAAD8sBczROsV+Fv7nn1o624u2JpOfzSF/ibwPYp6F2sYPAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMcBdjFkNzb77KOGdjwMn+k/lCxxagb32YUVYF9qGy35syYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlsML3OvEQLX284ltuP/dn1Ws0+6/lwUlg3U2cOKpdiXBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKAdyzcTTx+h6bkNADAAAAAACEAwAAsSctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzk0YzQ1YTQ2ODU5NTVjZGNhZWY1YzU1OTMyZTMxMjM0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPL5ejHmBudNRn8vWzqX+jh4KCHFq5VyN3oco0WeVHCLvsULA08vGp/I6fnOPufXFJ85IAqRpOrgssUusRknXwQ=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866855,
+      type: 'claim',
+      voucherSignature: '36Jd39294oxo6aDRBK1tMDcxYEpGXsTzPP1cWsBTjkEuE29hqy24oLRVcK6G94YfTRQjsKYCZkcCqTta3pd4rnWJ'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: false,
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    transaction: '',
+    errorReason: 'invalid_upto_svm_channel_state',
+    errorMessage: 'HTTP error (429): ',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '4GcDWfphWemjaWRiMrg1s55j9ca3Zg8H2ZHadigVYQnC',
+      deposit: '250000',
+      expiresAt: 1794867168,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '1376917382417373091',
+      openSlot: '523053031',
+      openTransaction: 'gQIACQ8AAAApGDUQdj2akoY3bUzuuwi/0XbuyIXso1YeEWYnvKuGwQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMTCSl2ltiqujiQm4xMtHkWFG97DsRxwBj2umZp2cS9+xyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvu4I7B46H4ZTcu+wRepCVK3z8EWdcBuwCEecUcWT6s3gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgMEDQUMCQcKAaNXDGgQyxsTkNADAAAAAACEAwAA5yctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2IwN2Q0MDUyNmJlMWEyZGYwMDJmYzA5NTQ2MjEzOWE5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAWhfUiM/LDdjJfImpD7rlhfv9Sx5AK4jpmJbBGHZ04M+pwtgSqbDltodI1CppqTz0x6ndKoP5BLZOCQlUIegk=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866868,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '4GcDWfphWemjaWRiMrg1s55j9ca3Zg8H2ZHadigVYQnC',
+      deposit: '250000',
+      expiresAt: 1794867168,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '1376917382417373091',
+      openSlot: '523053031',
+      openTransaction: 'gQIACQ8AAAApGDUQdj2akoY3bUzuuwi/0XbuyIXso1YeEWYnvKuGwQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMTCSl2ltiqujiQm4xMtHkWFG97DsRxwBj2umZp2cS9+xyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvu4I7B46H4ZTcu+wRepCVK3z8EWdcBuwCEecUcWT6s3gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgMEDQUMCQcKAaNXDGgQyxsTkNADAAAAAACEAwAA5yctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2IwN2Q0MDUyNmJlMWEyZGYwMDJmYzA5NTQ2MjEzOWE5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAWhfUiM/LDdjJfImpD7rlhfv9Sx5AK4jpmJbBGHZ04M+pwtgSqbDltodI1CppqTz0x6ndKoP5BLZOCQlUIegk=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866868,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '52StAYPu3ozcSZozagtDraYMU9HPig3G38PBtBLCEfBqQYiCXkvVdJgXnb6aWpkPLcyWLc3u2maFqR8BQm1QFWSm',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '4GcDWfphWemjaWRiMrg1s55j9ca3Zg8H2ZHadigVYQnC',
+      deposit: '250000',
+      expiresAt: 1794867168,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '1376917382417373091',
+      openSlot: '523053031',
+      openTransaction: 'gQIACQ8AAAApGDUQdj2akoY3bUzuuwi/0XbuyIXso1YeEWYnvKuGwQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMTCSl2ltiqujiQm4xMtHkWFG97DsRxwBj2umZp2cS9+xyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvu4I7B46H4ZTcu+wRepCVK3z8EWdcBuwCEecUcWT6s3gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgMEDQUMCQcKAaNXDGgQyxsTkNADAAAAAACEAwAA5yctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2IwN2Q0MDUyNmJlMWEyZGYwMDJmYzA5NTQ2MjEzOWE5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAWhfUiM/LDdjJfImpD7rlhfv9Sx5AK4jpmJbBGHZ04M+pwtgSqbDltodI1CppqTz0x6ndKoP5BLZOCQlUIegk=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866868,
+      type: 'claim',
+      voucherSignature: '5cbEP36CLWhwtVg7s8rKfS5vC6MJc6S7HyMUtdck56EYDb8v9T5R3wifpBjfTLdsh14m5p7moyyHnegxDCSZzYiL'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '4GcDWfphWemjaWRiMrg1s55j9ca3Zg8H2ZHadigVYQnC',
+      deposit: '250000',
+      expiresAt: 1794867168,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '1376917382417373091',
+      openSlot: '523053031',
+      openTransaction: 'gQIACQ8AAAApGDUQdj2akoY3bUzuuwi/0XbuyIXso1YeEWYnvKuGwQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMTCSl2ltiqujiQm4xMtHkWFG97DsRxwBj2umZp2cS9+xyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvu4I7B46H4ZTcu+wRepCVK3z8EWdcBuwCEecUcWT6s3gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgMEDQUMCQcKAaNXDGgQyxsTkNADAAAAAACEAwAA5yctHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2IwN2Q0MDUyNmJlMWEyZGYwMDJmYzA5NTQ2MjEzOWE5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAWhfUiM/LDdjJfImpD7rlhfv9Sx5AK4jpmJbBGHZ04M+pwtgSqbDltodI1CppqTz0x6ndKoP5BLZOCQlUIegk=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866868,
+      type: 'claim',
+      voucherSignature: '5cbEP36CLWhwtVg7s8rKfS5vC6MJc6S7HyMUtdck56EYDb8v9T5R3wifpBjfTLdsh14m5p7moyyHnegxDCSZzYiL'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '3zqqH51LtpSPjBTiUCGTpvJFoQAuuLVjzSCZYyPKhUB2Yr4FCF3RnchkxHPpjfXEjhLchhxNtPhD43Y4enNrai67',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '0',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '2tePFG9AiTEzFfYGF2rnGUjfSDoedLo1zFjzxhKvy2ZR',
+      deposit: '250000',
+      expiresAt: 1794867181,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '13568176806867072570',
+      openSlot: '523053087',
+      openTransaction: 'gQIACQ8AAAAhVvcApw13z2dkhsVmA02QVgwC9v1gy4/0YWfOZsNAKAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMRwWk/F8cUbr1kSjlcYwBtcV5U5Jb0WuRIGuathvID9Mhaz53lBVW04zf5FCPr6yS9Zkod4fZsrIsK4kbFyJSxzJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKATp2ASfr2Eu8kNADAAAAAACEAwAAHygtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2Q5ODU4MjExZDVhMDk0MDk2Nzc4ODU2NmNhM2E1YWVlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM5GYv2CimrkUK+1MEr2/y9VzS/tz6TFm26wUUWa4RuVTObb1ENsKN0Lc6dcF2Dw2vPQOLSgv14w2KVrg3i47wc=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866881,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '2tePFG9AiTEzFfYGF2rnGUjfSDoedLo1zFjzxhKvy2ZR',
+      deposit: '250000',
+      expiresAt: 1794867181,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '13568176806867072570',
+      openSlot: '523053087',
+      openTransaction: 'gQIACQ8AAAAhVvcApw13z2dkhsVmA02QVgwC9v1gy4/0YWfOZsNAKAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMRwWk/F8cUbr1kSjlcYwBtcV5U5Jb0WuRIGuathvID9Mhaz53lBVW04zf5FCPr6yS9Zkod4fZsrIsK4kbFyJSxzJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKATp2ASfr2Eu8kNADAAAAAACEAwAAHygtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2Q5ODU4MjExZDVhMDk0MDk2Nzc4ODU2NmNhM2E1YWVlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM5GYv2CimrkUK+1MEr2/y9VzS/tz6TFm26wUUWa4RuVTObb1ENsKN0Lc6dcF2Dw2vPQOLSgv14w2KVrg3i47wc=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866881,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '5jZ3H311AAEbvKdtjWCBoZPu2e4MzMofowTmzh9J5L2S2dQ1HkTk3HVCn9ktiQmvJYsbbDkUys2G71uo2htGzUv5',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '2tePFG9AiTEzFfYGF2rnGUjfSDoedLo1zFjzxhKvy2ZR',
+      deposit: '250000',
+      expiresAt: 1794867181,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '13568176806867072570',
+      openSlot: '523053087',
+      openTransaction: 'gQIACQ8AAAAhVvcApw13z2dkhsVmA02QVgwC9v1gy4/0YWfOZsNAKAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMRwWk/F8cUbr1kSjlcYwBtcV5U5Jb0WuRIGuathvID9Mhaz53lBVW04zf5FCPr6yS9Zkod4fZsrIsK4kbFyJSxzJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKATp2ASfr2Eu8kNADAAAAAACEAwAAHygtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2Q5ODU4MjExZDVhMDk0MDk2Nzc4ODU2NmNhM2E1YWVlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM5GYv2CimrkUK+1MEr2/y9VzS/tz6TFm26wUUWa4RuVTObb1ENsKN0Lc6dcF2Dw2vPQOLSgv14w2KVrg3i47wc=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866881,
+      type: 'claim',
+      voucherSignature: '3RYvEYehBEUpZM7T9jLR7D44NVEVoVL1hMFtuSacZjnqubhWTU6Bn9hGkrgWP6oTYGjXn6oqj6K7LQmhB46eS8ge'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '2tePFG9AiTEzFfYGF2rnGUjfSDoedLo1zFjzxhKvy2ZR',
+      deposit: '250000',
+      expiresAt: 1794867181,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '13568176806867072570',
+      openSlot: '523053087',
+      openTransaction: 'gQIACQ8AAAAhVvcApw13z2dkhsVmA02QVgwC9v1gy4/0YWfOZsNAKAIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMRwWk/F8cUbr1kSjlcYwBtcV5U5Jb0WuRIGuathvID9Mhaz53lBVW04zf5FCPr6yS9Zkod4fZsrIsK4kbFyJSxzJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKATp2ASfr2Eu8kNADAAAAAACEAwAAHygtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2Q5ODU4MjExZDVhMDk0MDk2Nzc4ODU2NmNhM2E1YWVlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM5GYv2CimrkUK+1MEr2/y9VzS/tz6TFm26wUUWa4RuVTObb1ENsKN0Lc6dcF2Dw2vPQOLSgv14w2KVrg3i47wc=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866881,
+      type: 'claim',
+      voucherSignature: '3RYvEYehBEUpZM7T9jLR7D44NVEVoVL1hMFtuSacZjnqubhWTU6Bn9hGkrgWP6oTYGjXn6oqj6K7LQmhB46eS8ge'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '444AaALKmey8YDCxGWtEWsRfgjYxULgYovnYas87GUBeJNeNV4vAwovupUbXCyuDFrMHWMedVgEis33Y1GA1Tum',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '0',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '7PSx3PDAWMZ2L8xnh5cMobTBxBkUEVQWbK3mSVhGAeBR',
+      deposit: '250000',
+      expiresAt: 1794867207,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '13930575517927608840',
+      openSlot: '523053193',
+      openTransaction: 'gQIACQ8AAABx/U58iDVaSEWsKTa6BWj/NriDwvTkt8jL7m17Gw6FsgIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMRGv8wJAInDRR52HaUsp+Rvz37tJAafzBJ9TuNmCO55RXuY9bocJBREhkV3rl40ezcr2yswslx717iSjdWXQNmjJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAwQCDQUMCQcKAQgS1E6gWFPBkNADAAAAAACEAwAAiSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzVhMTA2ZTcyMzdlYzZmNmQ1Y2NiMjdhMWI5ZTIxZmNjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAyc8qGr8PW4k+vCej+GqyGcRoQDvWz5aWHQDfd4lFEuklIUQ2VNmmXlGnbRRrKFoIj8UkEKVXEBppTQAcxXwgY=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866907,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '7PSx3PDAWMZ2L8xnh5cMobTBxBkUEVQWbK3mSVhGAeBR',
+      deposit: '250000',
+      expiresAt: 1794867207,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '13930575517927608840',
+      openSlot: '523053193',
+      openTransaction: 'gQIACQ8AAABx/U58iDVaSEWsKTa6BWj/NriDwvTkt8jL7m17Gw6FsgIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMRGv8wJAInDRR52HaUsp+Rvz37tJAafzBJ9TuNmCO55RXuY9bocJBREhkV3rl40ezcr2yswslx717iSjdWXQNmjJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAwQCDQUMCQcKAQgS1E6gWFPBkNADAAAAAACEAwAAiSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzVhMTA2ZTcyMzdlYzZmNmQ1Y2NiMjdhMWI5ZTIxZmNjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAyc8qGr8PW4k+vCej+GqyGcRoQDvWz5aWHQDfd4lFEuklIUQ2VNmmXlGnbRRrKFoIj8UkEKVXEBppTQAcxXwgY=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866907,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '2jcDYkJxiX4stcqdQrwhzJPeAsvPVTEPkhtuX1SGb27hSCFdpSLypqqBtqPTfhKrcyuvCehpEyi2B4VqJM3uAiXJ',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '7PSx3PDAWMZ2L8xnh5cMobTBxBkUEVQWbK3mSVhGAeBR',
+      deposit: '250000',
+      expiresAt: 1794867207,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '13930575517927608840',
+      openSlot: '523053193',
+      openTransaction: 'gQIACQ8AAABx/U58iDVaSEWsKTa6BWj/NriDwvTkt8jL7m17Gw6FsgIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMRGv8wJAInDRR52HaUsp+Rvz37tJAafzBJ9TuNmCO55RXuY9bocJBREhkV3rl40ezcr2yswslx717iSjdWXQNmjJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAwQCDQUMCQcKAQgS1E6gWFPBkNADAAAAAACEAwAAiSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzVhMTA2ZTcyMzdlYzZmNmQ1Y2NiMjdhMWI5ZTIxZmNjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAyc8qGr8PW4k+vCej+GqyGcRoQDvWz5aWHQDfd4lFEuklIUQ2VNmmXlGnbRRrKFoIj8UkEKVXEBppTQAcxXwgY=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866907,
+      type: 'claim',
+      voucherSignature: '2AUzL9fJ6s2CWYZ4tDdJrv3jYY61wksQHPxk7Kc9ED28wm2jAwpwPvHrewuj1p6ce8cN5cCcwBTdBsWGAEgjKPZW'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '7PSx3PDAWMZ2L8xnh5cMobTBxBkUEVQWbK3mSVhGAeBR',
+      deposit: '250000',
+      expiresAt: 1794867207,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '13930575517927608840',
+      openSlot: '523053193',
+      openTransaction: 'gQIACQ8AAABx/U58iDVaSEWsKTa6BWj/NriDwvTkt8jL7m17Gw6FsgIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMRGv8wJAInDRR52HaUsp+Rvz37tJAafzBJ9TuNmCO55RXuY9bocJBREhkV3rl40ezcr2yswslx717iSjdWXQNmjJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAwQCDQUMCQcKAQgS1E6gWFPBkNADAAAAAACEAwAAiSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzVhMTA2ZTcyMzdlYzZmNmQ1Y2NiMjdhMWI5ZTIxZmNjAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAyc8qGr8PW4k+vCej+GqyGcRoQDvWz5aWHQDfd4lFEuklIUQ2VNmmXlGnbRRrKFoIj8UkEKVXEBppTQAcxXwgY=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866907,
+      type: 'claim',
+      voucherSignature: '2AUzL9fJ6s2CWYZ4tDdJrv3jYY61wksQHPxk7Kc9ED28wm2jAwpwPvHrewuj1p6ce8cN5cCcwBTdBsWGAEgjKPZW'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '5bgwTdWfmCvo43xi3e1sjcV9RufPvn7EeGHU3C55woPsMM9CyCq2wzQHdgamyp81bv8BpKaRoFfFuSXJtUisY1vg',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '637YwpmCZ9Zgwr4tnrLzb1NFWjLhRGoJZc65tPY38qic',
+      deposit: '250000',
+      expiresAt: 1794867220,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11458783906731518147',
+      openSlot: '523053249',
+      openTransaction: 'gQIACQ8AAAA0NDEqwGWFJPxVD6hxJbS7Obj3IaMJ5BMgY8PS5SG/iwIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUrVANRborf5tM/Ce96F3Qz+Uw1QMtU3WDK7Op2g8VLFpew/Tmg0JnLwOl35hGopt7BoVpvfxsRJ906iqj+P6ELJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAcPosX5AxwWfkNADAAAAAACEAwAAwSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzBiZTA0OTllYTkxM2U3MmUxMWQxZWI3NTFhMzU5NTg4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN7tHhGRHOT1N/TpPCL2misBMUFvAby/kyZ5JTPedUv+UCbtcexBBy1k38rC36mXTBTTNLxuVpOKminJodpTzgM=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866920,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=0&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '637YwpmCZ9Zgwr4tnrLzb1NFWjLhRGoJZc65tPY38qic',
+      deposit: '250000',
+      expiresAt: 1794867220,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11458783906731518147',
+      openSlot: '523053249',
+      openTransaction: 'gQIACQ8AAAA0NDEqwGWFJPxVD6hxJbS7Obj3IaMJ5BMgY8PS5SG/iwIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUrVANRborf5tM/Ce96F3Qz+Uw1QMtU3WDK7Op2g8VLFpew/Tmg0JnLwOl35hGopt7BoVpvfxsRJ906iqj+P6ELJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAcPosX5AxwWfkNADAAAAAACEAwAAwSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzBiZTA0OTllYTkxM2U3MmUxMWQxZWI3NTFhMzU5NTg4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN7tHhGRHOT1N/TpPCL2misBMUFvAby/kyZ5JTPedUv+UCbtcexBBy1k38rC36mXTBTTNLxuVpOKminJodpTzgM=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866920,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=0&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '3zBJf4JPHQmRZpP1D45rnFa6fncwviseim3KVu5YPUupfSZiaP6n52VZLd4gCsgmL4hC8PpfdtuziGJvw9HPY6zp',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '637YwpmCZ9Zgwr4tnrLzb1NFWjLhRGoJZc65tPY38qic',
+      deposit: '250000',
+      expiresAt: 1794867220,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11458783906731518147',
+      openSlot: '523053249',
+      openTransaction: 'gQIACQ8AAAA0NDEqwGWFJPxVD6hxJbS7Obj3IaMJ5BMgY8PS5SG/iwIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUrVANRborf5tM/Ce96F3Qz+Uw1QMtU3WDK7Op2g8VLFpew/Tmg0JnLwOl35hGopt7BoVpvfxsRJ906iqj+P6ELJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAcPosX5AxwWfkNADAAAAAACEAwAAwSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzBiZTA0OTllYTkxM2U3MmUxMWQxZWI3NTFhMzU5NTg4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN7tHhGRHOT1N/TpPCL2misBMUFvAby/kyZ5JTPedUv+UCbtcexBBy1k38rC36mXTBTTNLxuVpOKminJodpTzgM=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866920,
+      type: 'claim',
+      voucherSignature: '5apbnA4T2hpNmjsvV1VsvScTHCxBBR3AkxkHeHgERnqABRaPs3ctiyKzHto7rZ1R2trC4TcPLwambhu3zomBdsZ1'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=0&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '0',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '637YwpmCZ9Zgwr4tnrLzb1NFWjLhRGoJZc65tPY38qic',
+      deposit: '250000',
+      expiresAt: 1794867220,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11458783906731518147',
+      openSlot: '523053249',
+      openTransaction: 'gQIACQ8AAAA0NDEqwGWFJPxVD6hxJbS7Obj3IaMJ5BMgY8PS5SG/iwIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUrVANRborf5tM/Ce96F3Qz+Uw1QMtU3WDK7Op2g8VLFpew/Tmg0JnLwOl35hGopt7BoVpvfxsRJ906iqj+P6ELJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAcPosX5AxwWfkNADAAAAAACEAwAAwSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzBiZTA0OTllYTkxM2U3MmUxMWQxZWI3NTFhMzU5NTg4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN7tHhGRHOT1N/TpPCL2misBMUFvAby/kyZ5JTPedUv+UCbtcexBBy1k38rC36mXTBTTNLxuVpOKminJodpTzgM=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866920,
+      type: 'claim',
+      voucherSignature: '5apbnA4T2hpNmjsvV1VsvScTHCxBBR3AkxkHeHgERnqABRaPs3ctiyKzHto7rZ1R2trC4TcPLwambhu3zomBdsZ1'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=0&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '0',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: false,
+    errorReason: 'settlement_pending',
+    errorMessage: 'timed out waiting for tx hg6Ec34wmYHiFYCKrTSsfpNuSiaEgdXNVMQedM22W54V6wZrcxKpZrXNJoxV7tKqGsFQvy7jHwN4mac9km5wjAi confirmation',
+    transaction: 'hg6Ec34wmYHiFYCKrTSsfpNuSiaEgdXNVMQedM22W54V6wZrcxKpZrXNJoxV7tKqGsFQvy7jHwN4mac9km5wjAi',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '637YwpmCZ9Zgwr4tnrLzb1NFWjLhRGoJZc65tPY38qic',
+      deposit: '250000',
+      expiresAt: 1794867220,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11458783906731518147',
+      openSlot: '523053249',
+      openTransaction: 'gQIACQ8AAAA0NDEqwGWFJPxVD6hxJbS7Obj3IaMJ5BMgY8PS5SG/iwIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUrVANRborf5tM/Ce96F3Qz+Uw1QMtU3WDK7Op2g8VLFpew/Tmg0JnLwOl35hGopt7BoVpvfxsRJ906iqj+P6ELJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAcPosX5AxwWfkNADAAAAAACEAwAAwSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzBiZTA0OTllYTkxM2U3MmUxMWQxZWI3NTFhMzU5NTg4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN7tHhGRHOT1N/TpPCL2misBMUFvAby/kyZ5JTPedUv+UCbtcexBBy1k38rC36mXTBTTNLxuVpOKminJodpTzgM=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866920,
+      type: 'claim',
+      voucherSignature: '5apbnA4T2hpNmjsvV1VsvScTHCxBBR3AkxkHeHgERnqABRaPs3ctiyKzHto7rZ1R2trC4TcPLwambhu3zomBdsZ1'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=0&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '0',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: '637YwpmCZ9Zgwr4tnrLzb1NFWjLhRGoJZc65tPY38qic',
+      deposit: '250000',
+      expiresAt: 1794867220,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '11458783906731518147',
+      openSlot: '523053249',
+      openTransaction: 'gQIACQ8AAAA0NDEqwGWFJPxVD6hxJbS7Obj3IaMJ5BMgY8PS5SG/iwIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUrVANRborf5tM/Ce96F3Qz+Uw1QMtU3WDK7Op2g8VLFpew/Tmg0JnLwOl35hGopt7BoVpvfxsRJ906iqj+P6ELJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAcPosX5AxwWfkNADAAAAAACEAwAAwSgtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzBiZTA0OTllYTkxM2U3MmUxMWQxZWI3NTFhMzU5NTg4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN7tHhGRHOT1N/TpPCL2misBMUFvAby/kyZ5JTPedUv+UCbtcexBBy1k38rC36mXTBTTNLxuVpOKminJodpTzgM=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866920,
+      type: 'claim',
+      voucherSignature: '5apbnA4T2hpNmjsvV1VsvScTHCxBBR3AkxkHeHgERnqABRaPs3ctiyKzHto7rZ1R2trC4TcPLwambhu3zomBdsZ1'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=0&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '0',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: false,
+    errorReason: 'settlement_pending',
+    errorMessage: 'HTTP error (429): ',
+    transaction: 'hg6Ec34wmYHiFYCKrTSsfpNuSiaEgdXNVMQedM22W54V6wZrcxKpZrXNJoxV7tKqGsFQvy7jHwN4mac9km5wjAi',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'BFjWzdYGZoHKs1DRyHTDe1CYyBKXtLyAaZ1mzt7CW5Gt',
+      deposit: '250000',
+      expiresAt: 1794867284,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '7419088061583440528',
+      openSlot: '523053515',
+      openTransaction: 'gQIACQ8AAAB5pqWoaBw+72vDLkDnDZYx/v8C58gzsZBFO3nPMhureQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMZhbEypOeRjXjWJ6z+GXej/rWd9E0a7yFry0VPeUh/lhtotQg/F2Oj1el7s4mZiabEhi0oTIkq4B92SNzAJE9ZrJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAZC6BbRI5fVmkNADAAAAAACEAwAAyyktHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzM3YzI1ZWY4ZmFlNDM3ODJkNmE4ZTg3NjNjN2RiMzM4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADDEdKHU24W5QQaGMfGeyKG63OOnOZMOK1piDqGlnRx9IJXECo0Kro3tsfiw6xYvC92GBYnF0AyJkeyuvzMPvQ8=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866984,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=30',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'BFjWzdYGZoHKs1DRyHTDe1CYyBKXtLyAaZ1mzt7CW5Gt',
+      deposit: '250000',
+      expiresAt: 1794867284,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '7419088061583440528',
+      openSlot: '523053515',
+      openTransaction: 'gQIACQ8AAAB5pqWoaBw+72vDLkDnDZYx/v8C58gzsZBFO3nPMhureQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMZhbEypOeRjXjWJ6z+GXej/rWd9E0a7yFry0VPeUh/lhtotQg/F2Oj1el7s4mZiabEhi0oTIkq4B92SNzAJE9ZrJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAZC6BbRI5fVmkNADAAAAAACEAwAAyyktHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzM3YzI1ZWY4ZmFlNDM3ODJkNmE4ZTg3NjNjN2RiMzM4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADDEdKHU24W5QQaGMfGeyKG63OOnOZMOK1piDqGlnRx9IJXECo0Kro3tsfiw6xYvC92GBYnF0AyJkeyuvzMPvQ8=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866984,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=30',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '2MaDpGTr9g543PM8zU6tFm9YNWXzhBh89BYu9Uu4eqywEsHSNV7ZMnijvbtT4GBjEf67D19MrUfwcr3yixYjzgZe',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'BFjWzdYGZoHKs1DRyHTDe1CYyBKXtLyAaZ1mzt7CW5Gt',
+      deposit: '250000',
+      expiresAt: 1794867284,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '7419088061583440528',
+      openSlot: '523053515',
+      openTransaction: 'gQIACQ8AAAB5pqWoaBw+72vDLkDnDZYx/v8C58gzsZBFO3nPMhureQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMZhbEypOeRjXjWJ6z+GXej/rWd9E0a7yFry0VPeUh/lhtotQg/F2Oj1el7s4mZiabEhi0oTIkq4B92SNzAJE9ZrJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAZC6BbRI5fVmkNADAAAAAACEAwAAyyktHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzM3YzI1ZWY4ZmFlNDM3ODJkNmE4ZTg3NjNjN2RiMzM4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADDEdKHU24W5QQaGMfGeyKG63OOnOZMOK1piDqGlnRx9IJXECo0Kro3tsfiw6xYvC92GBYnF0AyJkeyuvzMPvQ8=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866984,
+      type: 'claim',
+      voucherSignature: '4fwkyqFe2CRWJBXmVqGuyewZsrzp2SJFYAdfSRyBAMitw2VmUBXURZQF1B7DM9PvsUah682mhLupMjCwT55Xg3FV'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=30',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'BFjWzdYGZoHKs1DRyHTDe1CYyBKXtLyAaZ1mzt7CW5Gt',
+      deposit: '250000',
+      expiresAt: 1794867284,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '7419088061583440528',
+      openSlot: '523053515',
+      openTransaction: 'gQIACQ8AAAB5pqWoaBw+72vDLkDnDZYx/v8C58gzsZBFO3nPMhureQIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMZhbEypOeRjXjWJ6z+GXej/rWd9E0a7yFry0VPeUh/lhtotQg/F2Oj1el7s4mZiabEhi0oTIkq4B92SNzAJE9ZrJhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAgQDDQUMCQcKAZC6BbRI5fVmkNADAAAAAACEAwAAyyktHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzM3YzI1ZWY4ZmFlNDM3ODJkNmE4ZTg3NjNjN2RiMzM4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADDEdKHU24W5QQaGMfGeyKG63OOnOZMOK1piDqGlnRx9IJXECo0Kro3tsfiw6xYvC92GBYnF0AyJkeyuvzMPvQ8=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794866984,
+      type: 'claim',
+      voucherSignature: '4fwkyqFe2CRWJBXmVqGuyewZsrzp2SJFYAdfSRyBAMitw2VmUBXURZQF1B7DM9PvsUah682mhLupMjCwT55Xg3FV'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=30',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '3fRC7ZVhtqqKGgnejAGdczKEBC895dAJFsgjYtS2XhMk2yLFSrGR9D2A2oX1oSNFqGiKeFwpQ4kMy2XVdxNuPF37',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'FabiSEkKXQBc4U7aUb1k2EByyLunhNPeuC7vCgAWQ3FM',
+      deposit: '250000',
+      expiresAt: 1794867350,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '9347354716993939314',
+      openSlot: '523053790',
+      openTransaction: 'gQIACQ8AAAB8mFkgvvwonwDc/u3VS7YhcpG+rf9U2qG2XmFOAXDy/gIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUKEVLHaS0X3qrvrHJRVbZHMs/XBGmZ0I3b5QV1FrsRzyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvYnwkNnuTKQnLJ8CfyzcSeK0avXVLn6blUr0rGupPo0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKAXLn/jeXebiBkNADAAAAAACEAwAA3iotHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzhiMDMxNmYyOWZiY2RjNjA3YTFjYjI0MmUzNjg5MzEyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALtig8QOsh5ZJYa0S+vkevfDcjSBYsTbfkHPgJul8bzOQxkyp2/VGARxX5wjIfU7WmBG5wHNW7wyIeLuKOx2hwg=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794867050,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=60',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'FabiSEkKXQBc4U7aUb1k2EByyLunhNPeuC7vCgAWQ3FM',
+      deposit: '250000',
+      expiresAt: 1794867350,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '9347354716993939314',
+      openSlot: '523053790',
+      openTransaction: 'gQIACQ8AAAB8mFkgvvwonwDc/u3VS7YhcpG+rf9U2qG2XmFOAXDy/gIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUKEVLHaS0X3qrvrHJRVbZHMs/XBGmZ0I3b5QV1FrsRzyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvYnwkNnuTKQnLJ8CfyzcSeK0avXVLn6blUr0rGupPo0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKAXLn/jeXebiBkNADAAAAAACEAwAA3iotHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzhiMDMxNmYyOWZiY2RjNjA3YTFjYjI0MmUzNjg5MzEyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALtig8QOsh5ZJYa0S+vkevfDcjSBYsTbfkHPgJul8bzOQxkyp2/VGARxX5wjIfU7WmBG5wHNW7wyIeLuKOx2hwg=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794867050,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=60',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '4s4Hj5WfUtU3nwZvjvMushTnMN8x2X6hu6st7wy7U4yy23dmq5uwwEwXn91BJhc7YFqpdb8YTb4fgkuwb943mxBb',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'FabiSEkKXQBc4U7aUb1k2EByyLunhNPeuC7vCgAWQ3FM',
+      deposit: '250000',
+      expiresAt: 1794867350,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '9347354716993939314',
+      openSlot: '523053790',
+      openTransaction: 'gQIACQ8AAAB8mFkgvvwonwDc/u3VS7YhcpG+rf9U2qG2XmFOAXDy/gIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUKEVLHaS0X3qrvrHJRVbZHMs/XBGmZ0I3b5QV1FrsRzyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvYnwkNnuTKQnLJ8CfyzcSeK0avXVLn6blUr0rGupPo0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKAXLn/jeXebiBkNADAAAAAACEAwAA3iotHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzhiMDMxNmYyOWZiY2RjNjA3YTFjYjI0MmUzNjg5MzEyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALtig8QOsh5ZJYa0S+vkevfDcjSBYsTbfkHPgJul8bzOQxkyp2/VGARxX5wjIfU7WmBG5wHNW7wyIeLuKOx2hwg=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794867050,
+      type: 'claim',
+      voucherSignature: '5XCWfvNXp3SHC7oxWwr7b3isNy9N6jFHwK8y38uB3M9wen496zQoYUnQW7TMCkFupLyrAhvPeEZZZvhXpZaQoNL4'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=60',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'FabiSEkKXQBc4U7aUb1k2EByyLunhNPeuC7vCgAWQ3FM',
+      deposit: '250000',
+      expiresAt: 1794867350,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '9347354716993939314',
+      openSlot: '523053790',
+      openTransaction: 'gQIACQ8AAAB8mFkgvvwonwDc/u3VS7YhcpG+rf9U2qG2XmFOAXDy/gIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMUKEVLHaS0X3qrvrHJRVbZHMs/XBGmZ0I3b5QV1FrsRzyYT2/MBQMq4bK4k6zc+rfYDf2tc+We+fPKXd6EUaUlvYnwkNnuTKQnLJ8CfyzcSeK0avXVLn6blUr0rGupPo0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIBAMCDQUMCQcKAXLn/jeXebiBkNADAAAAAACEAwAA3iotHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJzhiMDMxNmYyOWZiY2RjNjA3YTFjYjI0MmUzNjg5MzEyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALtig8QOsh5ZJYa0S+vkevfDcjSBYsTbfkHPgJul8bzOQxkyp2/VGARxX5wjIfU7WmBG5wHNW7wyIeLuKOx2hwg=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794867050,
+      type: 'claim',
+      voucherSignature: '5XCWfvNXp3SHC7oxWwr7b3isNy9N6jFHwK8y38uB3M9wen496zQoYUnQW7TMCkFupLyrAhvPeEZZZvhXpZaQoNL4'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=100000&delay=60',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: '418GpCqCGQLnrgj69sVoEnFfmnmAbZAFKoo86FbPgbt74L3qTKQem3tBHzaYzQ1zupRSwjcWfJ6LzSrHWSQPeu7D',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '100000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+[rent-cleanup] reclaim channels=FLowD6572CbF6M2TYRAb8EX61N5fXnvnQ7a6BreLLegS tx=2Quap9UastmKHiB7pyZiG6BVjiBC18cFFa8fDSCPgrp26eEAQ8v8Y3ATnERvrHvfpBQuUoC5Kq1ji4z1fRgWkqwY
+Before settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'CNKvEyGsanSnuvP7EirQUFwjci5tLqRNPvnXF5H7kyEt',
+      deposit: '250000',
+      expiresAt: 1794867433,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '8899410673696410443',
+      openSlot: '523054132',
+      openTransaction: 'gQIACQ8AAADTvEgEKDcXs/Occ6a24vS/2PYAZAXL1wDhxGG9487FrgIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMYpL44SnFo48/FFiVRHtKyH0DemXyao87lYOEHbwdDGhqOckzh7lHgnJO1gZHDOE12Zh+kIoVuvfGI59RFl8wB3JhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAwQCDQUMCQcKAUuL/kvbDoF7kNADAAAAAACEAwAANCwtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2M5NDQ5ZWRkODE3NjM2ZmQ4ZGE2NTNiYTg4ODJhODdkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwDt2IBzMJesklgPQ8w4mS+v65394aJIvIWkkWHSU44/h1rVNARH5y0/1k1i5S9nJzosX1P+c5vAa02ViagaQw=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794867133,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=300000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  }
+}
+After settle {
+  paymentPayload: {
+    x402Version: 2,
+    payload: {
+      channelId: 'CNKvEyGsanSnuvP7EirQUFwjci5tLqRNPvnXF5H7kyEt',
+      deposit: '250000',
+      expiresAt: 1794867433,
+      from: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+      maxAmount: '250000',
+      nonce: '8899410673696410443',
+      openSlot: '523054132',
+      openTransaction: 'gQIACQ8AAADTvEgEKDcXs/Occ6a24vS/2PYAZAXL1wDhxGG9487FrgIO22aoa3jts1QNgEKIR+fkHUPUI05J9rzI+uj+GtvyGtoRhTCrSdGDyULryeJQ5NhxZLjZN9yodve3G0g7/JntMYpL44SnFo48/FFiVRHtKyH0DemXyao87lYOEHbwdDGhqOckzh7lHgnJO1gZHDOE12Zh+kIoVuvfGI59RFl8wB3JhPb8wFAyrhsriTrNz6t9gN/a1z5Z7588pd3oRRpSWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAO0Qss5EhV/E6kz0BNCgtAytf/s0Botvxt3kGCN8ALqdaVA17ax4rK7UXUhnJo/BgEJJByoxPFwzByi1I7ur50GlpO7EC4cNr60JdKCkY7NcBXB0lbGM7R4gRbCxv2ArFjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmnofuk6ysJCZP30t/WK4niuHIHemOf19dHqOmfY9QVrgVKU1qZKSEGTSTocWDaOHx8NbXdvJK7geQfqEBBBUSNBqfVFxksXFEhjMlMPUrxf1ja7gibof1E49vZigAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQEAAAAAAAAAQA0DAAAAQAAKDkMACwAgAAEAAAYIAwQCDQUMCQcKAUuL/kvbDoF7kNADAAAAAACEAwAANCwtHwAAAAABAAAAdXhihDU7KsvgyDD9ESZYTg/TApbkNGtgjt3v2+qGJuwQJ2M5NDQ5ZWRkODE3NjM2ZmQ4ZGE2NTNiYTg4ODJhODdkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwDt2IBzMJesklgPQ8w4mS+v65394aJIvIWkkWHSU44/h1rVNARH5y0/1k1i5S9nJzosX1P+c5vAa02ViagaQw=',
+      authorizedSigner: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      validAfter: 1794867133,
+      type: 'deposit'
+    },
+    resource: {
+      url: 'http://localhost:4023/api/generate?amount=300000&delay=0',
+      description: 'AI text generation — billed by token usage',
+      mimeType: 'application/json'
+    },
+    accepted: {
+      scheme: 'upto',
+      network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+      amount: '250000',
+      asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+      payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+      maxTimeoutSeconds: 300,
+      extra: [Object]
+    }
+  },
+  requirements: {
+    scheme: 'upto',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    asset: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+    payTo: '8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib',
+    maxTimeoutSeconds: 300,
+    extra: {
+      feePayer: 'FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM',
+      transactionVersions: [Array],
+      receiverAuthorizer: '86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He',
+      withdrawDelay: 900,
+      tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      paymentFlow: 'escrow'
+    }
+  },
+  result: {
+    success: true,
+    transaction: 'S93Vu8Tu17rk6RFN1Ac17SU4fLjDsz7YQFAd2Jvz5WGvT2PHu68uxxAJF5JhTcKyPfWNWBxcdvJxitQHbJ2vEHX',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '250000',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA'
+  }
+}
+[rent-cleanup] reclaim channels=5eDE2Yrn9xqhag4Y8F7QoqeYkuLohqXdDgmigkCe4Xs1 tx=269LwSYffjSnUMssk4SJU6KAAiFjLrRdaT9PpodCbHr1occXgwMrBuYhVrtKP3MF2oqo3r1wP1RA83JPxZsTvnES
+[rent-cleanup] reclaim channels=4GcDWfphWemjaWRiMrg1s55j9ca3Zg8H2ZHadigVYQnC tx=3cUc7Yjc1sE76xaWu6fZeGSUM6EX59qA5JqdSR4JCUg3LCMuL1ANFi7kMMhvkh2UwjZCUhor5R72y5psczVL91QY
+[rent-cleanup] reclaim channels=2tePFG9AiTEzFfYGF2rnGUjfSDoedLo1zFjzxhKvy2ZR tx=2TJUpM2kkd4YcXiJYfWonKdh6kaLFTau67XUkKXTujB4p5qZBDfq1yydnzz9MsbJLLny6J1tXNWpX4TfVQHhoKTn
+[rent-cleanup] abandon_close channel=pZrptwT71eNGQ3f8mDC2QVK1Fq2WFcrU7zHedo43v4c tx=9Kk5hTi5LNCRZWq6yUgaTtmqrJNMjvDmdyVXoofcruKeH96qPzMA7PJavzRc9TeuSiWKoeZHbrSjJf3gNfo32FC
+[rent-cleanup] reclaim channels=637YwpmCZ9Zgwr4tnrLzb1NFWjLhRGoJZc65tPY38qic,7PSx3PDAWMZ2L8xnh5cMobTBxBkUEVQWbK3mSVhGAeBR tx=3PSMmq3VWhbsJN3qrkeqRKU8AixgjLTmv91cWFxabbYJEeLZt9ocbsDQHJQ82dB6KKsKhenbjqpyVGn63aDyU1t2
+[rent-cleanup] reclaim channels=BFjWzdYGZoHKs1DRyHTDe1CYyBKXtLyAaZ1mzt7CW5Gt tx=1uuL59aRjv4Kx4oX1AvGrrMXQ3RfPJbcC4v7ownaEZt8uxJ4VJ4ak2mbao8qaQRDR16hL34chF8wShEuNZVf53M
+[rent-cleanup] reclaim channels=FabiSEkKXQBc4U7aUb1k2EByyLunhNPeuC7vCgAWQ3FM tx=5TAk9a3KTnzwiD2L3EdLz3fwDKN8oBNN9MAYALGhmP8rktin62At6qeM5Xjm2bW1Po296F3Q6k7E3Lh3aCW8HJL1
+[rent-cleanup] abandon_close channel=CNKvEyGsanSnuvP7EirQUFwjci5tLqRNPvnXF5H7kyEt tx=m1HvUBz1RvrJzRyS2SiuK8BUDCT8wiv3e664nMayT4wDGfKGH8ngKziT4iHVyvyT1ZPBdn59LXFjpjmPPbtDgjs
