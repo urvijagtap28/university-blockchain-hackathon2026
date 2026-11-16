@@ -1,0 +1,24 @@
+##### T3_zero amount=0 delay=0  start=17:08:39
+BEFORE
+buyer USDC=19.311423 SOL=2.5 SOL
+seller USDC=0.438577 SOL=1.49850156 SOL
+Making request to: http://localhost:4023/api/generate?amount=0&delay=0
+
+{
+  status: 402,
+  paymentStatus: 'settle_failed',
+  body: {},
+  header: {
+    success: false,
+    errorReason: 'settlement_pending',
+    errorMessage: 'HTTP error (429): ',
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+    transaction: 'hg6Ec34wmYHiFYCKrTSsfpNuSiaEgdXNVMQedM22W54V6wZrcxKpZrXNJoxV7tKqGsFQvy7jHwN4mac9km5wjAi',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1'
+  }
+}
+Request completed in 1.586s
+end=17:08:42
+AFTER
+buyer USDC=19.311423 SOL=2.5 SOL
+seller USDC=0.438577 SOL=1.49850156 SOL

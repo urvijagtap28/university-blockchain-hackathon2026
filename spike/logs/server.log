@@ -1,0 +1,7 @@
+$ tsx index.ts
+(node:5328) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Upto server listening at http://localhost:4021
+  GET /api/generate  — usage-based billing via upto scheme (Solana (devnet))
+  SVM receiver authorizer: 86UssGu5rcNMEeNTfvFP7gwdobCP6jKrBDV3qYQqm1He
+[ELIFECYCLE] Command failed with exit code 143.

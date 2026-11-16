@@ -1,0 +1,20 @@
+(node:5368) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Making request to: http://localhost:4021/api/generate
+
+{
+  status: 200,
+  paymentStatus: 'settled',
+  body: {
+    result: 'Here is your generated text...',
+    usage: { authorizedMaxAtomic: '100000', actualChargedAtomic: '88577' }
+  },
+  header: {
+    success: true,
+    payer: '2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA',
+    transaction: '3NcrkygtTRv4YgFggmpHS19h7Xq4yyXCGopLRP1nqygaKGnPDaiWYEHfCXhPkMaJT7oMBdXL3zACbyMVomSvei3P',
+    network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    amount: '88577'
+  }
+}
+Request completed in 1.898s

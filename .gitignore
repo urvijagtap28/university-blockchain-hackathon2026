@@ -1,0 +1,28 @@
+# secrets
+.env
+.env.*
+!.env.example
+keys/*
+!keys/.gitkeep
+*.key
+*-keypair.json
+id.json
+
+# deps / build
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.venv/
+
+# verifier scratch / untrusted submissions
+tmp/
+submissions/
+*.log.tmp
+
+# OS / editor
+.DS_Store
+.idea/
+
+# local Claude settings
+.claude/settings.local.json
