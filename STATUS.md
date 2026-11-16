@@ -31,5 +31,8 @@ Last updated: Mon Nov 16 evening (smoke test recorded).
 - curl primary-source numbers: not fetched.
 - Prior-art check: not done.
 
+## Guardrails to implement
+- /report must fail closed: if verifier output has `"stub": true` outside test mode, settle $0 and return an error. (verifier/verify.py is a filename-routed stub.)
+
 ## Next action
 Install Docker + pnpm, add remote and push. Person A: configure dedicated RPC, port the spike server/client into server/ and agent/. Person B: choose target library.

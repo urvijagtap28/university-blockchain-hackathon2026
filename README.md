@@ -7,6 +7,6 @@ Status: setup. See [STATUS.md](STATUS.md). Full README to come.
 ## Layout
 - `server/` Express + x402 `POST /report`
 - `agent/` sender agent (budget, allowlist, approval)
-- `verifier/` `verify.py` + Docker images
+- `verifier/` `verify.py` (currently a STUB) + Docker images + `testdata/`
 - `harness/` fixed C harness; `targets/` pinned library; `backtest/` historical reproducers
 - `spike/` x402 `upto` spike logs and scripts; notes in `docs/`
