@@ -17,6 +17,8 @@ Commands and actual outputs, newest last.
 - Not verified: dedicated RPC (none configured; public RPC used, 429s possible).
 
 ## 2026-11-16 stub verifier tidy
-- Moved verify.py -> verifier/verify.py, test inputs -> verifier/testdata/ (3 identical 5-byte files; stub routes on filename).
+- Moved verify.py -> verifier/verify.py, test inputs -> test-inputs/ (3 identical 5-byte files; stub routes on filename).
 - Ran from verifier/: fake.bin -> not_reproduced; flaky.bin -> inconclusive; real_bug.bin -> reproduced; STUB_VERDICT=bogus -> inconclusive; missing file -> inconclusive. All output has "stub": true.
 - Not verified: no server consumes this yet; the fail-closed check on stub:true is recorded in STATUS.md but not implemented.
+- 2026-11-16: moved verifier/testdata/ -> test-inputs/ (stub reran: same three verdicts). Uncommitted; user commits.
+- 2026-11-16: CLAUDE.md now states the verifier contract. User asked to stage, commit and push (one-off, overrides never-commit for this action).
