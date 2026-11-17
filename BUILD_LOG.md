@@ -403,3 +403,9 @@ New RESULTS.md sections as generated:
 ```
 Row 4 of the Reports table now carries the new random-bytes label. Facts checked against backtest/RESULTS.md set B (7 fakes, all not_reproduced/FORFEITED, deep_nesting 6000 B vul 3/3 clean) and server/src/index.ts:168 (empty body -> error, settle 0).
 UNVERIFIED: the --real RESULTS.md text (composition section is static and was only rendered in stub mode); the verdicts in the RESULTS.md file are still stub verdicts.
+
+## 2026-11-17 DOCS_README: README.md rewritten (docs only, nothing run)
+Replaced README.md with the full draft. No commands were run to produce claims; every figure was copied from backtest/RESULTS.md, RESULTS.md (stub), docs/verified-facts.md, docs/spike-findings.md, AGENTS/*.md and BUILD_LOG.md. TODO markers in the README mark real-run tx signatures, facilitator build steps, curl link re-check, .env.example check, signer pubkey/log head. docs/hackathon.md does not exist in the repo and was not read.
+
+## 2026-11-17 FACT_CHECKER prior-art check
+Appended 'Prior art / related work' to docs/verified-facts.md (13 WebSearch queries plus WebFetch of primary pages). Strong conceptual overlap: Cantina and Decred refundable deposits, Bram Cohen proposal. No commit made.
