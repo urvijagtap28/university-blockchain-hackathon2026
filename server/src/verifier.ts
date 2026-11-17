@@ -24,7 +24,12 @@ export function clamp(amount: bigint): bigint {
   return amount > CAP_ATOMIC ? CAP_ATOMIC : amount;
 }
 
-const errorDecision = (detail: string): Decision => ({ verdict: "error", detail, settleAtomic: 0n });
+/** The amount actually sent as the settle override: errors -> 0, everything else clamped to [0, CAP]. */
+export function finalSettle(d: { verdict: string; settleAtomic: bigint }): bigint {
+  return clamp(d.verdict === "error" ? 0n : d.settleAtomic);
+}
+
+const errorDecision =(detail: string): Decision => ({ verdict: "error", detail, settleAtomic: 0n });
 
 /** Pure: stdout text -> decision. Never throws. */
 export function decideFromOutput(stdout: string, allowStub: boolean): Decision {

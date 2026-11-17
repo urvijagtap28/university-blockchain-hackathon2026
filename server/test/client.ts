@@ -18,7 +18,7 @@ const pay = wrapFetchWithPayment(fetch, client);
 const t0 = performance.now();
 const res = await pay(url, {
   method: "POST",
-  headers: { "content-type": "application/octet-stream", ...(testName ? { "x-test-filename": testName } : {}) },
+  headers: { "content-type": "application/octet-stream", ...(testName ? { "x-test-filename": testName } : {}), ...(process.env.TEST_FAULT ? { "x-test-fault": process.env.TEST_FAULT } : {}) },
   body: readFileSync(file),
 });
 const result = await new x402HTTPClient(client).processResponse(res);
