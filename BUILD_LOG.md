@@ -322,3 +322,35 @@ Tamper copies (pinned): verdict changed not_reproduced->reproduced -> `PROBLEM l
 - Observation, not ours: that real claim settle did not land (stranded bond); a retry a minute later settled normally.
 
 UNVERIFIED: real verifier (caseId/targetCommit/vulImage/fixImage populated from cases.json only unit-reasoned, not run on the server; caseInfo ran against the real cases.json but with the stub it deliberately yields null case); the user's persistent LOG_SIGNING_KEY and keygen script (not run; written, syntax loaded only); busy / rate_limited / handler-exception records on devnet (same code path via logOutcome, not run); concurrent appends (synchronous appendFileSync, reasoned); multi-process writers (unsupported).
+
+## 2026-11-17 VERDICT_LOG investigation: every paid /report outcome must leave a record (D-013)
+### Path table (OLD code = HEAD index.ts; record written by `res.once("close")` registered in logOutcome, called inside the handler)
+| Path | Old | Why / code | New |
+|---|---|---|---|
+| verdict settle ok (incl. $0) | record | logOutcome then close | record on onAfterSettle |
+| handler exception (caught) | record | catch in handle() -> logOutcome | same |
+| escaped exception | record | app.post wrapper calls logOutcome if !headersSent | same |
+| busy / rate_limited (post-pay) | record | decision -> logOutcome | same |
+| verifier timeout | record | runVerifier returns decision | same |
+| settle failed, recovered | record (settled) | onSettleFailure puts note | recorder.flush |
+| settle failed, unrecovered 402 | record (failed, pending sig) | note put | recorder.flush |
+| VERIFY fails / invalid payment (no escrow) | none | processHTTPRequest payment-error, no money moved | none, by design (spam) |
+| DEPOSIT (before-handler) settle fails/pends unrecovered | NONE, silent | middleware returns 402 from processHTTPRequest; handler never runs; hook only handled phase after-handler | record `payment_failed` + loud stderr line |
+| client disconnects BEFORE logOutcome (verifier running) | NONE, silent | `res.once("close")` registered after close already fired | record on settle outcome |
+| client disconnects mid-settle | premature "unknown" record, real outcome lost | close fires during 45 s poll | record on settle outcome |
+| response never closes / settle never reports | none | nothing fires | none written, still silent (UNVERIFIED not fixable: pendingCount; documented) |
+Likeliest cause of the original: the DEPOSIT-settle path (handler never ran, hook ignored before-handler, nothing printed), or a client timeout; a stale pending claim from the earlier run on the facilitator could make the new deposit fail. UNVERIFIED which one happened; not reproduced with a real (non-simulated) failure.
+
+### Reproduction on devnet (stub; facilitator PID started once on 4022, never restarted; server on 4021 restarted per scenario; ephemeral LOG_SIGNING_KEY pub FWHWUZqj..., key file deleted; stopped by PID, ports free; dedicated RPC)
+Final log: `verify-log.ts --pubkey FWHW...` -> `OK: 10 records ... (pinned)`.
+- NEW code, handler exception (TEST_FAULT=throw): seq 0 error "exception: TEST injected..." 0 settled tx 5Fh59gze...MTM
+- NEW, escaped exception: seq 1 error "internal error (escaped exception)" 0 settled tx SeUZsn16...b44
+- NEW, client abort at 4 s during an 8 s handler (x-test-fault slow): client died with TimeoutError; seq 3 not_reproduced 250000 settled tx 5tihHGSa...SxQ (the server still settled; seq 2 was an earlier bad run where VERIFIER_PATH was relative, "verifier failed", tx dYwHxcDk...)
+- NEW, rate_limited (two simultaneous clients, window 30 s): seq 4 reproduced 0 settled ocYgaBtM...z6k; seq 5 rate_limited 0 settled 4kxz9m55...4w1
+- NEW, pending proxy `real` (claim really lands, reported pending): client got settled with extra.recoveredFromPending; seq 6 not_reproduced 250000 settled tx 29Zq7oJZ13UVF4ZggSP8Su4Q4qAtaf8VqJHAAGzbrQ8NqFpUH3pkA7PWQwP222UABfWKbjarFfoqy4qSfxdWmBtT (log: "pending ... -> confirmed")
+- NEW, pending proxy `bogus` (signature never confirms): client 402 settle_failed after 45.1 s; seq 7 not_reproduced 250000 failed tx 111...1 (bogus). Bond for it stranded ~7 min (test artifact).
+- NEW, proxy `depfail` (DEPOSIT settle pending, bogus, never forwarded): client 402 after 44.1 s; stderr `[verdictlog] paid request failed BEFORE the handler (deposit settle failed), tx=111...; recording`; seq 8 payment_failed 0 failed tx 111...1.
+- OLD code (HEAD index.ts copy, patched only to add the test delay), same `depfail` run: client 402 after 44.0 s, server printed only the two `[settle]` lines, log stayed at 9 lines => NO record, no error. This reproduces the original symptom.
+- OLD code, client abort at 4 s during the slow handler: log stayed at 10 lines => NO record. (Whether that run's claim settled was not checked.)
+Unit: `node test/recorder.test.ts` -> `recorder ok` (hook-then-close, failed, disconnect-before-register then settle, fallback timer, never-closing = nothing written, escaped, double flush, anon key, pre-handler failure verifies, unwritable log warns loudly, log disabled); verdictlog.test.ts `verdictlog ok`; unit.ts `unit ok`.
+UNVERIFIED: busy on devnet (needs 3 payers, only one buyer key; same code path as rate_limited); a real (non-simulated) facilitator deposit failure; the stale-pending-claim theory; the real verifier; log writing under the fallback timer on devnet (unit only); a request whose settle never reports and whose connection never closes still produces no record.

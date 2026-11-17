@@ -192,3 +192,69 @@ export class SettleNotes {
     const n = this.m.get(key); this.m.delete(key); return n;
   }
 }
+
+export type PendingFields = Omit<RecordFields, "settledAtomic" | "settlementStatus" | "txSignature" | "timestamp"> & { attempted: string };
+
+/** Writes exactly ONE record per paid request, whichever of these happens first (VERDICT_LOG investigation, D-013):
+ *  (1) the settle hook reports the final after-handler outcome, (2) the response closes and a fallback timer expires
+ *  (covers a settle that never reports). Writing on response 'close' alone lost records when the client had already
+ *  disconnected before the handler registered, and recorded "unknown" when it disconnected mid-settle.
+ *  Pre-handler failures (verify/deposit settle failed => handler never ran) go through preHandlerFailure.
+ *  Never throws; a failure is printed loudly and does not touch settlement. */
+export class OutcomeRecorder {
+  private pending = new Map<string, { f: PendingFields; timer?: ReturnType<typeof setTimeout> }>();
+  private n = 0;
+  private log: { append(f: RecordFields): unknown } | null;
+  private notes: SettleNotes;
+  private fallbackMs: number;
+  private warn: (m: string) => void;
+  constructor(log: { append(f: RecordFields): unknown } | null, notes: SettleNotes, fallbackMs: number, warn: (m: string) => void = m => console.error(m)) {
+    this.log = log; this.notes = notes; this.fallbackMs = fallbackMs; this.warn = warn;
+  }
+  /** Returns the key under which this request is registered (the payment key, or a unique one when unknown). */
+  register(key: string | null, f: PendingFields): string {
+    const k = key ?? `anon-${++this.n}`;
+    try {
+      if (!this.log) return k;
+      const old = this.pending.get(k);
+      if (old) { if (old.timer) clearTimeout(old.timer); this.write(old.f, undefined, "superseded by a second request with the same payment"); }
+      this.pending.set(k, { f });
+    } catch (e) { this.warn(`[verdictlog] register failed (settlement unaffected): ${e instanceof Error ? e.message : "error"}`); }
+    return k;
+  }
+  /** Response closed. If the settle hook has not reported yet, wait fallbackMs for it, then write whatever is known. */
+  closed(k: string): void {
+    try {
+      const p = this.pending.get(k);
+      if (!p || p.timer) return;
+      p.timer = setTimeout(() => this.flush(k), this.fallbackMs);
+      p.timer.unref?.();
+    } catch (e) { this.warn(`[verdictlog] close handling failed (settlement unaffected): ${e instanceof Error ? e.message : "error"}`); }
+  }
+  /** The final after-handler settle outcome is known (success, or failure after recovery). */
+  flush(k: string, note?: SettleNote): void {
+    try {
+      const p = this.pending.get(k);
+      if (!p) return;
+      if (p.timer) clearTimeout(p.timer);
+      this.pending.delete(k);
+      this.write(p.f, note ?? this.notes.take(k.startsWith("anon-") ? null : k));
+    } catch (e) { this.warn(`[verdictlog] flush failed (settlement unaffected): ${e instanceof Error ? e.message : "error"}`); }
+  }
+  /** Verify/deposit failed before the handler: a paid-flow request with no verdict. Record it (status failed, $0 settled). */
+  preHandlerFailure(f: Omit<PendingFields, "attempted">, tx: string | null, why: string): void {
+    try {
+      this.write({ ...f, attempted: "0", detail: why }, { status: "failed", tx, amount: null });
+    } catch (e) { this.warn(`[verdictlog] pre-handler record failed (settlement unaffected): ${e instanceof Error ? e.message : "error"}`); }
+  }
+  private write(f: PendingFields, n: SettleNote | undefined, extra?: string): void {
+    const { attempted, ...rest } = f;
+    const rec = this.log?.append({
+      ...rest, detail: extra ? `${rest.detail} (${extra})` : rest.detail,
+      settledAtomic: n?.status === "settled" ? (n.amount ?? attempted) : attempted,
+      settlementStatus: n ? n.status : "unknown", txSignature: n?.tx ?? null, timestamp: new Date().toISOString(),
+    });
+    if (rec === null) this.warn("[verdictlog] ERROR: a paid request's record could NOT be written (see append failure above); settlement unaffected");
+  }
+  get pendingCount(): number { return this.pending.size; }
+}
