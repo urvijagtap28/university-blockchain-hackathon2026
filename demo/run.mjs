@@ -360,6 +360,30 @@ function writeResults(file, { manifest, meta, res }) {
   writeFileSync(file, L.join("\n"));
 }
 
+// Machine-readable twin of RESULTS.md for demo/web/build.mjs. Same `res`, so the two cannot disagree. Public data only.
+// Per-record status is derived from the PROBLEM lines of server/scripts/verify-log.ts (verifyLogText): a record is "verified" if no problem names its line.
+function writeResultsJson(file, { manifest, meta, res }) {
+  const broken = new Map();
+  for (const m of res.vlOut.matchAll(/^PROBLEM line (\d+): (.*)$/gm)) { const k = Number(m[1]) - 1; broken.set(k, [...(broken.get(k) ?? []), m[2]]); }
+  const j = {
+    schema: 1, mode: meta.mode, generatedAt: new Date().toISOString(),
+    meta: { startedAt: meta.startedAt, finishedAt: meta.finishedAt, signerPub: meta.signerPub, buyerAddr: meta.buyerAddr, payTo: meta.payTo, facAddr: meta.facAddr,
+      buyerUsdcBefore: meta.buyerUsdcBefore, payToUsdcBefore: meta.payToUsdcBefore, balancesAfter: meta.balancesAfter ?? null },
+    log: { records: res.records.length, verifiedCount: res.records.length - [...broken.keys()].filter(k => k >= 0 && k < res.records.length).length, brokenLines: Object.fromEntries([...broken].map(([k, v]) => [k + 1, v])),
+      verifyOk: res.vlOk, head: res.head ?? null, depositTxRecorded: false },
+    counts: res.c, problems: res.problems,
+    rows: res.rows.map(({ i, e, r, a, chain, amt }) => ({
+      entry: i + 1, label: e.label, category: e.category, file: path.basename(e.input),
+      seq: r?.seq ?? null, verdict: r?.verdict ?? null, detail: r?.detail ?? null,
+      settledAtomic: r ? String(r.settledAtomic) : null, settlementStatus: r?.settlementStatus ?? null,
+      txSignature: r?.txSignature ?? null, chain: chain ?? null, agentStatus: a?.status ?? null,
+      recordVerified: r ? !broken.has(r.seq) : false })),
+    notDemonstrated: ["flaky_or_timeout", "crash_on_both"].filter(c => !manifest.entries.some(e => e.category === c)),
+    target: res.records[0] ? { caseId: res.records[0].caseId, targetCommit: res.records[0].targetCommit, fixCommit: res.records[0].fixCommit, vulImage: res.records[0].vulImage, fixImage: res.records[0].fixImage } : null,
+  };
+  writeFileSync(file, JSON.stringify(j, null, 1));
+}
+
 // ---------- main ----------
 async function main() {
   if (!MODE && !ANALYZE) fail("usage: scripts/demo.sh --stub | --real [--preflight-only]  |  --analyze <run-dir> [--out file]");
@@ -374,6 +398,7 @@ async function main() {
     printTable(res.rows);
     const out = path.resolve(opt("--out") ?? path.join(dir, "RESULTS.md"));
     writeResults(out, { manifest, meta: { ...meta, finishedAt: new Date().toISOString() }, res });
+    writeResultsJson(path.join(dir, "results.json"), { manifest, meta: { ...meta, finishedAt: meta.finishedAt ?? new Date().toISOString() }, res });
     console.log(`\nwrote ${out}`);
     console.log(res.problems.length ? `\nFAILED:\n${res.problems.map(p => "  - " + p).join("\n")}` : "\nALL CHECKS PASSED");
     return res.problems.length ? 1 : 0;
@@ -421,6 +446,7 @@ async function main() {
   printTable(res.rows);
   const out = path.join(ROOT, "RESULTS.md");
   writeResults(out, { manifest, meta, res });
+  writeResultsJson(path.join(RUN, "results.json"), { manifest, meta, res });
   console.log(`\nwrote ${out}   (mode: ${MODE === "stub" ? "STUB VERIFIER: not a real sandbox run" : "REAL"})`);
   console.log(`counts: reproduced ${res.c.reproduced}, forfeited ${res.c.forfeited}, wrongly forfeited real bugs ${res.c.wrongForfeit}, inconclusive ${res.c.inconclusive}, errors ${res.c.errors}`);
   console.log(`log head: seq ${res.head?.seq} sha256(last line) ${res.head?.hash}`);

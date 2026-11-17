@@ -37,3 +37,4 @@ server/*.jsonl
 
 # demo run artifacts (logs, pids, copies of the verdict log; no secrets)
 demo/run/
+demo/web/out/

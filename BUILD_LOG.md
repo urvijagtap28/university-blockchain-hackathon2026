@@ -409,3 +409,13 @@ Replaced README.md with the full draft. No commands were run to produce claims; 
 
 ## 2026-11-17 FACT_CHECKER prior-art check
 Appended 'Prior art / related work' to docs/verified-facts.md (13 WebSearch queries plus WebFetch of primary pages). Strong conceptual overlap: Cantina and Decred refundable deposits, Bram Cohen proposal. No commit made.
+
+## 2026-11-17 RESULTS_VIEW: static results page (demo/web/)
+Added: demo/web/build.mjs, demo/web/template.html, demo/web/test/negative.mjs; demo/run.mjs `writeResultsJson` (additive; writes <run-dir>/results.json from the same `res` as RESULTS.md); `.gitignore` demo/web/out/. No server/, agent/, verdict logic or money path edits. No devnet transactions sent.
+Ran:
+- `node --check demo/run.mjs`, `demo/web/build.mjs`, `demo/web/test/negative.mjs` -> all pass.
+- `node demo/run.mjs --analyze demo/run --out <scratchpad>/R.md` -> `OK: 5 records ... (pinned)`, 5 txs confirmed, `ALL CHECKS PASSED`; demo/run/results.json written (read-only RPC getTransaction only).
+- `node demo/web/build.mjs demo/run` -> `wrote .../demo/web/out/report.html (18964 bytes); mode stub; 5 of 5 log entries verified; 0 problem(s) listed`.
+- Headless Chrome screenshots at 1280 px and 500 px: layout OK (stub banner, diagram, counts, 5 cards, trust panel, footer banner). Narrow diagram scrolls horizontally. Window below ~500 px not checkable (headless minimum).
+- `node demo/web/test/negative.mjs demo/run <scratch>`: tampered log copy (line 3 settledAtomic edited) -> build exit 1, "line 3: BAD SIGNATURE", "line 4: prev hash mismatch", "3 of 5 log entries verified", no page; with --allow-failed a page is written with the CHECKS FAILED banner and "3 of 5 ... verified"; missing log -> `BUILD FAILED: verdict log not found`, exit 2; XSS fixture (`<img src=x onerror=alert(1)>` in label/detail/file) rendered in Chrome DOM as `&lt;img...` text, 0 img elements; bad signature string -> "invalid signature, no link", no href; output has no external URL except the Explorer prefix and the SVG namespace.
+UNVERIFIED: real-mode page (no real run dir exists); mobile widths under 500 px; Firefox/Safari.
