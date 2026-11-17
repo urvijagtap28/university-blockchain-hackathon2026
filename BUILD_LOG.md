@@ -23,6 +23,59 @@ Commands and actual outputs, newest last.
 - 2026-11-16: moved verifier/testdata/ -> test-inputs/ (stub reran: same three verdicts). Uncommitted; user commits.
 - 2026-11-16: CLAUDE.md now states the verifier contract. User asked to stage, commit and push (one-off, overrides never-commit for this action).
 
+## 2026-11-16 18:56 ET smoke test rerun: $0 settle on devnet (spike code)
+- Same procedure as the 18:19 run (facilitator :4022, spike-server :4023, run.sh smoke_zero 0 0).
+- Client output: status 200, paymentStatus 'settled', actualChargedAtomic '0', request 2.139s. Buyer USDC 19.361423 before and after.
+- Settle tx: 4cvmpDQafa7bLt6GuDG1nVeMgQsCYEYigtcLZ9GPA9mBWLoBqjuoYHFfKiiZxH4zbj6hPK9NFi9F2r8zWpLMMmnm
+  RPC getTransaction (public devnet RPC, maxSupportedTransactionVersion 1): err null, escrow account 0.25 -> closed, buyer 19.111423 -> 19.361423, seller +0.
+- NOT verified: which RPC the facilitator and server used. SVM_RPC_URL was added to .env but nothing observed shows the run used it (no 429s seen, but that proves nothing).
+
+## 2026-11-16 19:33 ET smoke test on DEDICATED RPC (QuickNode devnet), spike code
+- Setup issues found: shell had PORT=3000 exported (facilitator reads PORT, default 4022; started with PORT=4022); server needs FACILITATOR_URL=http://localhost:4022.
+- 19:29 run FAILED: status 402, settle_failed, invalid_upto_svm_payload_channel_seed. Cause (read in svm/src/upto/facilitator/scheme.ts:1328): that reason is returned when getSlot on the RPC throws. SVM_RPC_URL had curly quotes (’) pasted in, making it an invalid URL. Fixed by re-exporting with straight quotes. (Inference from code + fix; the failing URL itself was not tested.)
+- The full RPC URL (incl. API key) was printed to the chat by mistake in that debugging; key to be rotated.
+- 19:33 run OK: status 200, settled, actualChargedAtomic 0, 2.130s. Buyer USDC 19.361423 before and after.
+- Settle tx: 2geKqEppiYidUBfbL5YiM7n1bCyW5i6SBt2o4UrYqqaw8JfT6RW6A2WCjkwL1s51vjP2KWAZWH8eh3SC2wYqbeU8
+  RPC getTransaction (public devnet RPC): err null, escrow 0.25 -> closed, buyer 19.111423 -> 19.361423, seller +0.
+- Observed via ps: facilitator and server processes both have SVM_RPC_URL starting with 'h' on a quiknode.pro devnet host. 0 matches for 429 in both logs.
+- Not verified: sustained load, repeated runs, error-path settles.
+
+## 2026-11-16 orchestrator Phase 0
+- `docker --version` -> Docker version 29.10.0; `docker run --rm hello-world` -> "Hello from Docker! ... installation appears to be working correctly." `pnpm --version` -> 11.1.1. node v26.10.0, npm 11.19.1, python3 3.14.7, git 2.54.0. (STATUS.md said docker/pnpm missing: stale.)
+- `./scripts/secret-grep.sh` -> "secret grep clean".
+- `node --env-file=.env scripts/check-env.mjs` -> "OK: host=quiknode.pro getSlot=523096428" (URL ASCII, https, not printed).
+- NOT verified: .env.example contents (read denied); gh not checked; hello-world run on arm64 image only as pulled.
+
+## 2026-11-16 ~20:05 ET X402_PAYMENTS: re-run $0 smoke on dedicated RPC (spike code) + /report skeleton
+Part 1 (spike code in ~/upto-spike/scratch/x402/examples/typescript, facilitator `PORT=4022 pnpm exec tsx index.ts`, spike-server on 4023 with FACILITATOR_URL=http://localhost:4022, client amount=0 delay=0):
+- Only SVM_RPC_URL taken from repo .env (spike dirs keep their own keys). Balances/tx read via a scratch script using SVM_RPC_URL (not the public RPC). Note: a stale facilitator (pid 24643, listens on 3000, started 19:25) was already running; left untouched.
+- ps: facilitator and server both had SVM_RPC_URL host solana-devnet.quiknode.pro. 0 matches for "429" in both logs.
+- Before: buyer USDC 19.361423 SOL 2.5; seller USDC 0.638577; facilitator SOL 0.993893.
+- Client output: status 200, paymentStatus settled, actualChargedAtomic 0, 2.154s, payer 2BPj...rXA.
+- Settle tx: 29afTpSw7HcH8uk91rA5acQh3xKEbex5viPRYTfasLeQBLgRQHxJVvrECyqVW4M6pNCctbg1UesTNkoKpXVn8TJR
+  getTransaction (dedicated RPC): err null, escrow token acct 0.25 -> closed, buyer 19.111423 -> 19.361423, seller unchanged.
+- After: buyer USDC 19.361423 (delta 0), seller 0.638577 (delta 0), facilitator SOL 0.991927 (-0.00197, facilitator pays tx fees/rent).
+
+Part 2 (server/, node --disable-warning=ExperimentalWarning src/index.ts, native TS stripping; stub verifier; test client server/test/client.ts; same facilitator kept running, not restarted):
+- Repo .env has SVM_PRIVATE_KEY and AGENT_SVM_PRIVATE_KEY EMPTY and SVM_ADDRESS / SVM_RECEIVER_AUTHORIZER_PRIVATE_KEY apparently not real values (server exited "Missing required env var SVM_ADDRESS"; lengths 0/25). So for this run server keys came from the spike servers/upto/.env and the buyer key from the spike clients/fetch/.env, loaded into the shell env, never printed. HUMAN must fill the repo .env.
+- `node test/unit.ts` -> "unit ok" (decideFromOutput: stub refused, bad JSON, wrong verdict, multi-line, clamp).
+- curl POST without payment -> HTTP/1.1 402 Payment Required. 70000-byte body -> 413 (before any escrow).
+- reproduced (stub, real_bug.bin): status 200, settled, settledAtomic 0, tx 52y5tghzGfFwKYc5STxnj5JgeDvjdQsrNLXPUZQ9sqSGEVjo5WqLqxRwgJPmfBnQGeJ7Kba5Cnei6cq8KqZM8o6V; on-chain err null, escrow 0.25 closed, buyer 19.111423 -> 19.361423 (full refund).
+- not_reproduced (stub, fake.bin): settledAtomic 250000, tx 2nGMw6QwkAPcLVKWLzraVWe7pBxM4eRo4SLgYPZNWhrZGzXNRzDuxLZkhFmteTtQbZ96nnaLT5Ca65BrDKbJ1Ee6; balances buyer 19.361423 -> 19.111423, seller 0.638577 -> 0.888577. (buyer and seller are both ours.)
+- Error paths (each: HTTP 200, paymentStatus settled, settledAtomic 0, buyer back to 19.111423):
+  - stub refused (ALLOW_STUB_VERIFIER unset): verdict error, "verifier is a stub (stub:true)...", tx 3AS8uhDjk4ARP3M8YwtvrVEo8qKT4B5yUh27yj3BkRjqz2MLJhdt2XA61zFp7DP8ASS29mAiNXFwNvxZQ8AigMjk
+  - verifier timeout (fake slow.py, VERIFIER_TIMEOUT_SECONDS=5): "verifier timed out after 5s", 7.1s total, tx 5dFTk7MmtvcQngpzZXC9Sx1eDKAFA2YKyEBfcq3wYVpSdNrLesQnZ33UpuzHVsvtwN8q3py6CQHTh4yERVs1V1iZ
+  - bad JSON (fake bad.py): "bad verifier output: Unexpected token...", tx 5jDdvRBEKKFPJMREu7EqYsq71tMFxSSoQHfRTGo74TXjiuwVEa5cZ9PCu9Yz5VRN8VikCE1H3TcvL6AZjdncsGHj
+  - on-chain (dedicated RPC) for the first two: err null, buyer 18.861423 -> 19.111423 (escrow 0.25 refunded). Bad-JSON tx on-chain NOT separately checked (balance after = 19.111423).
+- Design finding (code read, @x402/express index.ts ~line 327): handler status >= 400 skips settlement. So /report returns 200 + {verdict:"error"} + $0 override on all errors. Behavior of the cancel path on >=400 (what happens to the escrow) NOT tested.
+- Not tested: handler exception path, concurrent runs, 60 s cap with real 60 s wait, maxTimeoutSeconds=300 effect (set in code, 402 body not inspected for it), settlement_pending polling (not implemented), CDP facilitator, restart behavior.
+- Processes stopped at end (4021, 4022 free; 4023 stopped earlier). Facilitator SOL went 0.9939 -> 0.9821 over 6 runs (fee/rent; cleanup manager recovers some after grace).
+- `./scripts/secret-grep.sh` -> secret grep clean.
+- PORT finding (X402_PAYMENTS, after human update): spike-server.ts does NOT read PORT (hardcoded app.listen(4023)); only the facilitator index.ts reads PORT (`process.env.PORT || "4022"`). server/src/index.ts reads only SERVER_PORT. Added server/scripts/start-facilitator.sh (inline PORT=${FACILITATOR_PORT:-4022}). Script not run (facilitator was started earlier with inline PORT=4022).
+
+## 2026-11-16 SANDBOX_VERIFIER gate attempt: BLOCKED
+- Read-only search for Person B ARVO artifacts (repo, ~, find /, docker images/ps/volume) found nothing; see AGENTS/SANDBOX_VERIFIER.md. No build attempted, no container run. docker images: hello-world, ubuntu:24.04, pib-target-probe (no libucl).
+
 ## 2026-11-16 Person B, sandbox branch: ARVO step 1 (env check)
 - Machine: Windows 11 Pro 10.0.26200 x86_64 (Git Bash/MINGW64), not the macOS box above.
 - `docker --version` -> Docker version 29.9.3, build 5457199
@@ -107,3 +160,29 @@ Commands and actual outputs, newest last.
 - `python -I verifier/test_verify.py`: no-docker 13/13, fake-docker 6/6 (VERIFY_TMPDIR mount location and cleanup, unset default, exit 137 verdict, exit 137 self-test, clean self-test, digest-only), end-to-end 34/34 incl. real VERIFY_TMPDIR run (reproduced, dir empty after) and real --self-test (pass, 2.0 s); exit 0.
 - `python verifier/verify.py targets/libucl/inputs/arvo_42482847.poc --case 42482847` x3: reproduced each, wall 3.86 s / 3.84 s / 4.03 s, exit 0. (A first attempt printed exit=0 from the wrong `$?`, the date command's; rerun with rc captured right after the call.)
 - ASan excerpt, 42482847 vul by digest with verify.py's flags: exit 1; heap-buffer-overflow READ of size 1; #0 ucl_lex_json_string /src/libucl/src/ucl_parser.c:1036:8; 0 bytes right of 2-byte region allocated by operator new in fuzzer::RunOneTest.
+## 2026-11-16 TARGET_SELECTION: libucl / ARVO validation
+- Searched repo, ~, Downloads/Desktop/Documents, /tmp, docker for Person B's ARVO artifacts: none found. Cloned public n132/ARVO-Meta; `grep -rl libucl` -> 9 cases (21578 21579 24591 25626 28135 33041 34755 38579 38675), fix commits in meta/<id>.json.
+- libucl fix commits form a linear chain 71f16a8 -> ac8d760 -> 08de358 -> 3a94514 -> 54a5b59 -> 852f752 -> f9e5446 -> a9c0965 (git log %p).
+- `docker pull n132/arvo:28135-vul` (6.01 GB, amd64); `docker run --rm --network none n132/arvo:28135-vul arvo` -> "Killed", rc=137, no ASan output (qemu/2 GiB). Used `docker cp` to extract /tmp/poc from all 9 vul/fix images (then rmi).
+- Native arm64 build per commit in `ubuntu:24.04 + gcc -fsanitize=address -g -O1`, `--network none`, harness = ucl_parser_add_string on exact-size malloc buffer.
+- run2.log (vul=71f16a8, fixed=a9c0965, 3 runs each): all 9 cases `vul_crashes=3/3 fixed_crashes=0/3`; e.g. `case=24591 ... WRITE of size 1`, `case=38579 ... READ of size 8`.
+- run1.log matrix: each poc crashes at its fix^ commit (top frame e.g. ucl_strnstr ucl_util.c:2183, ucl_hash_func ucl_hash.c:105) and is clean at its fix commit.
+- Not verified: Person B's own artifacts/harness, the 6-case selection, ARVO-image runs on this host.
+- Earlier (superseded) libexif probe: 3 hand-built JPEGs gave heap-buffer-overflow on d0ebd6e (e.g. strcmp in exif_mnote_data_apple_identify), clean on 6801b62.
+
+## 2026-11-16 QE_FUNCTIONAL: independent re-run of Person B's libucl verifier on macOS arm64 (Colima, Docker client 29.10.0 / server 29.5.2, VZ, 2 CPU, 8 GiB)
+- `docker pull --platform linux/amd64 -q n132/arvo:<id>-vul|fix` for the 6 cases (12 images): all succeeded, 5m20s total. `docker images --digests` digests are IDENTICAL to those in docs/DECISIONS.md (checked all 12).
+- `python3 -I verifier/test_verify.py` (default TMPDIR) -> `SUMMARY: 6/18 passed`. Every Docker-backed test returned inconclusive: `sandbox error (docker exit 125): ... bind source path does not exist: /var/folders/.../T/verify-xxxx/input`. Cause: verify.py stages the input in tempfile.mkdtemp() (macOS /var/folders), which the Colima VM does not mount (only $HOME is shared). The 6 passes are the tests that expect inconclusive or never reach Docker.
+- Same run with `TMPDIR=$HOME/.qe-verify-tmp` (a dir under the shared home) -> still `6/18 passed`; bind mount now works but every harness run exits 137 with no output: `vul run1: exit 137 without sanitizer report` x3. Test time ~21 s total, 1.4-2.0 s per call.
+- Isolation: on `n132/arvo:42482847-fix` (linux/amd64), `docker run ... --entrypoint /out/ucl_add_string_fuzzer .../harmless.ucl` -> exit 137, no output, with the verifier's flags, with no --memory limit (5.6 s), and with NO hardening flags at all. With ASAN_OPTIONS=verbosity=1 the last output before the kill is `SHADOW_OFFSET: 0x7fff8000` (ASan is reserving its shadow memory). Non-ASan amd64 commands in the same image (uname, sh, ls, cat /proc/meminfo) run fine. Cause is almost certainly ASan's shadow mapping failing under user-mode amd64 emulation on arm64 (not proven; no emulator log available). Colima status: `macOS Virtualization.Framework`, aarch64, `ls /proc/sys/fs/binfmt_misc` absent inside container.
+- Direct verify.py calls (TMPDIR under $HOME), wall time: arvo_42482847.poc 2 s, harmless.ucl 1 s, hand_made_fake_config.ucl 2 s, 42512369 poc `--case 42512369` ~2 s. All `inconclusive` (exit 137 x3). So the timing question ("does a real verdict fit in 60 s under emulation") is UNANSWERED: the harness never starts. A failed-to-start harness gives inconclusive (fail-closed, bond refunded): good.
+- Flag probe on a live `--entrypoint sleep` container with the verifier's flags, `docker inspect`: net=none ro=true user=1000:1000 NanoCpus=1e9 mem=swap=1073741824 pids=64 CapDrop=[ALL] SecurityOpt=[no-new-privileges] Privileged=false. In-container: id uid=1000 gid=1000; write to /in/input and /src -> Read-only file system; write to /tmp ok (tmpfs 16m); only `lo` interface; CapEff=0; /root unreadable; no /var/run/docker.sock; 33 env vars, all image build env (CC, CFLAGS, SANITIZER...) plus ASAN_OPTIONS, no secrets.
+- Leftover containers after all runs: 0 (`docker ps -a`).
+- NOT verified: any ASan trace, any reproduced / not_reproduced verdict, real timing, kill-on-timeout on a real hang, 3/3 repeat behaviour, control-run meaning on real runs.
+
+## 2026-11-16 Person B: merge origin/orchestrator-setup (7943364) into sandbox
+- Dry run `git merge-tree --write-tree --name-only sandbox origin/orchestrator-setup` -> CONFLICT (content) in BUILD_LOG.md only; STATUS.md auto-merged. Reported before resolving.
+- Resolution: both sides had appended sections at the end of BUILD_LOG.md; kept both in full (Person B's, then Person A's), removing only the 3 conflict markers. Check: Person A's 65 added lines and Person B's 29 added lines all present; Person A's branch deleted no BUILD_LOG lines.
+- STATUS.md: Person A's line ("[x] Dedicated RPC configured (QuickNode devnet, ...)") present verbatim; nothing else changed by the merge.
+- Incoming files: server/ (index.ts, verifier.ts, tests, package.json, pnpm-lock.yaml, start-facilitator.sh), scripts/check-env.mjs, scripts/secret-grep.sh. Not edited by Person B. `sh scripts/secret-grep.sh` on the merged tree -> "secret grep clean".
+- Post-merge `python -I verifier/test_verify.py` -> no-docker 13/13, fake-docker 6/6, end-to-end 34/34, exit 0.
