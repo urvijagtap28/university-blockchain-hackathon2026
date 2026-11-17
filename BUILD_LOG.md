@@ -299,3 +299,26 @@ Covers: USD parsing (rejects 1e3, -1, 7 decimals), auto-approve clamped to cap, 
 - Balances after: buyer USDC 17.361423 -> 17.111423 (= exactly the one forfeit, 0.25); facilitator SOL 0.962261 -> 0.952428; seller USDC +0.25.
 - UNVERIFIED: real TTY prompt; real verifier; busy retry live (unit only); post-payment settle_failed/pending path with the real agent (unit only, mocked); redirect handling against a real redirecting server (mock only); real over-cap server; CDP facilitator; the agent's behavior when AGENT_ALLOWED_URL host differs from where it runs (only localhost tested).
 - Gotchas: Array(8).flatMap skips holes; zsh does not word-split `$R`; Node strip-only TS forbids constructor parameter properties; `sed -i` needs `''` on macOS.
+
+## 2026-11-17 VERDICT_LOG: signed hash-chained verdict log (stub verifier, devnet, repo .env only, dedicated RPC)
+Code: server/src/verdictlog.ts (canonicalize, ed25519 sign/verify via node:crypto, VerdictLog, verifyLogText, caseInfo, SettleNotes), server/scripts/verify-log.ts, server/scripts/gen-log-key.mjs, server/test/verdictlog.test.ts; wiring in server/src/index.ts (logOutcome at response close, onAfterSettle + wrapped onSettleFailure, phase after-handler only). Schema: AGENTS/INTERFACES.md. No new dependencies.
+
+### Unit
+`cd server && node test/verdictlog.test.ts` -> `verdictlog ok` (plus one expected stderr line from the unwritable-path case: `[verdictlog] append failed (settlement unaffected): ENOENT ...`). `node test/unit.ts` -> `unit ok`. Covers: canonical form; valid chain verifies; restart continues the chain; tampered verdict -> BAD SIGNATURE; tampered settledAtomic; whitespace re-serialization -> not canonical; deleted middle/first record and reorder -> seq/chain failure; tail truncation still verifies (documented limit); wrong pinned key fails; record re-signed by another key / signature swapped fails; keypair parsing (bad half, wrong length rejected); append to an unwritable path returns null and does not throw. Ephemeral in-memory keys only.
+
+### Devnet (facilitator 4022 started once via server/scripts/start-facilitator.sh, never restarted; server restarted between phases; ALLOW_STUB_VERIFIER=1, VERIFIER_PATH=verifier/verify_stub.py, VERIFIER_CASE unset; LOG_SIGNING_KEY = ephemeral key in a 0600 scratch file, not the user's; all stopped by PID, ports free)
+Final log (3 lines, signer pubkey 4CrWcL2cprsk2mZKFrMKiDvbbqJ22oPEcNcDNi2qwgdd, ephemeral, discarded):
+- seq 0 real_bug.bin -> reproduced, settledAtomic 0, settled, tx 2KrBwGcNP5skYTuwVu3H2zJsbojMe9uzfWHWYidtHC9AckZkhRYoF9n6RSxVqLbtdmBXY9eT4igointi4V5KN8xt. getTransaction: err null, buyer 2BPj +0.25, escrow -0.25 => REFUND.
+- seq 1 fake.bin -> not_reproduced, settledAtomic 250000, settled, tx 3mDVTHC4ni6KjZWKeZwmctNjxQUmK8z9py9ZZPatg8rJTNohNZ5cK4ENvzCmwMx9MF8DtrJ1JDQ8UjZu964LjN1s. getTransaction: err null, seller 8uZA +0.25 => FORFEIT.
+- seq 2 (simulated settlement_pending via test/pending_proxy.ts bogus, facilitator URL pointed at the proxy for this run only) -> not_reproduced, settlementStatus failed, txSignature = the bogus pending signature (all 1s), settledAtomic 250000 = attempted. Client got 402 settle_failed after 45 s. The bond for this one is stranded ~7 min (test artifact).
+- caseId/targetCommit null in all (stub, VERIFIER_CASE unset); casesSha256 and verifierSha256 filled.
+`node scripts/verify-log.ts devnet-verdicts.jsonl --pubkey 4CrW...` -> `OK: 3 records ... (pinned)`, exit 0 (the 2-record version printed `OK: 2 records`, exit 0).
+Tamper copies (pinned): verdict changed not_reproduced->reproduced -> `PROBLEM line 2: BAD SIGNATURE`, `FAIL`, exit 1; settledAtomic 250000->0 -> BAD SIGNATURE, exit 1; wrong pin -> `signer ... is not the pinned key` per line, exit 1; log cut to line 1 -> `OK: 1 records`, exit 0 (tail truncation undetectable, as documented).
+
+### Problems found and fixed while testing
+- onAfterSettle also fires for the deposit (before-handler) settle: the first build recorded the deposit tx as `settled` for a failed claim. Fixed: only phase after-handler counts. That first-build log was discarded.
+- Ephemeral key regenerated on each server restart mixed two signers in one log (test artifact; verify reports "N different signers"). Final run used one key file.
+- NOT explained: in the first (buggy-build) run a REAL devnet settlement_pending failure (claim tx never landed, getSignatureStatuses null; 105 s client wait) produced NO log record, while three later records (incl. simulated pending) did. No error was printed. Not reproduced since. UNVERIFIED that every real settle failure is logged.
+- Observation, not ours: that real claim settle did not land (stranded bond); a retry a minute later settled normally.
+
+UNVERIFIED: real verifier (caseId/targetCommit/vulImage/fixImage populated from cases.json only unit-reasoned, not run on the server; caseInfo ran against the real cases.json but with the stub it deliberately yields null case); the user's persistent LOG_SIGNING_KEY and keygen script (not run; written, syntax loaded only); busy / rate_limited / handler-exception records on devnet (same code path via logOutcome, not run); concurrent appends (synchronous appendFileSync, reasoned); multi-process writers (unsupported).

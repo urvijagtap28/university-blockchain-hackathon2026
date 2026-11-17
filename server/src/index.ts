@@ -17,6 +17,9 @@ import { HTTPFacilitatorClient } from "@x402/core/server";
 import type { Network } from "@x402/core/types";
 import { CAP_ATOMIC, finalSettle, runVerifier, type Decision } from "./verifier.ts";
 import { makeSettlementRecovery } from "./settlement.ts";
+import { VerdictLog, signerFromKeypair, caseInfo, sha256hex, paymentKey, paymentKeyFromHeader, SettleNotes } from "./verdictlog.ts";
+import { VERIFY_PY } from "./verifier.ts";
+import { fileURLToPath } from "node:url";
 import { ConcurrencyGate, RateLimiter, parseMaxConcurrent, payerFromHeader } from "./limits.ts";
 
 const SOLANA_DEVNET = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1" as Network;
@@ -44,10 +47,54 @@ const resourceServer = new x402ResourceServer(new HTTPFacilitatorClient({ url: f
 );
 // settlement_pending => poll the dedicated RPC (bounded) before reporting failure (rule 3). See settlement.ts.
 const POLL_SECS = Math.min(Number(process.env.SETTLEMENT_POLL_SECONDS) || 45, 120);
-resourceServer.onSettleFailure(makeSettlementRecovery({ rpcUrl, timeoutMs: POLL_SECS * 1000, intervalMs: 1500 }));
+const settleNotes = new SettleNotes();
+const recovery = makeSettlementRecovery({ rpcUrl, timeoutMs: POLL_SECS * 1000, intervalMs: 1500 });
+resourceServer.onSettleFailure(async ctx => {
+  const r = await recovery(ctx);
+  try {
+    if (ctx.phase !== "after-handler") return r;
+    const key = paymentKey(ctx.paymentPayload.payload);
+    const tx = (ctx.error as { transaction?: string }).transaction ?? null;
+    settleNotes.put(key, r ? { status: "settled", tx: r.result.transaction || tx, amount: r.result.amount ?? null } : { status: "failed", tx, amount: null });
+  } catch { /* log only */ }
+  return r;
+});
 try { await resourceServer.initialize(); } catch (e) {
   console.error(e instanceof Error ? e.message : "Failed to initialize x402 resource server");
   process.exit(1);
+}
+
+// Signed verdict log (AGENTS/INTERFACES.md). A log problem must never change a settle: all of it is best-effort + caught.
+const LOG_PATH = process.env.LOG_PATH?.trim() || path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../verdicts.jsonl");
+const CASES_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../verifier/cases.json");
+let verdictLog: VerdictLog | null = null;
+if (process.env.LOG_SIGNING_KEY?.trim()) {
+  try { verdictLog = new VerdictLog(LOG_PATH, signerFromKeypair(process.env.LOG_SIGNING_KEY)); }
+  catch (e) { console.error("Bad LOG_SIGNING_KEY:", e instanceof Error ? e.message : "error"); process.exit(1); } // before taking any payment
+} else console.warn("[verdictlog] LOG_SIGNING_KEY not set: verdict log DISABLED");
+resourceServer.onAfterSettle(async ctx => {
+  try {
+    if (ctx.phase !== "after-handler") return; // the deposit (before-handler) settle is not the verdict settle
+    settleNotes.put(paymentKey(ctx.paymentPayload.payload), { status: "settled", tx: ctx.result.transaction || null, amount: ctx.result.amount ?? null }); } catch { /* log only */ }
+});
+/** Registers one log record for this response; written when the response closes, i.e. AFTER the middleware settled. */
+function logOutcome(req: express.Request, res: express.Response, d: Decision, settle: bigint, body: unknown): void {
+  try {
+    if (!verdictLog) return;
+    const key = paymentKeyFromHeader(req.header("payment-signature") ?? req.header("x-payment"));
+    const reportHash = sha256hex(Buffer.isBuffer(body) ? body : Buffer.alloc(0));
+    const ci = caseInfo(CASES_PATH, VERIFY_PY, process.env.VERIFIER_CASE, ALLOW_STUB);
+    res.once("close", () => {
+      try {
+        const n = settleNotes.take(key);
+        verdictLog?.append({
+          reportHash, ...ci, verdict: d.verdict, detail: d.detail,
+          settledAtomic: n?.status === "settled" ? (n.amount ?? settle.toString()) : settle.toString(),
+          settlementStatus: n ? n.status : "unknown", txSignature: n?.tx ?? null, timestamp: new Date().toISOString(),
+        });
+      } catch (e) { console.error("[verdictlog] failed (settlement unaffected):", e instanceof Error ? e.message : "error"); }
+    });
+  } catch (e) { console.error("[verdictlog] failed (settlement unaffected):", e instanceof Error ? e.message : "error"); }
 }
 
 const app = express();
@@ -116,7 +163,8 @@ async function handle(req: express.Request, res: express.Response) {
     if (dir) await rm(dir, { recursive: true, force: true }).catch(() => {});
   }
   if (fault === "escape") throw new Error("TEST injected exception that escapes the handler's own try/catch");
-  const settle = finalSettle(decision); // rate_limited/busy carry settleAtomic 0n; clamp still applies // errors -> 0, clamped to the cap before settling
+  const settle = finalSettle(decision);
+  logOutcome(req, res, decision, settle, req.body); // rate_limited/busy carry settleAtomic 0n; clamp still applies // errors -> 0, clamped to the cap before settling
   try {
     setSettlementOverrides(res, { amount: settle.toString() });
     // Always 200: >=400 would skip settlement and strand the bond. Errors are reported in the body.
@@ -134,6 +182,7 @@ app.post("/report", (req, res) => {
     console.error("[report] escaped exception, settling $0:", e instanceof Error ? e.message : e);
     try {
       if (!res.headersSent) {
+        logOutcome(req, res, { verdict: "error", detail: "internal error (escaped exception)", settleAtomic: 0n }, 0n, req.body);
         setSettlementOverrides(res, { amount: "0" });
         res.status(200).json({ verdict: "error", detail: "internal error", settledAtomic: "0", capAtomic: CAP_ATOMIC.toString() });
       }

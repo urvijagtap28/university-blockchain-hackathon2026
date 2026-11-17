@@ -47,7 +47,7 @@ export function decideFromOutput(stdout: string, allowStub: boolean): Decision {
   }
 }
 
-const VERIFY_PY =
+export const VERIFY_PY =
   process.env.VERIFIER_PATH ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../verifier/verify.py");
 
 const CASE_RE = /^[0-9]{1,12}$/;

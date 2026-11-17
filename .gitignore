@@ -30,3 +30,7 @@ submissions/
 # agent decision log (JSON lines; no key material)
 agent/decisions.log
 agent/*.log
+
+# signed verdict log (server/verdicts.jsonl by default)
+server/verdicts.jsonl
+server/*.jsonl
