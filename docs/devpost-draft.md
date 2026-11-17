@@ -11,47 +11,42 @@ An AI agent posts a refundable $0.25 bond with its bug report. A sandbox runs th
 ## About the project (paste into the Markdown box)
 
 ## Inspiration
-Open source maintainers get buried in low-quality bug reports, many written by AI. When curl ended its bug bounty (effective January 31, 2026), its maintainer wrote that the share of reports that turned out to be real vulnerabilities fell from somewhere north of 15% in earlier years to below 5% starting in 2025.
-
-Asking reporters to put down a refundable deposit is an old idea, and some programs already do it. But a person still has to read every report to decide who gets the money back. We wondered what happens if the first check is a machine: run the proof the sender attached, and let the result decide.
+Maintainers are flooded with low-quality, often AI-written bug reports. When curl ended its bug bounty (effective January 31, 2026), its maintainer wrote that confirmed vulnerabilities fell from "somewhere north of 15%" of submissions in earlier years to "below 5%" starting in 2025. Refundable deposits for reports exist already, but a person has to judge each report. We tried a machine as the first filter: run the attached proof and let the result decide.
 
 ## What it does
-An agent sends a bug report to our server with a proof file. The server asks for a $0.25 bond, paid in USDC on Solana devnet using the x402 payment protocol. The bond is held in escrow before anything runs.
+An agent submits a bug report with a proof file. The server asks for a $0.25 bond in USDC on Solana devnet via x402, held in escrow before anything runs. A sandbox then runs the proof against a vulnerable build of one C library (libucl) under AddressSanitizer:
 
-Then a sandbox runs the proof against a vulnerable build of one C library (libucl) with AddressSanitizer turned on:
+- Bug reproduces: bond returned.
+- Nothing happens: bond forfeited ($0.25).
+- Error, timeout or unclear result: bond returned.
 
-- If the bug reproduces, the bond goes back to the sender.
-- If the input does nothing, the sender loses the $0.25.
-- If something goes wrong or the result is unclear, the bond goes back.
-
-Everything happens in one request, so nobody has to approve anything later. The sandbox only filters. A person still reviews the reports that reproduce.
+It all settles in one request. The sandbox only filters, and a person still reviews reproduced reports.
 
 ## How we built it
-- **Payments:** x402's `upto` scheme on Solana devnet, which lets us charge anything from $0 up to the $0.25 we escrowed. The server is Express and the facilitator is the upstream x402 example. Any error, crash or timeout returns the full bond.
-- **The agent:** a script that pays and submits for us. Its limits are enforced in code: $0.25 per report, a $2.00 budget per session, only our own endpoint, a prompt for human approval above a threshold, and a log of every decision it makes.
-- **The sandbox:** each proof runs three times against the vulnerable build and once against a fixed build, all in Docker containers with no network, limited CPU and memory, a read-only filesystem and no secrets. We used prebuilt libucl images from the ARVO dataset.
-- **Abuse limits:** a 64 KB input cap, two verifier runs at a time, one request per 10 seconds per wallet, and a 60 second hard cap.
-- **A signed log:** every paid report is written to a signed, hash-linked log that a script can check.
+- **Payments:** x402 `upto` on Solana devnet, so the amount charged can be anything from $0 to the $0.25 cap. Express server, upstream x402 facilitator. Every error path returns the bond.
+- **Agent:** enforces in code a $0.25 per-report cap, a $2.00 session budget, an allowlist of our one endpoint, human approval above a threshold, and a decision log.
+- **Sandbox:** three runs on the vulnerable build and one on the fixed build, in Docker with no network, resource limits, a read-only filesystem and no secrets. Images come from the ARVO dataset.
+- **Abuse limits:** 64 KB input cap, two concurrent runs, one request per 10 s per wallet, 60 s hard cap.
+- **Log:** every paid report goes into a signed, hash-linked log with a verify script.
 
 ## Challenges we ran into
-- The sandbox images only run on x86 machines. On an Apple-silicon Mac they were killed under emulation, so the real verifier runs on my teammate's x86 laptop.
-- If a payment can't be confirmed, the bond only comes back when the facilitator cleans up the escrow, about ten minutes later. We found this by testing it, so we list it as a limitation.
-- The public devnet RPC kept rate-limiting us, so we moved to a dedicated one.
-- We looked for a flaky or crash-on-both-builds example and didn't find a genuine one, so our demo doesn't show one. We didn't make one up.
+- The sandbox images are x86-only and were killed under emulation on an Apple-silicon Mac, so the real verifier runs on my teammate's x86 laptop.
+- If a payment can't be confirmed, the bond returns only after the facilitator cleans up, about ten minutes later.
+- The public devnet RPC rate-limited us, so we use a dedicated one.
+- We found no genuine flaky or crash-on-both case, so the demo doesn't show one.
 
 ## Accomplishments that we're proud of
-- Backtested on real libucl bugs: all 6 reproduced and none were wrongly forfeited. All 7 of our hand-made fake inputs were forfeited. The fakes are made up by us, so this doesn't show spam is stopped.
-- The payment path works on devnet. We checked refunds, forfeits and the error cases on-chain, along with the rate limit and concurrency cap. These runs used a stub verifier.
-- TODO (real run): a real bond returned and a real bond forfeited through the sandbox, with both transaction links. Do not publish this section until we have them.
-- We wrote down what we did not verify instead of hiding it.
+- Backtest on real libucl bugs: 6 of 6 reproduced, none wrongly forfeited. All 7 of our hand-made fakes forfeited (made up by us, so this doesn't show spam is stopped).
+- Refunds, forfeits, error paths, the rate limit and the concurrency cap work on devnet, checked on-chain. These runs used a stub verifier.
+- TODO (real run): a real bond returned and a real bond forfeited through the sandbox, with transaction links. Do not publish this section until we have them.
 
 ## What we learned
-x402's `upto` makes a "return or keep" bond possible without writing our own escrow program. We also learned that the failure paths matter more than the happy path, since one skipped settle leaves someone's bond stuck.
+x402 `upto` gives a "return or keep" bond without a custom escrow program. Failure paths matter most: one skipped settle strands a bond.
 
 ## What's next for BugBond
-- Let a maintainer run the verifier on their own infrastructure, separate from the payment server. Running other people's input on a machine next to keys isn't safe, and we don't claim our sandbox is escape-proof.
-- Support more than one project and more kinds of bugs.
-- Test Coinbase's hosted facilitator, which we haven't tried, and settlement delays beyond five minutes.
+- Run the verifier on a maintainer's own infrastructure, apart from the payment server. We don't claim the sandbox is escape-proof.
+- More projects and bug types.
+- Test Coinbase's hosted facilitator and delays beyond five minutes, neither tried yet.
 
 ## Built with (tags)
 Solana, x402, USDC, TypeScript, Node.js, Express, Python, Docker, AddressSanitizer, C, libucl, ARVO, QuickNode, pnpm, Claude Code
