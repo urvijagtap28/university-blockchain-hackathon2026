@@ -5,7 +5,7 @@
     { "input": "targets/libucl/inputs/arvo_42482847.poc", "label": "ARVO 42482847 crashing input (real bug, this case's own)", "category": "real_bug" },
     { "input": "targets/libucl/inputs/arvo_42482848.poc", "label": "ARVO 42482848 crashing input (real bug; backtest set C: also crashes the 42482847 vulnerable build)", "category": "real_bug" },
     { "input": "test-inputs/fake/hand_made_fake_near_miss.ucl", "label": "HAND-MADE fake: near miss of 42482847 input, string closed", "category": "hand_made_fake" },
-    { "input": "test-inputs/fake/hand_made_fake_random.bin", "label": "HAND-MADE fake: 4096 random bytes", "category": "hand_made_fake" },
+    { "input": "test-inputs/fake/hand_made_fake_random.bin", "label": "HAND-MADE robustness check: 4096 random bytes (not representative of LLM slop)", "category": "hand_made_fake" },
     { "input": "test-inputs/fake/hand_made_fake_asan_claim.txt", "label": "HAND-MADE fake: prose claiming an ASan crash", "category": "hand_made_fake" }
   ]
 }

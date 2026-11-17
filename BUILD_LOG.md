@@ -382,3 +382,24 @@ OK: 5 records, signer(s): 6vYi5vh1... (pinned)
 Negatives (all non-zero): (a) server PID killed after report 1 -> entries 2-5 MISSING, `FAILED`, demo exit=1, facilitator never restarted, ports freed; (b) copy of log with settledAtomic 250000->0 on line 3 -> `PROBLEM line 3: BAD SIGNATURE`, `line 4: prev hash mismatch`, plus on-chain MISMATCH and balance mismatch, analyze exit 1; (c) copy with record 2 deleted -> seq/prev errors, `no log record for entry 2`, exit 1; (d) SIGINT during report 1 -> "stopping children by PID", exit 130, no listeners on 4021/4022; (e) port 4021 occupied -> `DEMO FAILED: port 4021 (server) is already in use`, exit 2; (f) `--real --preflight-only` on this Mac -> `docker architecture is "aarch64"; --real needs an amd64 host`, exit 2.
 Extra stub runs (killed-server run, a SIGINT run, a third full batch) spent additional devnet USDC between our own wallets; (d) may have left one escrowed deposit that the facilitator returns after its abandon timeout (not checked).
 UNVERIFIED: the whole `--real` path after the docker check; image presence check; RESULTS.md real-mode text.
+
+## 2026-11-17 DEMO_RUNNER: approved demo-set wording and RESULTS.md disclosure
+Changed: demo/manifest.json (random-bytes label -> "HAND-MADE robustness check: 4096 random bytes (not representative of LLM slop)", category unchanged), demo/run.mjs writeResults (new "Demo set composition" section; extra line under "Not demonstrated"). No server/, agent/, verdict logic or money path edits.
+Ran: `node --check demo/run.mjs` -> passes (CHECK_OK). `node demo/run.mjs --analyze demo/run --out RESULTS.md` (rebuilds from the existing 2026-11-17 stub log; no new devnet txs, only read-only RPC getTransaction) -> `OK: 5 records, signer(s): 6vYi5vh1... (pinned)`, all 5 txs `confirmed`, final line `ALL CHECKS PASSED`. `grep -c "STUB VERIFIER: not a real sandbox run" RESULTS.md` -> 1 (banner present).
+New RESULTS.md sections as generated:
+```
+## Demo set composition
+- This demo batch contains 2 real bugs and 3 hand-made fakes (5 reports). Hand-picked, tiny; not a sample of real-world reports.
+- **The proof is an input file only.** No report text is part of the protocol, so the fakes are inputs, not written reports. The random-bytes fake is a HAND-MADE robustness check and is NOT representative of LLM-written slop reports.
+- Other hand-made fakes exist in `test-inputs/fake/` and were NOT part of this demo batch:
+  - `hand_made_fake_empty.bin`: the server rejects empty bodies, so it never reaches the verifier; kept as a server test.
+  - `hand_made_fake_config.ucl`, `hand_made_fake_deep_nesting.ucl`, `hand_made_fake_large_config.ucl`: redundant clean inputs exercising the same path as the fakes above.
+- All seven hand-made fakes (including these four) are in `backtest/RESULTS.md` set B, where each was run through the real verifier and forfeited (`not_reproduced`). See that file for the table.
+
+## Not demonstrated
+- `flaky_or_timeout`: NOT demonstrated. The backtest found no genuine example and we do not fake one.
+- `crash_on_both`: NOT demonstrated. The backtest found no genuine example and we do not fake one.
+- The deep-nesting input (`hand_made_fake_deep_nesting.ucl`) was run through the real verifier in the backtest (`backtest/RESULTS.md` set B) and returned `not_reproduced`, so it is NOT a flaky/timeout or crash-on-both example.
+```
+Row 4 of the Reports table now carries the new random-bytes label. Facts checked against backtest/RESULTS.md set B (7 fakes, all not_reproduced/FORFEITED, deep_nesting 6000 B vul 3/3 clean) and server/src/index.ts:168 (empty body -> error, settle 0).
+UNVERIFIED: the --real RESULTS.md text (composition section is static and was only rendered in stub mode); the verdicts in the RESULTS.md file are still stub verdicts.

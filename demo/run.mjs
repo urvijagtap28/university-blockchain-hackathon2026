@@ -326,6 +326,15 @@ function writeResults(file, { manifest, meta, res }) {
     L.push(`| ${i + 1} | \`${e.input}\` | ${e.label} | ${e.category} | ${r?.verdict ?? "MISSING"} | ${r ? usd(amt ?? 0n) : "-"} | ${r?.txSignature ? `[${r.txSignature.slice(0, 12)}...](${explorer(r.txSignature)})` : "-"} | ${chain ?? "-"} |`);
   }
   L.push("", "Hand-made fakes are labeled HAND-MADE in the labels above; they are our own inputs, not real-world spam.");
+  const nReal = manifest.entries.filter(e => e.category === "real_bug").length;
+  const nFake = manifest.entries.filter(e => e.category === "hand_made_fake").length;
+  L.push("", "## Demo set composition", "",
+    `- This demo batch contains ${nReal} real bugs and ${nFake} hand-made fakes (${rows.length} reports). Hand-picked, tiny; not a sample of real-world reports.`,
+    "- **The proof is an input file only.** No report text is part of the protocol, so the fakes are inputs, not written reports. The random-bytes fake is a HAND-MADE robustness check and is NOT representative of LLM-written slop reports.",
+    "- Other hand-made fakes exist in `test-inputs/fake/` and were NOT part of this demo batch:",
+    "  - `hand_made_fake_empty.bin`: the server rejects empty bodies, so it never reaches the verifier; kept as a server test.",
+    "  - `hand_made_fake_config.ucl`, `hand_made_fake_deep_nesting.ucl`, `hand_made_fake_large_config.ucl`: redundant clean inputs exercising the same path as the fakes above.",
+    "- All seven hand-made fakes (including these four) are in `backtest/RESULTS.md` set B, where each was run through the real verifier and forfeited (`not_reproduced`). See that file for the table.");
   L.push("", "## Provenance of this file", "",
     `- Signer public key (ed25519, pinned from \`LOG_SIGNING_KEY\`): \`${meta.signerPub}\``,
     `- Log: ${res.records.length} records, verification: **${res.vlOk ? "OK, pinned key" : "FAILED"}** (\`node server/scripts/verify-log.ts <log> --pubkey <signer>\`)`,
@@ -342,6 +351,7 @@ function writeResults(file, { manifest, meta, res }) {
   L.push("", "## Not demonstrated", "");
   const have = new Set(manifest.entries.map(e => e.category));
   for (const cat of ["flaky_or_timeout", "crash_on_both"]) if (!have.has(cat)) L.push(`- \`${cat}\`: NOT demonstrated. The backtest found no genuine example and we do not fake one.`);
+  L.push("- The deep-nesting input (`hand_made_fake_deep_nesting.ucl`) was run through the real verifier in the backtest (`backtest/RESULTS.md` set B) and returned `not_reproduced`, so it is NOT a flaky/timeout or crash-on-both example.");
   L.push("", "## What this does and does not show", "",
     "- The sandbox is a filter, not a judge: a human triages `reproduced` reports, and a `not_reproduced` verdict only means this pinned build ran the input clean.",
     "- This demo does not prove that spam is stopped. It is a small, hand-picked batch.",
