@@ -31,7 +31,7 @@ Everything else in CLAUDE.md is unchanged, including the verifier contract (`pyt
 This table comes from ARVO metadata. We have run the six cases in `ucl_parser.c`, `ucl_util.c` and `ucl_hash.c` (results below). The four bundled-header cases have not been run.
 
 ## Image details: case 42482847 (verified by running, 2026-11-16)
-- Bug: heap-buffer-overflow READ 1 in `ucl_lex_json_string` (src/ucl_parser.c:1036). Fix commit `ac8d76023386fb1f1b31b47cd294e28831929c96` (https://github.com/vstakhov/libucl/commit/ac8d76023386fb1f1b31b47cd294e28831929c96).
+- Bug: heap-buffer-overflow READ 1 in `ucl_lex_json_string` (src/ucl_parser.c:1036). ARVO metadata gives fix commit `ac8d76023386fb1f1b31b47cd294e28831929c96`, but the fix image is NOT built from that commit (see "Source revisions inside the images").
 - `n132/arvo:42482847-vul`: digest `sha256:76a841ce67b750f5abf59477c391f1701384a5f1f84053f4ac5afb112a199483`, 3.55 GB.
 - `n132/arvo:42482847-fix`: digest `sha256:02a979ebbb0d5dab1455d079a993baebee8119ea210ea75622afd31e60e63d3d`, 2.49 GB.
 - Both images: amd64; default cmd `sleep infinity`; no user set (root); workdir `/src`.
@@ -96,7 +96,31 @@ Each run took 0.4-0.8 s. Every image's `/bin/arvo` runs `/out/ucl_add_string_fuz
 
 Docker reports 29.75 GB for all images (sizes above overlap through shared layers). C: free went from 271 GB to 243 GB.
 
+### Source revisions inside the images (checked with `git log -1` in /src/libucl)
+| Case | vul commit | fix commit |
+|---|---|---|
+| 42482847 | 875c251 (Merge PR #216) | 45997ad 2022-01-06 "Fix variables expansion" |
+| 42482848 | 875c251 (same as 42482847) | 45997ad |
+| 42486194 | ac5b370 2020-07-19 | 45997ad |
+| 42490132 | 1de4f36 2020-11-02 | 45997ad |
+| 42497487 | a2ea4ab 2021-03-14 | 45997ad |
+| 42512369 | 95df30c 2021-08-23 | 8a0294f 2025-06-04 |
+
+**What this means.** ARVO's fix image is a later libucl version in which the bug no longer reproduces, not the single fix commit from the metadata. Five of the six cases share one fixed version. So our control run shows that "this crash is gone in a later libucl", not that "this specific bug was fixed". This was confirmed by running: the ARVO inputs for 42482848, 42486194, 42490132 and 42497487 all give `reproduced` against the default case 42482847 (its vul build has those bugs too, and its fix build is clean on them). The README and the backtest must describe the control run this way.
+
+## verify.py (real verifier, 2026-11-16)
+`python verifier/verify.py <input_file> [--case <id>]` prints exactly one line of JSON `{"verdict", "detail"}`. The default case is 42482847, and only the six verified cases are accepted. The stub moved to `verifier/verify_stub.py` (it still emits `"stub": true`).
+- Sandbox per run as in step 4, with `--pull never`, `--mount type=bind,...,readonly` from a private temp copy of the input (made after the size check), input path as the only harness argument, `detect_leaks=0`, and named containers that are `docker kill`ed on timeout.
+- 60 s total cap measured from start (5 s kept back for the kill). The 64 KB limit (65536 B accepted, 65537 B rejected) is checked before any Docker call. Any exception or docker error gives `inconclusive`.
+- Flow: 3 vul runs (stops early once outcomes differ). 3/3 clean gives `not_reproduced` (no fix run). 3/3 expected error with a library frame leads to the fix run: clean gives `reproduced`; a crash gives `inconclusive` (crash on both builds); anything else gives `inconclusive`.
+- Test hook: env `VERIFY_CAP_SECONDS` can only lower the cap.
+- Tests: `python -I verifier/test_verify.py` runs 18 tests, 18/18 PASS. Reproduced on all six cases; not_reproduced on harmless.ucl, 4 hand-made fakes (test-inputs/fake/) and a 65536 B input; inconclusive on the 42512369 input against the default case (real SEGV in ucl_hash.c 3/3, the wrong error type), 65537 B, missing file, unknown case, usage error, and timeout. No verify-* containers left after any test. A typical full verdict takes 2-3.5 s.
+
 ### Not verified yet
+- An input that genuinely hangs the harness (the timeout test used a lowered cap, so the kill hit a container that was starting or running, not a real infinite loop).
+- A "crash on both builds" result from a real input (none found yet).
+- Mixed results across the 3 runs (every input so far gave identical results).
+- Concurrency (the 1-2 concurrent run limit is the server's job and is not enforced in verify.py).
 - The four bundled-header cases (42487344, 42495584, 42501732, 42501839).
 - Timeout and kill path on a truly hanging input inside verify.py. Input over 64 KB.
 - Cross-case behaviour (for example, case A's input on case B's images). That matters for the backtest, which has not been designed yet.

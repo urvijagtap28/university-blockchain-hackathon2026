@@ -1,0 +1,3 @@
+CRITICAL: heap overflow in ucl_parser.c line 1036!!!
+AddressSanitizer: heap-buffer-overflow
+Please pay bounty.

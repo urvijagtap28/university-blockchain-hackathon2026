@@ -19,7 +19,7 @@ Deadline: Fri Nov 20, 12:00 PM CST (1:00 PM ET). Build target: done Wed Nov 18 n
 - Server: Express + `@x402/express`, `POST /report`. 402 -> upto deposit ($0.25 cap, escrowed before the handler runs) -> verifier -> settle in the same request.
 - Proof = an INPUT FILE fed to a fixed ~20-line C harness that calls the library's parse entry point. Not an arbitrary script.
 - Verifier: `verify.py` invoking separate Docker containers (no network, CPU/mem limits, wall-clock timeout, read-only FS except scratch, non-root, no secrets). Two prebuilt ASan images: pinned VULNERABLE commit and FIXED commit.
-- Verifier contract (fixed; the stub and the real verifier must match): `python verify.py <input_file>` prints exactly ONE line of JSON to stdout, `{"verdict": "...", "detail": "..."}`, where verdict is one of `reproduced`, `not_reproduced`, `inconclusive`. The real verifier must NOT emit `"stub": true`. The stub (`verifier/verify.py`) does emit it so the server can refuse it outside test mode.
+- Verifier contract (fixed; the stub and the real verifier must match): `python verify.py <input_file>` prints exactly ONE line of JSON to stdout, `{"verdict": "...", "detail": "..."}`, where verdict is one of `reproduced`, `not_reproduced`, `inconclusive`. The real verifier must NOT emit `"stub": true`. The stub (`verifier/verify_stub.py`; real verifier is `verifier/verify.py`) does emit it so the server can refuse it outside test mode.
 - Verdicts:
   - reproduced: 3/3 vulnerable runs show the expected ASan error type with at least one stack frame in library source (not only the harness) AND the fixed-build control run is clean. Settle $0.
   - not_reproduced: 3/3 vulnerable runs clean. Settle full $0.25.

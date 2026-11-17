@@ -1,1 +1,2 @@
 targets/**/inputs/* binary
+test-inputs/fake/hand_made_* binary
