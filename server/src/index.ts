@@ -15,7 +15,8 @@ import { paymentMiddleware, setSettlementOverrides, x402ResourceServer } from "@
 import { UptoSvmScheme } from "@x402/svm/upto/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import type { Network } from "@x402/core/types";
-import { CAP_ATOMIC, clamp, runVerifier, type Decision } from "./verifier.ts";
+import { CAP_ATOMIC, finalSettle, runVerifier, type Decision } from "./verifier.ts";
+import { makeSettlementRecovery } from "./settlement.ts";
 
 const SOLANA_DEVNET = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1" as Network;
 const need = (k: string): string => {
@@ -37,6 +38,9 @@ const resourceServer = new x402ResourceServer(new HTTPFacilitatorClient({ url: f
   SOLANA_DEVNET,
   new UptoSvmScheme({ receiverAuthorizerSigner, rpcUrl }),
 );
+// settlement_pending => poll the dedicated RPC (bounded) before reporting failure (rule 3). See settlement.ts.
+const POLL_SECS = Math.min(Number(process.env.SETTLEMENT_POLL_SECONDS) || 45, 120);
+resourceServer.onSettleFailure(makeSettlementRecovery({ rpcUrl, timeoutMs: POLL_SECS * 1000, intervalMs: 1500 }));
 try { await resourceServer.initialize(); } catch (e) {
   console.error(e instanceof Error ? e.message : "Failed to initialize x402 resource server");
   process.exit(1);
@@ -63,7 +67,9 @@ app.use(
   ),
 );
 
-app.post("/report", async (req, res) => {
+async function handle(req: express.Request, res: express.Response) {
+  // TEST ONLY (needs ALLOW_STUB_VERIFIER=1): fault injection for the money-path tests.
+  const fault = ALLOW_STUB ? String(req.header("x-test-fault") ?? "") : "";
   let decision: Decision = { verdict: "error", detail: "internal error", settleAtomic: 0n };
   let dir: string | undefined;
   try {
@@ -76,14 +82,17 @@ app.post("/report", async (req, res) => {
       const name = ALLOW_STUB ? path.basename(String(req.header("x-test-filename") ?? "input.bin")) : "input.bin";
       const file = path.join(dir, name);
       await writeFile(file, body);
+      if (fault === "throw") throw new Error("TEST injected exception inside the handler after payment");
       decision = await runVerifier(file, ALLOW_STUB);
+      if (fault === "overcap") decision = { ...decision, verdict: "not_reproduced", settleAtomic: 300_000n }; // attempt to exceed the cap
     }
   } catch (e) {
     decision = { verdict: "error", detail: `exception: ${e instanceof Error ? e.message.slice(0, 200) : "unknown"}`, settleAtomic: 0n };
   } finally {
     if (dir) await rm(dir, { recursive: true, force: true }).catch(() => {});
   }
-  const settle = clamp(decision.verdict === "error" ? 0n : decision.settleAtomic); // clamp before settling
+  if (fault === "escape") throw new Error("TEST injected exception that escapes the handler's own try/catch");
+  const settle = finalSettle(decision); // errors -> 0, clamped to the cap before settling
   try {
     setSettlementOverrides(res, { amount: settle.toString() });
     // Always 200: >=400 would skip settlement and strand the bond. Errors are reported in the body.
@@ -92,7 +101,22 @@ app.post("/report", async (req, res) => {
     setSettlementOverrides(res, { amount: "0" });
     res.status(200).json({ verdict: "error", detail: "response failure", settledAtomic: "0" });
   }
+}
+
+// Express 4 does not catch async rejections: an escaped throw would hang the request (bond stranded) and can kill
+// the process. Last-resort wrapper: ALWAYS answer 200 with a $0 settle override.
+app.post("/report", (req, res) => {
+  handle(req, res).catch(e => {
+    console.error("[report] escaped exception, settling $0:", e instanceof Error ? e.message : e);
+    try {
+      if (!res.headersSent) {
+        setSettlementOverrides(res, { amount: "0" });
+        res.status(200).json({ verdict: "error", detail: "internal error", settledAtomic: "0", capAtomic: CAP_ATOMIC.toString() });
+      }
+    } catch (e2) { console.error("[report] could not even answer:", e2); }
+  });
 });
+process.on("unhandledRejection", e => console.error("[unhandledRejection]", e));
 
 // Final error handler (oversize body etc.). Pre-payment errors only; runs before any escrow.
 app.use((err: Error & { status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
