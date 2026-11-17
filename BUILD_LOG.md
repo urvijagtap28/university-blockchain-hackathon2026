@@ -251,3 +251,27 @@ Not done / UNVERIFIED: real Docker verifier (arm64 Mac), concurrency, CDP facili
 - Cleanup: facilitator/server stopped; ports 4021/4022/4024 free.
 - MISTAKE (mine): my cleanup `pkill -f "tsx index.ts"` / `pkill -f facilitator/upto` also killed the stale facilitator (pid 24643, port 3000) that I was told not to touch. It was stale and unused by these runs; channels it held in memory (if any) are gone. Reported to the user.
 - NOT verified: real Docker verifier on amd64, concurrency, rate limit, CDP facilitator, real settlement_pending, dedicated-RPC load.
+
+## 2026-11-17 ENDPOINT_HARDENING: concurrency cap, per-wallet rate limit, 413/60 s check (devnet, dedicated RPC, STUB/fake verifier only, repo .env only)
+Code: server/src/limits.ts (ConcurrencyGate, RateLimiter, payerFromHeader, parseMaxConcurrent), wiring in server/src/index.ts, finalSettle() in verifier.ts now settles 0 for any verdict outside reproduced/not_reproduced/inconclusive (busy, rate_limited, error, unknown). Env: VERIFIER_MAX_CONCURRENT (default 2, clamped to 1..2), RATE_LIMIT_SECONDS (default 10).
+Setup: facilitator `FACILITATOR_PORT=4022 sh server/scripts/start-facilitator.sh` (repo .env exported), started once, NOT restarted; server restarted once between phases (RATE_LIMIT_SECONDS changed). Both stopped by PID afterwards; ports 4021/4022 free. Tx check = RPC getTransaction pre/postTokenBalances (maxSupportedTransactionVersion 1).
+
+### Unit
+`cd server && node test/unit.ts` -> `unit ok` (new: gate cap/release/never negative; parseMaxConcurrent default 2, 1 ok, 5->2, 0/abc/-3->2; rate limiter per key, retryAfter 6000 ms after 4 s of 10 s, window expiry, check() does not record, bounded map; payerFromHeader good/bad; finalSettle busy/rate_limited -> 0).
+
+### 413 and 60 s cap
+- unpaid curl: 70000 B -> HTTP 413; 65537 B -> 413; 65536 B -> 402 (accepted by the size gate, goes on to payment). 413 happens before any deposit.
+- 60 s cap: code unchanged (VERIFIER_HARD_CAP_SECONDS=60, unit asserts inv.secs 60). Not re-run on devnet this session; the sleep90 -> 60 s timeout -> $0 run is in the X402_PAYMENTS entry above.
+
+### Rate limit (stub verifier, buyer 2BPj...CnrXA, window 10 s)
+- Where: two checks. (1) PRE-payment, best effort: reads payer from the unverified payment-signature header (payload.payload.from), and answers 429 + Retry-After before the middleware escrows anything. (2) POST-payment, authoritative, the only place that records: limited request answers 200 verdict rate_limited and settles $0.
+- Sequential: req 1 real_bug.bin -> reproduced, settledAtomic 0, tx 5gDTxaYFAVY72ZXQ3XhDC7Qf1vH5Wzy3Xxad4WibtgaEuaApkqTyiSCpkqFd2RnL2RCo1v8YPtysof3w4L8wpKU5. req 2 immediately after -> `status: 429, paymentStatus: 'none', body {error:'rate limited', detail:'one report per 10s per wallet; no payment was taken'}`, 0.066 s, NO tx, nothing escrowed.
+- Concurrent pair (both pass the pre-check, race to the handler), fake.bin x2: pair1 not_reproduced settledAtomic 250000, tx 562TEDg1o4pZGGTUiCyyZben95L7LWCt55jD2hWa6eZsJMwzd6vq63NCHmm1QapjQ1eQLfMwPAZ4xRsUPPyvwCvt; pair2 `verdict rate_limited, detail 'one report per 10s per wallet; retry in 10s; bond refunded', settledAtomic 0`, paymentStatus settled, amount 0, tx 58h16FB5Xe64ECifA9ENJrc2vNjt2wtNAfkGj2vZDvJFfcQ8USbBPZCFZxi1kCb4CSzevVbvCt9pz3VWf1oyiR5S.
+- On-chain (getTransaction): 5gDT... err null buyer +0.25 seller 0 (refund); 562T... err null buyer 0 seller +0.25 (forfeit); 58h1... err null buyer +0.25 seller 0 (rate-limited, full refund).
+
+### Concurrency cap (VERIFIER_MAX_CONCURRENT=2, fake verifier sleeps 8 s, RATE_LIMIT_SECONDS=0.001 so the same buyer is not rate-limited)
+3 simultaneous requests: two ran (10.165 s each, not_reproduced, 250000): 3X1Q8binLER1EoSAzwdk3V5WTsu1t6NaHLgPmmvLeBuBi9nmAZpzGtcVZH12gzhn4PTSe16THrQdTTmpch9RqH2N, 3YRALivGpDCSmtLpMj6wV3ZLD6o9Q3wC4XkeTJqQ8R9HmLF5HGK9hFGcqqi5cN6Dj36BZPoizyvPpdwqWFiW3m5k (both err null, buyer 0, seller +0.25). Third: `verdict busy, 'verifier at capacity (2 concurrent); retry shortly; bond refunded', settledAtomic 0`, 2.058 s (did not wait), tx 5drAuE2fNvdSjeHAbuyezysY2Bf8aurMh1inParQt81uavZU2VVJQJ5WVQFzjJ1gLe7yMAKDPBUpNJeRnvoo3c7D err null, buyer +0.25 (refund).
+
+### Totals
+7 paid-path requests this session (1 refund + 1 rate_limited refund + 1 busy refund + 3 forfeits = 6 txs; plus the pre-payment 429 with no tx). Buyer USDC 18.111423 -> 17.361423 = -0.75 = exactly the 3 forfeits (pair1, c1, c2). Facilitator SOL 0.974071 -> 0.962261. Nothing stuck.
+UNVERIFIED: real Docker verifier (arm64 Mac); gate release when the verifier hits the 60 s timeout or throws on devnet (covered by the same try/finally, only unit-level reasoning, not run); behavior with a payment header from a non-upto client; pre-check using a forged header (reasoned, not run); queueing (deliberately not implemented).

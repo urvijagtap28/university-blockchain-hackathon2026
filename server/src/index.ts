@@ -17,6 +17,7 @@ import { HTTPFacilitatorClient } from "@x402/core/server";
 import type { Network } from "@x402/core/types";
 import { CAP_ATOMIC, finalSettle, runVerifier, type Decision } from "./verifier.ts";
 import { makeSettlementRecovery } from "./settlement.ts";
+import { ConcurrencyGate, RateLimiter, parseMaxConcurrent, payerFromHeader } from "./limits.ts";
 
 const SOLANA_DEVNET = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1" as Network;
 const need = (k: string): string => {
@@ -32,6 +33,9 @@ const authorizerKey = need("SVM_RECEIVER_AUTHORIZER_PRIVATE_KEY");
 const PORT = Number(process.env.SERVER_PORT || 4021); // NOT PORT (DECISIONS D-004)
 const MAX_INPUT_BYTES = Number(process.env.MAX_INPUT_BYTES) || 65536;
 const ALLOW_STUB = process.env.ALLOW_STUB_VERIFIER === "1";
+const gate = new ConcurrencyGate(parseMaxConcurrent(process.env.VERIFIER_MAX_CONCURRENT));
+const RATE_SECS = Number(process.env.RATE_LIMIT_SECONDS) > 0 ? Number(process.env.RATE_LIMIT_SECONDS) : 10;
+const limiter = new RateLimiter(RATE_SECS * 1000);
 
 const receiverAuthorizerSigner = await createKeyPairSignerFromBytes(base58.decode(authorizerKey));
 const resourceServer = new x402ResourceServer(new HTTPFacilitatorClient({ url: facilitatorUrl })).register(
@@ -50,6 +54,17 @@ const app = express();
 
 // Body parser BEFORE payment so oversize input is rejected with 413 before any deposit is escrowed.
 app.use("/report", express.raw({ type: () => true, limit: MAX_INPUT_BYTES }));
+
+// Best-effort PRE-payment rate check: if the (unverified) payer in the payment header already submitted within the
+// window, answer 429 before the middleware escrows anything. Only the post-payment check below ever RECORDS, so a
+// forged header can at worst get a 429 for requests that claim someone else's address.
+app.use("/report", (req, res, next) => {
+  const payer = payerFromHeader(req.header("payment-signature") ?? req.header("x-payment"));
+  const r = payer ? limiter.check(payer) : { ok: true, retryAfterMs: 0 };
+  if (r.ok) return next();
+  res.set("Retry-After", String(Math.ceil(r.retryAfterMs / 1000)));
+  res.status(429).json({ error: "rate limited", detail: `one report per ${RATE_SECS}s per wallet; no payment was taken` });
+});
 
 app.use(
   paymentMiddleware(
@@ -72,9 +87,17 @@ async function handle(req: express.Request, res: express.Response) {
   const fault = ALLOW_STUB ? String(req.header("x-test-fault") ?? "") : "";
   let decision: Decision = { verdict: "error", detail: "internal error", settleAtomic: 0n };
   let dir: string | undefined;
+  let held = false;
   try {
     const body = req.body;
-    if (!Buffer.isBuffer(body) || body.length === 0) {
+    // Payment is already escrowed here, so every rejection below must still answer 200 + settle $0 (errors -> 0).
+    const payer = payerFromHeader(req.header("payment-signature") ?? req.header("x-payment"));
+    const rl = payer ? limiter.hit(payer) : { ok: true, retryAfterMs: 0 };
+    if (!rl.ok) {
+      decision = { verdict: "rate_limited", detail: `one report per ${RATE_SECS}s per wallet; retry in ${Math.ceil(rl.retryAfterMs / 1000)}s; bond refunded`, settleAtomic: 0n };
+    } else if (!(held = gate.tryAcquire())) {
+      decision = { verdict: "busy", detail: `verifier at capacity (${gate.max} concurrent); retry shortly; bond refunded`, settleAtomic: 0n };
+    } else if (!Buffer.isBuffer(body) || body.length === 0) {
       decision = { verdict: "error", detail: "empty or missing body", settleAtomic: 0n };
     } else {
       dir = await mkdtemp(path.join(tmpdir(), "proveit-"));
@@ -89,10 +112,11 @@ async function handle(req: express.Request, res: express.Response) {
   } catch (e) {
     decision = { verdict: "error", detail: `exception: ${e instanceof Error ? e.message.slice(0, 200) : "unknown"}`, settleAtomic: 0n };
   } finally {
+    if (held) gate.release();
     if (dir) await rm(dir, { recursive: true, force: true }).catch(() => {});
   }
   if (fault === "escape") throw new Error("TEST injected exception that escapes the handler's own try/catch");
-  const settle = finalSettle(decision); // errors -> 0, clamped to the cap before settling
+  const settle = finalSettle(decision); // rate_limited/busy carry settleAtomic 0n; clamp still applies // errors -> 0, clamped to the cap before settling
   try {
     setSettlementOverrides(res, { amount: settle.toString() });
     // Always 200: >=400 would skip settlement and strand the bond. Errors are reported in the body.

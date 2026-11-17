@@ -50,4 +50,21 @@ assert.equal(rec.recovered, true); assert.equal(rec.result.success, true); asser
 assert.equal(await hook(rpc([null]))({ error: pendErr }), undefined); // timeout -> not recovered
 assert.equal(await hook(rpc([{ err: "boom", confirmationStatus: "confirmed" }]))({ error: pendErr }), undefined); // tx failed -> not recovered
 assert.equal(await hook(rpc([{ err: null, confirmationStatus: "confirmed" }]))({ error: Object.assign(new Error("x"), { errorReason: "boom", transaction: "S" }) }), undefined); // other failure ignored
+// Limits: concurrency gate and per-wallet rate limiter (injected clock)
+import { ConcurrencyGate, RateLimiter, parseMaxConcurrent, payerFromHeader } from "../src/limits.ts";
+const g = new ConcurrencyGate(2);
+assert.ok(g.tryAcquire()); assert.ok(g.tryAcquire()); assert.ok(!g.tryAcquire()); assert.equal(g.inFlight, 2);
+g.release(); assert.ok(g.tryAcquire()); g.release(); g.release(); g.release(); assert.equal(g.inFlight, 0); // extra release never goes negative
+assert.equal(parseMaxConcurrent(undefined), 2); assert.equal(parseMaxConcurrent("1"), 1); assert.equal(parseMaxConcurrent("5"), 2);
+assert.equal(parseMaxConcurrent("0"), 2); assert.equal(parseMaxConcurrent("abc"), 2); assert.equal(parseMaxConcurrent("-3"), 2);
+let tnow = 1000; const rl = new RateLimiter(10_000, () => tnow);
+assert.ok(rl.hit("A").ok); assert.ok(!rl.hit("A").ok); assert.ok(rl.hit("B").ok); // keys independent
+tnow += 4000; const r4 = rl.hit("A"); assert.ok(!r4.ok); assert.equal(r4.retryAfterMs, 6000);
+assert.ok(!rl.check("A").ok); tnow += 6000; assert.ok(rl.check("A").ok); assert.ok(rl.hit("A").ok); // window elapsed
+assert.ok(rl.check("C").ok); assert.ok(rl.check("C").ok); // check() does not record
+const small = new RateLimiter(10_000, () => tnow, 3); for (const k of ["a", "b", "c", "d", "e"]) small.hit(k); // bounded map, no throw
+const pk = "2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA";
+assert.equal(payerFromHeader(Buffer.from(JSON.stringify({ payload: { from: pk } })).toString("base64")), pk);
+for (const bad of [undefined, "", "!!!", Buffer.from("{}").toString("base64"), Buffer.from(JSON.stringify({ payload: { from: "0OIl" } })).toString("base64")]) assert.equal(payerFromHeader(bad), null);
+assert.equal(finalSettle({ verdict: "busy", settleAtomic: CAP_ATOMIC }), 0n); assert.equal(finalSettle({ verdict: "rate_limited", settleAtomic: CAP_ATOMIC }), 0n);
 console.log("unit ok");

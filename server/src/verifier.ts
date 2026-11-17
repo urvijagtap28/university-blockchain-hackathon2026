@@ -26,7 +26,7 @@ export function clamp(amount: bigint): bigint {
 
 /** The amount actually sent as the settle override: errors -> 0, everything else clamped to [0, CAP]. */
 export function finalSettle(d: { verdict: string; settleAtomic: bigint }): bigint {
-  return clamp(d.verdict === "error" ? 0n : d.settleAtomic);
+  return clamp(VALID.has(d.verdict) ? d.settleAtomic : 0n); // error, busy, rate_limited, anything unknown -> 0
 }
 
 const errorDecision =(detail: string): Decision => ({ verdict: "error", detail, settleAtomic: 0n });
