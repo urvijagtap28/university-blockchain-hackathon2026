@@ -1,6 +1,6 @@
 # Status (update after every milestone)
 
-Last updated: Mon Nov 16 night (real verify.py on sandbox branch, 18/18 tests).
+Last updated: Mon Nov 16 night (backtest done on sandbox branch).
 
 ## Checklist
 - [x] Environment check: macOS 26.6 arm64, node v26.10.0, npm 11.19.1, python3 3.14.7. MISSING: docker, pnpm, gh (see Open items)
@@ -16,7 +16,7 @@ Last updated: Mon Nov 16 night (real verify.py on sandbox branch, 18/18 tests).
 - [ ] /report endpoint settles $0 or full correctly, including error paths
 - [ ] Agent script with budget, allowlist, approval limits
 - [ ] Signed verdict log
-- [ ] Backtest run, RESULTS.md generated
+- [x] Backtest run, backtest/RESULTS.md generated (2026-11-16, f2af4bf): real bugs 6/6 reproduced, 0 wrongly forfeited; 7 hand-made fakes 7/7 forfeited; 30 cross-case real inputs 17 reproduced / 8 forfeited / 5 inconclusive; 0 failures. No genuine crash-on-both or flaky result found (not faked).
 - [ ] One-command demo passes on a clean machine
 - [ ] README complete
 - [ ] Demo video (under 3:00)
@@ -26,7 +26,7 @@ Last updated: Mon Nov 16 night (real verify.py on sandbox branch, 18/18 tests).
 - Target library: libucl, using ARVO (n132/arvo) vul/fix image pairs and libucl's OSS-Fuzz harness ucl_add_string_fuzzer (approved deviations, docs/DECISIONS.md). Original criteria: small C library, parser-style entry point reading a file, >=3 fixed memory bugs whose fix commits added a regression-test input, builds in minutes under ASan; switch immediately if it fights us).
 
 ## Open items
-- Person B: 6/6 libucl ARVO cases in ucl_parser.c/ucl_util.c/ucl_hash.c confirmed (3/3 vul, fix clean; docs/DECISIONS.md). verify.py done. Caveat: ARVO fix images are a later libucl version, not the per-bug fix commit (5 of 6 share 45997ad), so the control run means 'gone in a later libucl' (docs/DECISIONS.md). Next: backtest design. Not yet run: bundled-header cases, a real hanging input.
+- Person B: 6/6 libucl ARVO cases in ucl_parser.c/ucl_util.c/ucl_hash.c confirmed (3/3 vul, fix clean; docs/DECISIONS.md). verify.py done. Caveat: ARVO fix images are a later libucl version, not the per-bug fix commit (5 of 6 share 45997ad), so the control run means 'gone in a later libucl' (docs/DECISIONS.md). Backtest done (backtest/RESULTS.md). Not yet run: bundled-header cases, a real hanging input.
 - Install Docker Desktop (Person B, blocks ASan images) and pnpm (`npm i -g pnpm@<pinned>`), and gh or add remote manually.
 - Spike used self-hosted facilitator; CDP-hosted facilitator untested (see docs/SPIKE_NOTES.md).
 - Devnet tx signatures for README: none yet.

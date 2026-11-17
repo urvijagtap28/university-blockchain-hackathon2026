@@ -75,3 +75,14 @@ Commands and actual outputs, newest last.
 - Cross-case check (other cases' ARVO inputs against default 42482847): 42482848, 42486194, 42490132, 42497487 -> reproduced (crash at ucl_parse_value :1811, ucl_expand_variable :547, ucl_strnstr ucl_util.c:2181, ucl_check_variable :375; fixed build clean). 42512369 -> inconclusive (SEGV at kh_get_ucl_hash_caseless_node ucl_hash.c:230, 3/3). 42482847 input vs --case 42512369 -> not_reproduced.
 - `git log -1` in /src/libucl of every image: fix images 42482847/48/86194/90132/97487 are all 45997ad (2022-01-06 "Fix variables expansion"); 42512369-fix is 8a0294f (2025-06-04). Vul: 875c251 (42482847 and 42482848 both), ac5b370, 1de4f36, a2ea4ab, 95df30c. So ARVO fix images are a later libucl version, not the metadata fix_commit (ac8d760 for 42482847). DECISIONS.md corrected.
 - Added the 42512369-input-vs-default test (a real inconclusive) -> rerun 18/18 PASS, 2.0-3.4 s per full verdict.
+
+## 2026-11-16 Person B: backtest
+- Note: CLAUDE.md has no "Data and honest backtest" section; used its honesty rules (label hand-made, count reproduced / forfeited / wrongly forfeited / inconclusive / failures).
+- Edge-case search (scratch cross_matrix.py, every ARVO input x every other case via verify.py, 30 pairs): no crash-on-both verdict, no mixed 3-run result. ARVO 42512369 input -> SEGV kh_get_ucl_hash_caseless_node ucl_hash.c:230 on all 5 older vul builds (inconclusive, wrong error type).
+- Direct run of the 42512369 input on 42497487-fix (libucl 45997ad): heap-buffer-overflow at ucl_hash_search ucl_hash.c:460, 16 lib frames. So the 45997ad "fixed" build still has bug 42512369. A crash-on-both verdict still isn't reachable, because the vul builds SEGV first.
+- Added fakes: hand_made_fake_near_miss.ucl (`"\"`), hand_made_fake_empty.bin (0 B), hand_made_fake_large_config.ucl (40322 B). Total fakes 7.
+- backtest/run_backtest.py: committed c37ed4a, then f2af4bf (dirty check ignores RESULTS.md). `python -I backtest/run_backtest.py` run 3 times (b78879b+dirty, c37ed4a+dirty, f2af4bf clean); identical counts every time:
+  - A real bugs, own case: 6 -> reproduced 6, not_reproduced 0, inconclusive 0, failures 0
+  - B hand-made fakes, default case: 7 -> reproduced 0, not_reproduced 7, inconclusive 0, failures 0
+  - C real bug inputs vs other case: 30 -> reproduced 17, not_reproduced 8, inconclusive 5, failures 0
+  - wrongly forfeited real bugs (A) 0/6; fakes judged reproduced 0/7; 43 calls, 2.0-3.9 s each, 123-137 s total.
