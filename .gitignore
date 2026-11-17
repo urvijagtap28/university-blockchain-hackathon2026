@@ -26,3 +26,7 @@ submissions/
 
 # local Claude settings
 .claude/settings.local.json
+
+# agent decision log (JSON lines; no key material)
+agent/decisions.log
+agent/*.log
