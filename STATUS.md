@@ -1,6 +1,6 @@
 # Status (update after every milestone)
 
-Last updated: Mon Nov 16 evening (stub verifier added).
+Last updated: Mon Nov 16 night (ARVO/libucl gate passed on sandbox branch).
 
 ## Checklist
 - [x] Environment check: macOS 26.6 arm64, node v26.10.0, npm 11.19.1, python3 3.14.7. MISSING: docker, pnpm, gh (see Open items)
@@ -10,8 +10,8 @@ Last updated: Mon Nov 16 evening (stub verifier added).
   - NOT proven: dedicated RPC (SVM_RPC_URL unset; spike hit 429s on the public RPC twice), CDP-hosted facilitator, any code in this repo (server/ and agent/ are empty), error-path settles, concurrent or repeated runs (one run only).
 - [x] Stub verifier written and tested (verifier/verify.py, inputs in test-inputs/): fixed one-line JSON contract; ran it on 3 filenames -> not_reproduced / inconclusive / reproduced, plus bad verdict and missing file -> inconclusive. It routes on filename and emits "stub": true. NOT the real verifier: no Docker, ASan or control run.
 - [ ] Dedicated RPC configured; devnet SOL and USDC funded
-- [ ] Target library chosen; ASan images (vulnerable, fixed) built
-- [ ] GATE: first real reproducer produces an ASan trace (if not tonight, STOP and report; fallbacks: Keyback or pay-by-accuracy labeling)
+- [x] Target library chosen: libucl via ARVO prebuilt images (n132/arvo:42482847-vul/-fix pulled, not built). See docs/DECISIONS.md.
+- [x] GATE passed 2026-11-16 (Windows box): ARVO 42482847 vul image gives heap-buffer-overflow in src/ucl_parser.c:1036 on a host-mounted input under no-network/read-only/non-root; fix image clean; harmless input clean on both.
 - [ ] verify.py returns all three verdicts with control run
 - [ ] /report endpoint settles $0 or full correctly, including error paths
 - [ ] Agent script with budget, allowlist, approval limits
@@ -23,9 +23,10 @@ Last updated: Mon Nov 16 evening (stub verifier added).
 - [ ] Devpost submitted
 
 ## Decisions made
-- Target library: TBD (criteria: small C library, parser-style entry point reading a file, >=3 fixed memory bugs whose fix commits added a regression-test input, builds in minutes under ASan; switch immediately if it fights us).
+- Target library: libucl, using ARVO (n132/arvo) vul/fix image pairs and libucl's OSS-Fuzz harness ucl_add_string_fuzzer (approved deviations, docs/DECISIONS.md). Original criteria: small C library, parser-style entry point reading a file, >=3 fixed memory bugs whose fix commits added a regression-test input, builds in minutes under ASan; switch immediately if it fights us).
 
 ## Open items
+- Person B: pull and test the other libucl ARVO cases (prefer ucl_parser.c/ucl_util.c/ucl_hash.c crashes); then write the real verify.py (Docker from Python, absolute Windows paths).
 - Install Docker Desktop (Person B, blocks ASan images) and pnpm (`npm i -g pnpm@<pinned>`), and gh or add remote manually.
 - Spike used self-hosted facilitator; CDP-hosted facilitator untested (see docs/SPIKE_NOTES.md).
 - Devnet tx signatures for README: none yet.
