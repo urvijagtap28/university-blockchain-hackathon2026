@@ -1,6 +1,6 @@
 # Status (update after every milestone)
 
-Last updated: Mon Nov 16 night (handoff docs + cases.json on sandbox branch).
+Last updated: Mon Nov 16 night (F-001 VERIFY_TMPDIR, --self-test, merged orchestrator-setup on sandbox).
 
 ## Checklist
 - [x] Environment check: macOS 26.6 arm64, node v26.10.0, npm 11.19.1, python3 3.14.7. MISSING: docker, pnpm, gh (see Open items)

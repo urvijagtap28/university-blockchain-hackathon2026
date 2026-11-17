@@ -186,3 +186,4 @@ Part 2 (server/, node --disable-warning=ExperimentalWarning src/index.ts, native
 - STATUS.md: Person A's line ("[x] Dedicated RPC configured (QuickNode devnet, ...)") present verbatim; nothing else changed by the merge.
 - Incoming files: server/ (index.ts, verifier.ts, tests, package.json, pnpm-lock.yaml, start-facilitator.sh), scripts/check-env.mjs, scripts/secret-grep.sh. Not edited by Person B. `sh scripts/secret-grep.sh` on the merged tree -> "secret grep clean".
 - Post-merge `python -I verifier/test_verify.py` -> no-docker 13/13, fake-docker 6/6, end-to-end 34/34, exit 0.
+- Backtest rerun on merge 282056d (verify.py sha256 8022c685...): same counts A 6/0/0/0, B 0/7/0/0, C 17/8/5/0, 0 failures.
