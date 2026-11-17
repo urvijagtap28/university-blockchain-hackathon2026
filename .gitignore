@@ -26,3 +26,15 @@ submissions/
 
 # local Claude settings
 .claude/settings.local.json
+
+# agent decision log (JSON lines; no key material)
+agent/decisions.log
+agent/*.log
+
+# signed verdict log (server/verdicts.jsonl by default)
+server/verdicts.jsonl
+server/*.jsonl
+
+# demo run artifacts (logs, pids, copies of the verdict log; no secrets)
+demo/run/
+demo/web/out/

@@ -2,11 +2,12 @@
 // usage: node test/pending_proxy.ts <real-facilitator-url> <listen-port> <mode>
 //   mode real  : forwards the CLAIM settle to the real facilitator ONCE (it really lands on-chain), then answers the
 //                server with settlement_pending + the REAL claim signature (twice, because core retries once).
+//   mode depfail: the DEPOSIT settle (before the handler) answers settlement_pending with a bogus signature, never forwarded; the handler never runs.
 //   mode bogus : never forwards the claim settle; answers settlement_pending with a signature that does not exist.
 // Everything else (/supported, /verify, ...) is forwarded untouched.
 import http from "node:http";
 const [upstream, port, mode] = [process.argv[2], Number(process.argv[3]), process.argv[4]];
-if (!upstream || !port || !["real", "bogus"].includes(mode)) { console.error("usage: pending_proxy.ts <url> <port> <real|bogus>"); process.exit(1); }
+if (!upstream || !port || !["real", "bogus", "depfail"].includes(mode)) { console.error("usage: pending_proxy.ts <url> <port> <real|bogus|depfail>"); process.exit(1); }
 const BOGUS = "1".repeat(87); // valid base58 shape, no such tx
 let phase: "deposit" | "claim" = "deposit"; let pendingSent = 0;
 let real: { transaction: string; network: string; payer?: string } | undefined;
@@ -18,6 +19,10 @@ http.createServer(async (req, res) => {
     // A paid request makes TWO settle calls: (1) the deposit/open, (2) the claim after the handler. Only the claim is
     // made pending: the deposit is forwarded untouched, otherwise the handler never runs. (First version of this proxy
     // got this wrong and polled the DEPOSIT tx as if it were the claim; see BUILD_LOG.)
+    if (phase === "deposit" && mode === "depfail") {
+      console.log("[proxy] DEPOSIT settle NOT forwarded -> pending(bogus sig)");
+      return send(200, { success: false, errorReason: "settlement_pending", transaction: BOGUS, network: JSON.parse(b.toString()).paymentRequirements.network });
+    }
     if (phase === "deposit") {
       const r = await fetch(`${upstream}/settle`, { method: "POST", headers: { "content-type": "application/json" }, body: b });
       const j = await r.json(); console.log(`[proxy] deposit settle forwarded success=${j.success} tx=${j.transaction}`);

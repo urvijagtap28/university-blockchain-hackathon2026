@@ -1,2 +1,3 @@
 targets/**/inputs/* binary
 test-inputs/fake/hand_made_* binary
+*.sh text eol=lf
