@@ -97,3 +97,4 @@ Commands and actual outputs, newest last.
 - `python -I verifier/test_verify.py`: no-docker tests 12/12 PASS (9 malformed --case incl. empty, ../x, 42;ls, 5000 chars, unicode digits, newline; unknown 999; tampered cases.json; missing cases.json; 0 docker calls each) + end-to-end 31/31 PASS; exit 0; 0 leftover containers.
 - `python -I harness/measure_timing.py 5`: per run n=120 min 0.51 / median 0.67 / max 0.92 s; reproduced verdict n=5 3.65-3.79 s (median 3.77); not_reproduced n=5 2.30-2.49 s (median 2.40).
 - Docs: docs/SANDBOX_HANDOFF.md, docs/INTERFACES.md (contract changes + case/digest logging proposal, not implemented), DECISIONS.md (amd64-only note).
+- Backtest rerun on 71b0cfd (verify.py sha256 8744de8b...): identical counts A 6/0/0/0, B 0/7/0/0, C 17/8/5/0, 0 failures; 2.0-3.8 s per call.
