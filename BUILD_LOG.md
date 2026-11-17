@@ -354,3 +354,31 @@ Final log: `verify-log.ts --pubkey FWHW...` -> `OK: 10 records ... (pinned)`.
 - OLD code, client abort at 4 s during the slow handler: log stayed at 10 lines => NO record. (Whether that run's claim settled was not checked.)
 Unit: `node test/recorder.test.ts` -> `recorder ok` (hook-then-close, failed, disconnect-before-register then settle, fallback timer, never-closing = nothing written, escaped, double flush, anon key, pre-handler failure verifies, unwritable log warns loudly, log disabled); verdictlog.test.ts `verdictlog ok`; unit.ts `unit ok`.
 UNVERIFIED: busy on devnet (needs 3 payers, only one buyer key; same code path as rate_limited); a real (non-simulated) facilitator deposit failure; the stale-pending-claim theory; the real verifier; log writing under the fallback timer on devnet (unit only); a request whose settle never reports and whose connection never closes still produces no record.
+
+## 2026-11-17 DEMO_RUNNER: one-command demo (bash scripts/demo.sh --stub|--real)
+Host: Mac arm64, node v26.10.0, devnet, dedicated QuickNode RPC, repo .env only, clean `env -i HOME PATH` shell. Files: scripts/demo.sh, demo/run.mjs, demo/manifest.json, .gitignore (demo/run/), generated RESULTS.md (STUB banner).
+Run 1 (`--stub`, before two fixes: getTransaction needed maxSupportedTransactionVersion >= 1 [RPC error -32015 "Transaction version (1) is not supported"], and the settled-sum was skipped for unconfirmed tx): batch fine, log `OK: 5 records ... (pinned)`, but checks FAILED "cannot be confirmed" (correct: the checker was wrong). Re-ran the fixed checker on that run with `--analyze demo/run`: ALL CHECKS PASSED, no new txs.
+Run 2 (`--stub`, final code), full terminal output:
+```
+== Preflight (mode: stub) ==
+  SVM_RPC_URL: set (length 102) ... (all 7 required vars: set, lengths only)
+  OK: host=quiknode.pro getSlot (numeric, ok)
+  facilitator wallet FmT5TvNWkLQBsyJ1iFMiKtsTQVKbeSpodjqksmg8LSaM: 0.9262 SOL (need >= 0.05)
+  buyer wallet       2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA: 14.861423 USDC (need >= 1.250000 for 5 reports)
+  payTo wallet       8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib: 4.388577 USDC
+  log signer public key: 6vYi5vh11HPCtFDiY7uCdwFt7shT3maXXPTen8PAFNGY
+  ports 4021 and 4022 are free
+== Starting services == facilitator ready on 4022, server ready on 4021 (unpaid probe got 402)
+== Batch: 5 reports ==
+  [1/5] arvo_42482847.poc (real_bug) ... done reproduced settled=0
+  [2/5] arvo_42482848.poc (real_bug) ... done reproduced settled=0
+  [3/5] hand_made_fake_near_miss.ucl ... done not_reproduced settled=250000
+  [4/5] hand_made_fake_random.bin ... done not_reproduced settled=250000
+  [5/5] hand_made_fake_asan_claim.txt ... done not_reproduced settled=250000
+  server stopped; port 4021 free / facilitator stopped; port 4022 free
+OK: 5 records, signer(s): 6vYi5vh1... (pinned)
+```
+(the scratch capture of this exact run was lost when I re-used the terminal output; the table and txs are the ones in RESULTS.md). Final RESULTS.md (copy of the clean run, generated from the log): txs 49hbmUdd...8MJxT (reproduced, $0), 56hJLFUP...Q24L ($0), 5YQLCw1q...XGS ($0.25), 5t3aVc4P...5nPM ($0.25), 3wneJhza...fosJ ($0.25); all `confirmed`, payTo USDC delta per tx equals the logged amount; buyer delta -0.750000 = expected, payTo +0.750000. Log head seq 4, sha256(last line) a2f67691458b4c94083fe8b07b74abd1a4c1c6cd04f9adda34e4d846d58594c9. Explorer: https://explorer.solana.com/tx/<sig>?cluster=devnet.
+Negatives (all non-zero): (a) server PID killed after report 1 -> entries 2-5 MISSING, `FAILED`, demo exit=1, facilitator never restarted, ports freed; (b) copy of log with settledAtomic 250000->0 on line 3 -> `PROBLEM line 3: BAD SIGNATURE`, `line 4: prev hash mismatch`, plus on-chain MISMATCH and balance mismatch, analyze exit 1; (c) copy with record 2 deleted -> seq/prev errors, `no log record for entry 2`, exit 1; (d) SIGINT during report 1 -> "stopping children by PID", exit 130, no listeners on 4021/4022; (e) port 4021 occupied -> `DEMO FAILED: port 4021 (server) is already in use`, exit 2; (f) `--real --preflight-only` on this Mac -> `docker architecture is "aarch64"; --real needs an amd64 host`, exit 2.
+Extra stub runs (killed-server run, a SIGINT run, a third full batch) spent additional devnet USDC between our own wallets; (d) may have left one escrowed deposit that the facilitator returns after its abandon timeout (not checked).
+UNVERIFIED: the whole `--real` path after the docker check; image presence check; RESULTS.md real-mode text.
