@@ -1,0 +1,20 @@
+{
+  "name": "prove-it-bond-server",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "packageManager": "pnpm@11.1.1",
+  "scripts": {
+    "start": "node --env-file=../.env src/index.ts",
+    "test:client": "node --env-file=../.env test/client.ts"
+  },
+  "dependencies": {
+    "@scure/base": "1.2.6",
+    "@solana/kit": "8.5.0",
+    "@x402/core": "2.31.0",
+    "@x402/express": "2.31.0",
+    "@x402/fetch": "2.31.0",
+    "@x402/svm": "2.31.0",
+    "express": "4.22.3"
+  }
+}
