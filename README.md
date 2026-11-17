@@ -320,7 +320,14 @@ Taken from STATUS.md, BUILD_LOG.md and the agents' files as of 2026-11-17.
 
 ## 14. Related work
 
-We have not done an exhaustive prior-art search; known related work x402r, ERC-8183, Pact Network; see [docs/verified-facts.md](docs/verified-facts.md) for what has been checked. We make no claim of novelty.
+We have not done an exhaustive prior-art search, and we make no claim of novelty. Sources and quotes are in [docs/verified-facts.md](docs/verified-facts.md) (section 'Prior art / related work'); that is the only place to take wording from.
+
+- Refundable deposits for bug reports are not a new idea. Cantina and Decred describe them, and a published proposal argues for them. Firedancer charges a non-refundable burn per submission, which is a fee, not a refundable bond.
+- x402r and Pact Network add refunds to x402 payments. Prove-It Bond applies the x402 `upto` scheme, where the settled amount may be 0, to a bug-report bond.
+- ERC-8183 is a draft Ethereum standard in which an evaluator releases or refunds an escrow. Ours is a Solana devnet prototype.
+- Reproducing a crash from an input file under a sanitizer follows the OSS-Fuzz reproducer workflow, and our images come from the ARVO dataset.
+
+In the sources checked we found no project combining an x402 `upto` bond, a sandboxed AddressSanitizer verdict and a same-request settle. The search is not exhaustive: we did not search academic literature, the Immunefi, HackerOne or Bugcrowd policy pages, or Solana-native escrow programs. Several details are marked UNVERIFIED in the facts file and are deliberately left out here.
 
 ## 15. Credits
 
