@@ -124,3 +124,10 @@ Docker reports 29.75 GB for all images (sizes above overlap through shared layer
 - The four bundled-header cases (42487344, 42495584, 42501732, 42501839).
 - Timeout and kill path on a truly hanging input inside verify.py. Input over 64 KB.
 - Cross-case behaviour (for example, case A's input on case B's images). That matters for the backtest, which has not been designed yet.
+
+## 2026-11-16: Results apply only to these amd64 images
+Every result in this repo (the case checks, verifier tests, backtest and timings) was produced on **linux/amd64** images, pinned by the digests in `verifier/cases.json`, on a Windows 11 x86_64 host (Docker Desktop 29.9.3, WSL2 kernel 6.18.58.1). We claim nothing for other architectures, emulated amd64 (for example Apple Silicon), other image digests, or rebuilt images. verify.py refuses images whose platform is not `linux/amd64`, and runs images only by digest.
+
+## 2026-11-16: verify.py reads verifier/cases.json (Person A's conditions)
+- Cases, digests, expected error type and confirmed library frames moved from code into `verifier/cases.json`. The values were generated from `docker image inspect` and `git rev-parse` inside each image, not typed by hand.
+- `--case` is validated (`^[0-9]{1,12}$`) before any lookup or Docker call. Contract changes and the case/digest logging proposal are in `docs/INTERFACES.md`; exact values for Person A are in `docs/SANDBOX_HANDOFF.md`.
