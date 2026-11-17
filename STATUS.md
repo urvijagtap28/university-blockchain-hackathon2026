@@ -9,7 +9,7 @@ Last updated: Mon Nov 16 evening (stub verifier added).
   - Proven: self-hosted upto facilitator + spike server + spike client settle $0 on Solana devnet and refund the full deposit.
   - NOT proven: dedicated RPC (SVM_RPC_URL unset; spike hit 429s on the public RPC twice), CDP-hosted facilitator, any code in this repo (server/ and agent/ are empty), error-path settles, concurrent or repeated runs (one run only).
 - [x] Stub verifier written and tested (verifier/verify.py, inputs in test-inputs/): fixed one-line JSON contract; ran it on 3 filenames -> not_reproduced / inconclusive / reproduced, plus bad verdict and missing file -> inconclusive. It routes on filename and emits "stub": true. NOT the real verifier: no Docker, ASan or control run.
-- [ ] Dedicated RPC configured; devnet SOL and USDC funded
+- [x] Dedicated RPC configured (QuickNode devnet, $0 settle passed on it 2026-11-16 19:33 ET, tx 2geKqEpp...bqeU8; key to be rotated); devnet SOL and USDC funded (buyer 19.36 USDC, 2.5 SOL)
 - [ ] Target library chosen; ASan images (vulnerable, fixed) built
 - [ ] GATE: first real reproducer produces an ASan trace (if not tonight, STOP and report; fallbacks: Keyback or pay-by-accuracy labeling)
 - [ ] verify.py returns all three verdicts with control run

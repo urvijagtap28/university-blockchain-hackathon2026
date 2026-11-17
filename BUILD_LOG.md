@@ -22,3 +22,20 @@ Commands and actual outputs, newest last.
 - Not verified: no server consumes this yet; the fail-closed check on stub:true is recorded in STATUS.md but not implemented.
 - 2026-11-16: moved verifier/testdata/ -> test-inputs/ (stub reran: same three verdicts). Uncommitted; user commits.
 - 2026-11-16: CLAUDE.md now states the verifier contract. User asked to stage, commit and push (one-off, overrides never-commit for this action).
+
+## 2026-11-16 18:56 ET smoke test rerun: $0 settle on devnet (spike code)
+- Same procedure as the 18:19 run (facilitator :4022, spike-server :4023, run.sh smoke_zero 0 0).
+- Client output: status 200, paymentStatus 'settled', actualChargedAtomic '0', request 2.139s. Buyer USDC 19.361423 before and after.
+- Settle tx: 4cvmpDQafa7bLt6GuDG1nVeMgQsCYEYigtcLZ9GPA9mBWLoBqjuoYHFfKiiZxH4zbj6hPK9NFi9F2r8zWpLMMmnm
+  RPC getTransaction (public devnet RPC, maxSupportedTransactionVersion 1): err null, escrow account 0.25 -> closed, buyer 19.111423 -> 19.361423, seller +0.
+- NOT verified: which RPC the facilitator and server used. SVM_RPC_URL was added to .env but nothing observed shows the run used it (no 429s seen, but that proves nothing).
+
+## 2026-11-16 19:33 ET smoke test on DEDICATED RPC (QuickNode devnet), spike code
+- Setup issues found: shell had PORT=3000 exported (facilitator reads PORT, default 4022; started with PORT=4022); server needs FACILITATOR_URL=http://localhost:4022.
+- 19:29 run FAILED: status 402, settle_failed, invalid_upto_svm_payload_channel_seed. Cause (read in svm/src/upto/facilitator/scheme.ts:1328): that reason is returned when getSlot on the RPC throws. SVM_RPC_URL had curly quotes (’) pasted in, making it an invalid URL. Fixed by re-exporting with straight quotes. (Inference from code + fix; the failing URL itself was not tested.)
+- The full RPC URL (incl. API key) was printed to the chat by mistake in that debugging; key to be rotated.
+- 19:33 run OK: status 200, settled, actualChargedAtomic 0, 2.130s. Buyer USDC 19.361423 before and after.
+- Settle tx: 2geKqEppiYidUBfbL5YiM7n1bCyW5i6SBt2o4UrYqqaw8JfT6RW6A2WCjkwL1s51vjP2KWAZWH8eh3SC2wYqbeU8
+  RPC getTransaction (public devnet RPC): err null, escrow 0.25 -> closed, buyer 19.111423 -> 19.361423, seller +0.
+- Observed via ps: facilitator and server processes both have SVM_RPC_URL starting with 'h' on a quiknode.pro devnet host. 0 matches for 429 in both logs.
+- Not verified: sustained load, repeated runs, error-path settles.
