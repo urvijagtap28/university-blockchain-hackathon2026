@@ -1,6 +1,6 @@
 # Status (update after every milestone)
 
-Last updated: Mon Nov 16 night (ARVO/libucl gate passed on sandbox branch).
+Last updated: Mon Nov 16 night (6 libucl ARVO cases confirmed on sandbox branch).
 
 ## Checklist
 - [x] Environment check: macOS 26.6 arm64, node v26.10.0, npm 11.19.1, python3 3.14.7. MISSING: docker, pnpm, gh (see Open items)
@@ -26,7 +26,7 @@ Last updated: Mon Nov 16 night (ARVO/libucl gate passed on sandbox branch).
 - Target library: libucl, using ARVO (n132/arvo) vul/fix image pairs and libucl's OSS-Fuzz harness ucl_add_string_fuzzer (approved deviations, docs/DECISIONS.md). Original criteria: small C library, parser-style entry point reading a file, >=3 fixed memory bugs whose fix commits added a regression-test input, builds in minutes under ASan; switch immediately if it fights us).
 
 ## Open items
-- Person B: pull and test the other libucl ARVO cases (prefer ucl_parser.c/ucl_util.c/ucl_hash.c crashes); then write the real verify.py (Docker from Python, absolute Windows paths).
+- Person B: 6/6 libucl ARVO cases in ucl_parser.c/ucl_util.c/ucl_hash.c confirmed (3/3 vul, fix clean; docs/DECISIONS.md). Next: real verify.py (input path only, named containers + docker kill on timeout, detect_leaks=0). Bundled-header cases not yet run.
 - Install Docker Desktop (Person B, blocks ASan images) and pnpm (`npm i -g pnpm@<pinned>`), and gh or add remote manually.
 - Spike used self-hosted facilitator; CDP-hosted facilitator untested (see docs/SPIKE_NOTES.md).
 - Devnet tx signatures for README: none yet.
