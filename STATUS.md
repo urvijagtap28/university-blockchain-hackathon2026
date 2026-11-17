@@ -38,5 +38,6 @@ Last updated: Mon Nov 16 night (sandbox merged; server verifier invocation harde
 - DONE in server/ (stub refused unless ALLOW_STUB_VERIFIER=1, settled $0 on devnet, BUILD_LOG.md); still to re-test with the real verifier. /report must fail closed: if verifier output has `"stub": true` outside test mode, settle $0 and return an error. (verifier/verify_stub.py is the filename-routed stub; verifier/verify.py is real and never emits stub.)
 
 ## Next action
-1. Decide H-006 (run real verifier on an x86_64 box vs try Rosetta on the Mac); rerun the gate there and record the ASan trace and timing against the 60 s cap.
-2. Person B: push docs/SANDBOX_HANDOFF.md, add VERIFY_TMPDIR, cases.json. Person A: wire server/ to the real verifier with server-config --case, then agent/ with budget, allowlist, approval limits.
+1. H-006: decide the demo host (real verifier needs an amd64 machine; keys stay on one machine).
+2. Person A: server/ with real verifier end to end on an amd64 host (VERIFIER_CASE, VERIFIER_PYTHON), verdict log with case id and digests (docs/INTERFACES.md), then agent/ with budget, allowlist, approval limits.
+3. .env.example still needs SERVER_PORT, FACILITATOR_PORT, VERIFIER_CASE, VERIFIER_PYTHON, ALLOW_STUB_VERIFIER, AGENT_AUTO_APPROVE_USD (edit blocked for Claude).
