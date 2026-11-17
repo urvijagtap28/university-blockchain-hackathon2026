@@ -1,0 +1,6 @@
+server {
+  listen = 8080;
+  name = "${HOST}";
+  .include "/etc/passwd"
+  tags = ["a", "b", {nested = true}];
+}
