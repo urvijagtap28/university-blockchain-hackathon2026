@@ -28,7 +28,7 @@ Primary source 2: https://daniel.haxx.se/blog/2026/02/25/curl-security-moves-aga
 
 ## Not yet checked
 - Prior-art check: done 2026-11-17, see 'Prior art / related work' below (not exhaustive; a person should re-open the links).
-- Solana program ID and USDC mint values from the hackathon rules: copy from the rules page, not yet checked against the chain.
+- Solana program ID CHNLxYvV...: the organizers' guide (docs/hackathon.md) does NOT name it. Observed deployed on devnet by `solana program show -u devnet` during the spike (docs/spike-findings.md); not re-run since. USDC mint 4zMMC9sr...: seen as the token mint on the funded wallets in Solana Explorer (devnet) on 2026-11-17.
 
 ## Prior art / related work
 Checked 2026-11-17 by FACT_CHECKER. Primary sources read through WebFetch (quotes are 125 characters or fewer). Search-result summaries were used only to find URLs. A person should re-open the links before the final README. This search is NOT exhaustive.
