@@ -148,3 +148,11 @@ Part 2 (server/, node --disable-warning=ExperimentalWarning src/index.ts, native
 - Flag probe on a live `--entrypoint sleep` container with the verifier's flags, `docker inspect`: net=none ro=true user=1000:1000 NanoCpus=1e9 mem=swap=1073741824 pids=64 CapDrop=[ALL] SecurityOpt=[no-new-privileges] Privileged=false. In-container: id uid=1000 gid=1000; write to /in/input and /src -> Read-only file system; write to /tmp ok (tmpfs 16m); only `lo` interface; CapEff=0; /root unreadable; no /var/run/docker.sock; 33 env vars, all image build env (CC, CFLAGS, SANITIZER...) plus ASAN_OPTIONS, no secrets.
 - Leftover containers after all runs: 0 (`docker ps -a`).
 - NOT verified: any ASan trace, any reproduced / not_reproduced verdict, real timing, kill-on-timeout on a real hang, 3/3 repeat behaviour, control-run meaning on real runs.
+
+## 2026-11-16 20:5x ET Rosetta attempt on the Mac (H-006 option b) FAILED; going with option a
+- Ran `colima stop; colima start --vm-type vz --vz-rosetta --cpu 2 --memory 8`. ~/.colima/default/colima.yaml: `rosetta: true`, vmType vz, aarch64, 8 GiB.
+- Rosetta is NOT active: `/Library/Apple/usr/libexec/oah/` does not exist on the host (Rosetta not installed); inside the VM `/proc/sys/fs/binfmt_misc/` lists only qemu-x86_64 and qemu-i386 (no `rosetta` handler), and `/mnt/lima-rosetta` is absent. amd64 containers therefore run under QEMU user emulation. `docker run --platform linux/amd64 ubuntu:24.04 uname -m` -> x86_64 (plain amd64 binaries work).
+- Real verifier from a worktree of origin/sandbox (8116e99), TMPDIR under $HOME: `python3 -I verifier/verify.py targets/libucl/inputs/arvo_42482847.poc --case 42482847` -> inconclusive, "vul run1..3: exit 137 without sanitizer report", 2.1 s total. Same failure as before the restart.
+- scripts/rerun_gate.sh (new, uncommitted) smoke-tested here for mechanics only: vul runs exit 137 in 0.6-2.8 s, fix control exit 137, verify.py inconclusive in 1.9 s. This reproduces the failure and proves nothing about the verifier.
+- Cause is EMULATION (QEMU), likely ASan shadow-memory mapping; not proven. Rosetta not installed (installing needs admin + license; user said skip for now). NOT verified: any ASan trace, any real verdict, real timing on this Mac.
+- Decision: real verifier runs on Person B's x86_64 box (option a); Person B reruns the gate there (scripts/rerun_gate.sh).
