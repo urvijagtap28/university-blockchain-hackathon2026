@@ -15,9 +15,12 @@ Verdict rules (CLAUDE.md):
   inconclusive   : anything else (mixed, timeout, sandbox error, crash on both builds, bad input).
 
 Sandbox per run: separate container, no network, read-only root FS + small tmpfs /tmp,
-uid 1000, 1 CPU, 1 GB RAM, 64 pids, all capabilities dropped, no-new-privileges, no env
-except ASAN_OPTIONS, input bind-mounted read-only. Images must already be pulled; this script
-never pulls.
+uid 1000, 1 CPU, 1 GB RAM, 64 pids, all capabilities dropped, no-new-privileges, no host env
+passed through (the container sees only the image's own build variables, which hold no secrets,
+plus ASAN_OPTIONS), input bind-mounted read-only. Images are referenced by the sha256 digests in
+verifier/cases.json, must already be pulled, and must be linux/amd64; this script never pulls.
+--case must be 1-12 digits and listed in cases.json; anything else is inconclusive before any
+Docker call.
 
 Lessons applied (docs/DECISIONS.md):
   1. The harness gets ONLY the input path (images use libFuzzer, honggfuzz or the AFL++ driver).
@@ -25,7 +28,17 @@ Lessons applied (docs/DECISIONS.md):
   3. detect_leaks=0, so leaks never count as a crash.
 Limits: 60 s wall clock for the whole call (the server enforces 60 s too), 64 KB input cap.
 
-Test hook: env VERIFY_CAP_SECONDS can only LOWER the 60 s cap (used to test the timeout path).
+Environment:
+  VERIFY_TMPDIR       optional; existing directory in which the input copy is staged before it is
+                      bind-mounted (default: tempfile's default). Needed on Colima, which only
+                      shares $HOME with its VM. Set but not a directory -> inconclusive, no Docker.
+  VERIFY_CAP_SECONDS  test hook; can only LOWER the 60 s cap (used to test the timeout path).
+
+Self-test (environment check, NOT a verdict):
+  python verify.py --self-test
+  Runs a harmless built-in input once on the default case's vul and fix images. Prints one JSON line
+  {"self_test": "pass"|"fail", "detail": "..."} (no "verdict" key) and exits 0 on pass, 1 on fail.
+  Fail means this host cannot run the harness (e.g. exit 137 under amd64 emulation or low memory).
 """
 import json
 import os
@@ -37,22 +50,19 @@ import tempfile
 import time
 import uuid
 
-DEFAULT_CASE = "42482847"
 MAX_INPUT_BYTES = 64 * 1024
 TOTAL_CAP_SECONDS = 60.0
 VUL_RUNS = 3
 KILL_RESERVE_SECONDS = 5.0  # time kept back so a timed-out container can still be killed
-HARNESS = "/out/ucl_add_string_fuzzer"
 
-# Cases verified by harness/arvo_case_check.py (docs/DECISIONS.md). Only these are accepted.
-CASES = {
-    "42482847": {"error": "heap-buffer-overflow"},
-    "42482848": {"error": "heap-buffer-overflow"},
-    "42486194": {"error": "heap-buffer-overflow"},
-    "42490132": {"error": "heap-buffer-overflow"},
-    "42497487": {"error": "heap-buffer-overflow"},
-    "42512369": {"error": "heap-buffer-overflow"},
-}
+# Accepted cases, pinned image digests and expected error types live in cases.json next to this
+# file (docs/SANDBOX_HANDOFF.md). Only cases listed there are accepted.
+CASES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cases.json")
+CASE_ID_RE = re.compile(r"^[0-9]{1,12}$")
+IMAGE_RE = re.compile(r"^n132/arvo@sha256:[0-9a-f]{64}$")
+HARNESS_RE = re.compile(r"^/out/[A-Za-z0-9_.-]+$")
+ERROR_RE = re.compile(r"^[a-z-]+$")
+PLATFORM = "linux/amd64"
 
 ASAN_OPTIONS = ("alloc_dealloc_mismatch=0:allocator_may_return_null=1:detect_leaks=0:"
                 "detect_stack_use_after_return=1:fast_unwind_on_fatal=0:handle_abort=1:"
@@ -81,12 +91,54 @@ def docker(args, timeout):
                           errors="replace", timeout=timeout)
 
 
-def run_once(image, input_path, expected, deadline):
-    """Run the harness once. Returns (kind, info).
-    kind: 'crash' (expected ASan error + library frame), 'clean', 'timeout', or 'other'."""
+def show(value, limit=32):
+    """Safe, short rendering of an untrusted string for the detail field."""
+    s = ascii(value)  # ASCII only: escapes non-ASCII and control characters
+    return s if len(s) <= limit else f"{s[:limit]}... ({len(value)} chars)"
+
+
+def load_cases():
+    """Load and sanity-check cases.json. Raises ValueError on anything unexpected."""
+    with open(CASES_FILE, encoding="utf-8") as f:
+        doc = json.load(f)
+    if not HARNESS_RE.match(doc.get("harness", "")):
+        raise ValueError("cases.json: bad harness path")
+    if doc.get("platform") != PLATFORM:
+        raise ValueError("cases.json: platform must be " + PLATFORM)
+    cases = doc.get("cases") or {}
+    for cid, c in cases.items():
+        if not CASE_ID_RE.match(cid) or not ERROR_RE.match(c.get("expected_error", "")):
+            raise ValueError(f"cases.json: bad entry {show(cid)}")
+        for t in ("vul", "fix"):
+            if not IMAGE_RE.match(c.get(t, {}).get("image", "")):
+                raise ValueError(f"cases.json: case {cid} {t} image is not a pinned n132/arvo digest")
+    if doc.get("default_case") not in cases:
+        raise ValueError("cases.json: default_case is not a listed case")
+    return doc
+
+
+def staging_parent():
+    """Directory to stage the input copy in. VERIFY_TMPDIR if set (it must already exist, e.g. a
+    directory under $HOME for Colima, which only shares $HOME with its VM); otherwise None, which
+    means tempfile's default. Raises ValueError if VERIFY_TMPDIR is set but unusable."""
+    d = os.environ.get("VERIFY_TMPDIR")
+    if d is None:
+        return None
+    if not d or not os.path.isdir(d):
+        raise ValueError("VERIFY_TMPDIR is set but is not an existing directory")
+    return os.path.abspath(d)
+
+
+def killed_info(rc):
+    return (f"killed (exit {rc}: SIGKILL, usually out of memory or amd64 emulation on a non-amd64 host)"
+            if rc == 137 else None)
+
+
+def docker_run(image, harness, input_path, deadline):
+    """One locked-down run. Returns (returncode or None on timeout, combined output or timeout info)."""
     budget = deadline.left() - KILL_RESERVE_SECONDS
     if budget <= 0:
-        return "timeout", "no time left in the 60 s cap"
+        return None, "no time left in the total time cap"
     name = "verify-" + uuid.uuid4().hex[:16]
     cmd = ["run", "--rm", "--name", name, "--pull", "never",
            "--network", "none", "--read-only", "--tmpfs", "/tmp:rw,size=16m",
@@ -94,7 +146,7 @@ def run_once(image, input_path, expected, deadline):
            "--pids-limit", "64", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
            "-e", "ASAN_OPTIONS=" + ASAN_OPTIONS,
            "--mount", f"type=bind,src={input_path},dst=/in/input,readonly",
-           "--entrypoint", HARNESS, image, "/in/input"]
+           "--entrypoint", harness, image, "/in/input"]
     try:
         p = docker(cmd, timeout=budget)
     except subprocess.TimeoutExpired:
@@ -102,47 +154,78 @@ def run_once(image, input_path, expected, deadline):
             docker(["kill", name], timeout=KILL_RESERVE_SECONDS)
         except subprocess.TimeoutExpired:
             pass
-        return "timeout", f"run exceeded {budget:.0f} s, container killed"
-    out = (p.stdout or "") + (p.stderr or "")
-    if p.returncode in DOCKER_ERROR_EXITS and not ANY_SANITIZER.search(out):
-        return "other", f"sandbox error (docker exit {p.returncode}): {out.strip()[-160:]}"
+        return None, f"run exceeded {budget:.0f} s, container killed"
+    return p.returncode, (p.stdout or "") + (p.stderr or "")
+
+
+def run_once(image, harness, input_path, expected, deadline):
+    """Run the harness once. Returns (kind, info).
+    kind: 'crash' (expected ASan error + library frame), 'clean', 'timeout', or 'other'."""
+    rc, out = docker_run(image, harness, input_path, deadline)
+    if rc is None:
+        return "timeout", out
+    if rc in DOCKER_ERROR_EXITS and not ANY_SANITIZER.search(out):
+        return "other", f"sandbox error (docker exit {rc}): {out.strip()[-160:]}"
+    if killed_info(rc) and not ANY_SANITIZER.search(out):
+        return "other", killed_info(rc)
     err = ASAN_ERR.search(out)
     frames = LIB_FRAME.findall(out)
     if err and err.group(1) == expected and frames:
         fn, loc = frames[0]
         return "crash", f"{err.group(1)} at {fn} {loc}"
-    if p.returncode == 0 and not ANY_SANITIZER.search(out):
+    if rc == 0 and not ANY_SANITIZER.search(out):
         return "clean", "clean"
     if err:
         where = f" at {frames[0][0]} {frames[0][1]}" if frames else " with no library frame"
         return "other", f"{err.group(1)}{where}"
     if ANY_SANITIZER.search(out):
         return "other", "non-ASan sanitizer report"
-    return "other", f"exit {p.returncode} without sanitizer report"
+    return "other", f"exit {rc} without sanitizer report"
 
 
-def image_present(image, deadline):
+def image_platform(image, deadline):
+    """Return 'os/arch' of a locally present image, or None if it is not present."""
     t = min(15.0, max(1.0, deadline.left() - KILL_RESERVE_SECONDS))
-    return docker(["image", "inspect", "--format", "{{.Id}}", image], timeout=t).returncode == 0
+    p = docker(["image", "inspect", "--format", "{{.Os}}/{{.Architecture}}", image], timeout=t)
+    return p.stdout.strip() if p.returncode == 0 else None
 
 
 def verify(input_file, case, deadline):
-    if case not in CASES:
-        return "inconclusive", f"unknown case {case!r}"
+    # Validate the case id BEFORE anything else touches it (never reaches Docker if malformed).
+    if case is not None and not CASE_ID_RE.match(case):
+        return "inconclusive", f"invalid case id {show(case)}: must be 1-12 digits"
+    try:
+        cfg = load_cases()
+    except OSError as e:  # no host paths in detail: it may end up in the verdict log
+        return "inconclusive", f"verifier config error: cannot read cases.json ({type(e).__name__})"
+    except ValueError as e:
+        return "inconclusive", f"verifier config error: {e}"[:300]
+    if case is None:
+        case = cfg["default_case"]
+    if case not in cfg["cases"]:
+        return "inconclusive", f"unknown case {show(case)}: not in cases.json"
+    try:
+        parent = staging_parent()
+    except ValueError as e:  # no path in detail
+        return "inconclusive", f"verifier config error: {e}"
     if not os.path.isfile(input_file):
         return "inconclusive", "input file not found"
     size = os.path.getsize(input_file)
     if size > MAX_INPUT_BYTES:
         return "inconclusive", f"input is {size} bytes, over the {MAX_INPUT_BYTES} byte limit"
-    expected = CASES[case]["error"]
-    vul, fix = f"n132/arvo:{case}-vul", f"n132/arvo:{case}-fix"
+    entry = cfg["cases"][case]
+    expected, harness = entry["expected_error"], cfg["harness"]
+    vul, fix = entry["vul"]["image"], entry["fix"]["image"]
     for img in (vul, fix):
-        if not image_present(img, deadline):
+        plat = image_platform(img, deadline)
+        if plat is None:
             return "inconclusive", f"sandbox error: image {img} not present locally"
+        if plat != PLATFORM:
+            return "inconclusive", f"sandbox error: image {img} is {plat}, verified only on {PLATFORM}"
 
     # Copy the input into a private scratch dir so the mount source is a plain file we control
     # (no symlinks, no odd characters in the path, no changes after the size check).
-    scratch = tempfile.mkdtemp(prefix="verify-")
+    scratch = tempfile.mkdtemp(prefix="verify-", dir=parent)
     try:
         staged = os.path.join(scratch, "input")
         with open(input_file, "rb") as src:
@@ -155,7 +238,7 @@ def verify(input_file, case, deadline):
 
         results = []
         for _ in range(VUL_RUNS):
-            kind, info = run_once(vul, staged, expected, deadline)
+            kind, info = run_once(vul, harness, staged, expected, deadline)
             results.append((kind, info))
             if kind != results[0][0]:  # mixed outcomes: no need to keep running
                 break
@@ -168,7 +251,7 @@ def verify(input_file, case, deadline):
         if kinds != ["crash"] * VUL_RUNS:
             return "inconclusive", f"{tag}: {summary}"
 
-        fkind, finfo = run_once(fix, staged, expected, deadline)
+        fkind, finfo = run_once(fix, harness, staged, expected, deadline)
         if fkind == "clean":
             return "reproduced", f"{tag}: vul 3/3 {results[0][1]}; fixed build clean"
         if fkind == "crash":
@@ -178,9 +261,54 @@ def verify(input_file, case, deadline):
         shutil.rmtree(scratch, ignore_errors=True)
 
 
+SELF_TEST_INPUT = b'key = "value";\nsection { a = 1; b = [1, 2, 3]; }\n'  # valid UCL, never crashes
+
+
+def self_test(deadline):
+    """Run a harmless input once on the default case's vul and fix images.
+    Returns (ok, detail). This checks the ENVIRONMENT (can this host run the harness at all?);
+    it is never a verdict and never decides money."""
+    import platform as _platform
+    host = f"host {_platform.system()} {_platform.machine()}"
+    try:
+        cfg = load_cases()
+        parent = staging_parent()
+    except OSError as e:
+        return False, f"{host}: verifier config error: cannot read cases.json ({type(e).__name__})"
+    except ValueError as e:
+        return False, f"{host}: verifier config error: {e}"
+    case = cfg["default_case"]
+    entry = cfg["cases"][case]
+    scratch = tempfile.mkdtemp(prefix="verify-selftest-", dir=parent)
+    try:
+        staged = os.path.abspath(os.path.join(scratch, "input"))
+        with open(staged, "wb") as f:
+            f.write(SELF_TEST_INPUT)
+        parts = []
+        for t in ("vul", "fix"):
+            img = entry[t]["image"]
+            plat = image_platform(img, deadline)
+            if plat is None:
+                return False, f"{host}: image {img} ({t}) not present locally"
+            rc, out = docker_run(img, cfg["harness"], staged, deadline)
+            if rc is None:
+                return False, f"{host}: environment cannot run the harness: {t} image ({plat}) {out}"
+            if killed_info(rc):
+                return False, f"{host}: environment cannot run the harness: {t} image ({plat}) {killed_info(rc)}"
+            if rc != 0 or ANY_SANITIZER.search(out):
+                return False, (f"{host}: environment cannot run the harness: {t} image ({plat}) failed on a "
+                               f"harmless input (exit {rc}): {out.strip()[-120:]}")
+            parts.append(f"{t} clean")
+        return True, f"{host}: case {case} harmless input: {', '.join(parts)}; harness runs here"
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
 def parse_args(argv):
     args = argv[1:]
-    case = DEFAULT_CASE
+    case = None  # None -> default_case from cases.json
+    if args.count("--case") > 1:
+        return None, None
     if "--case" in args:
         i = args.index("--case")
         if i + 1 >= len(args):
@@ -199,6 +327,15 @@ def main():
     except ValueError:
         pass
     deadline = Deadline(cap)
+    if sys.argv[1:] == ["--self-test"]:
+        # Separate mode: prints {"self_test": "pass"|"fail", "detail": ...}. No "verdict" key, so a
+        # caller can never mistake it for a settle decision. Exit 0 on pass, 1 on fail.
+        try:
+            ok, detail = self_test(deadline)
+        except Exception as e:
+            ok, detail = False, f"self-test error: {type(e).__name__}: {e}"[:300]
+        print(json.dumps({"self_test": "pass" if ok else "fail", "detail": detail}))
+        sys.exit(0 if ok else 1)
     input_file, case = parse_args(sys.argv)
     if input_file is None:
         emit("inconclusive", "usage: python verify.py <input_file> [--case <id>]")
