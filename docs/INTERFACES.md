@@ -19,6 +19,20 @@ python verifier/verify.py <input_file> [--case <id>]
 3. **Cases, images and expected error types now live in `verifier/cases.json`.** verify.py runs images by `n132/arvo@sha256:<digest>` from that file and refuses (inconclusive, before Docker) any entry that is not a pinned digest, or a missing or unreadable file.
 4. **Images must be `linux/amd64`**; any other platform gives inconclusive.
 
+5. **(F-001) Optional env `VERIFY_TMPDIR`.** If set, verify.py stages its private copy of the input inside this existing directory before bind-mounting it. Colima only shares `$HOME` with its VM, so set it to a directory under `$HOME` there. If unset, behaviour is unchanged (tempfile's default). If set but not an existing directory, the result is `inconclusive` with detail `verifier config error: VERIFY_TMPDIR is set but is not an existing directory`, without calling Docker.
+6. **Exit 137 is named explicitly.** A run killed with exit 137 gives `inconclusive` with detail `killed (exit 137: SIGKILL, usually out of memory or amd64 emulation on a non-amd64 host)`. It is never `not_reproduced`, so an environment failure can never forfeit a bond.
+7. **Image references are digest-only.** All 12 images in cases.json are `n132/arvo@sha256:<64 hex>`. The informational `tag` fields were removed. verify.py contains no tag reference and refuses any cases.json image that is not a digest (tested).
+
+### Self-test mode (environment check, NOT a verdict)
+```
+python verifier/verify.py --self-test
+```
+- Runs a built-in harmless UCL input once on the default case's vul and fix images, with the same lockdown and `VERIFY_TMPDIR` handling.
+- stdout: one JSON line `{"self_test": "pass" | "fail", "detail": "..."}`. There is **no `verdict` key**, so `decideFromOutput` treats it as an error if it is ever fed to the money path. Exit code is 0 on pass and 1 on fail.
+- `fail` means **this host cannot run the harness**, not that any report is good or bad. Example on exit 137: `host Darwin arm64: environment cannot run the harness: vul image (linux/amd64) killed (exit 137: SIGKILL, usually out of memory or amd64 emulation on a non-amd64 host)`.
+- Use it at server start-up or before a demo. Do not take payments on a host where it fails.
+- Must be passed alone; `--self-test` combined with other arguments is a usage error (inconclusive).
+
 ### Proposal: exposing the case ID and both digests for the verdict log (NOT implemented; for Person A to choose)
 The stdout stays `{"verdict", "detail"}` as agreed.
 

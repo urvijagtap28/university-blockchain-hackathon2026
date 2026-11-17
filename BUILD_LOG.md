@@ -98,3 +98,12 @@ Commands and actual outputs, newest last.
 - `python -I harness/measure_timing.py 5`: per run n=120 min 0.51 / median 0.67 / max 0.92 s; reproduced verdict n=5 3.65-3.79 s (median 3.77); not_reproduced n=5 2.30-2.49 s (median 2.40).
 - Docs: docs/SANDBOX_HANDOFF.md, docs/INTERFACES.md (contract changes + case/digest logging proposal, not implemented), DECISIONS.md (amd64-only note).
 - Backtest rerun on 71b0cfd (verify.py sha256 8744de8b...): identical counts A 6/0/0/0, B 0/7/0/0, C 17/8/5/0, 0 failures; 2.0-3.8 s per call.
+
+## 2026-11-16 Person B: Person A's Mac findings (F-001, digest audit, self-test)
+- F-001: verify.py honours VERIFY_TMPDIR (existing dir; staged copy goes there; unset = tempfile default; set-but-not-a-dir -> inconclusive, no Docker).
+- Exit 137 -> "killed (exit 137: SIGKILL, usually out of memory or amd64 emulation...)" -> inconclusive (never not_reproduced).
+- `python verify.py --self-test`: harmless input on default vul + fix; prints {"self_test": pass|fail, detail}, no verdict key; exit 0/1.
+- Digest audit: removed informational `tag` fields from cases.json; `grep n132/arvo: verifier/verify.py verifier/cases.json` -> none; 12/12 cases.json images match n132/arvo@sha256:<64hex>.
+- `python -I verifier/test_verify.py`: no-docker 13/13, fake-docker 6/6 (VERIFY_TMPDIR mount location and cleanup, unset default, exit 137 verdict, exit 137 self-test, clean self-test, digest-only), end-to-end 34/34 incl. real VERIFY_TMPDIR run (reproduced, dir empty after) and real --self-test (pass, 2.0 s); exit 0.
+- `python verifier/verify.py targets/libucl/inputs/arvo_42482847.poc --case 42482847` x3: reproduced each, wall 3.86 s / 3.84 s / 4.03 s, exit 0. (A first attempt printed exit=0 from the wrong `$?`, the date command's; rerun with rc captured right after the call.)
+- ASan excerpt, 42482847 vul by digest with verify.py's flags: exit 1; heap-buffer-overflow READ of size 1; #0 ucl_lex_json_string /src/libucl/src/ucl_parser.c:1036:8; 0 bytes right of 2-byte region allocated by operator new in fuzzer::RunOneTest.

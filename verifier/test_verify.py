@@ -5,7 +5,7 @@ Runs verify.py as a subprocess, exactly as the server will, and checks for each 
 expected verdict, exactly one line of JSON on stdout with only "verdict" and "detail" keys,
 and that no verify-* containers are left running afterwards.
 """
-import json, os, subprocess, sys, tempfile, time
+import json, os, shutil, subprocess, sys, tempfile, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -107,13 +107,97 @@ def no_docker_tests(scratch):
     v, d = mod.verify(poc, None, mod.Deadline(60))
     check("missing cases.json", v, d, "verifier config error")
     mod.CASES_FILE = real
+    # VERIFY_TMPDIR set to something that is not a directory: inconclusive, no Docker.
+    os.environ["VERIFY_TMPDIR"] = os.path.join(scratch, "no_such_dir")
+    try:
+        v, d = mod.verify(poc, None, mod.Deadline(60))
+    finally:
+        del os.environ["VERIFY_TMPDIR"]
+    check("VERIFY_TMPDIR not a directory", v, d, "VERIFY_TMPDIR is set but is not an existing directory")
     return ok
+
+
+def fake_docker_tests(scratch):
+    """In-process with a FAKE docker (no containers): VERIFY_TMPDIR staging location and cleanup,
+    exit-137 handling in verdict mode and in --self-test, and the digest-only audit."""
+    import re, types
+    mod = load_verify_module()
+    poc = os.path.join(INPUTS, "arvo_42482847.poc")
+    seen = {"mounts": [], "images": []}
+    run_rc = {"value": 0}
+
+    def fake(args, timeout):
+        if args[:2] == ["image", "inspect"]:
+            seen["images"].append(args[-1])
+            return types.SimpleNamespace(returncode=0, stdout="linux/amd64\n", stderr="")
+        if args[0] == "run":
+            src = [a for a in args if a.startswith("type=bind,src=")][0]
+            path = src[len("type=bind,src="):].split(",dst=")[0]
+            seen["mounts"].append((path, os.path.exists(path)))
+            seen["images"].append(args[args.index("/in/input") - 1])
+            return types.SimpleNamespace(returncode=run_rc["value"], stdout="", stderr="")
+        raise AssertionError(f"unexpected docker call {args[:2]}")
+
+    mod.docker = fake
+    results = []
+
+    def record(label, good, info):
+        results.append(good)
+        print(f"[{'PASS' if good else 'FAIL'}] fake-docker: {label}\n        {info}")
+
+    # 1. VERIFY_TMPDIR: the bind-mount source must be inside it, exist during the run, and be removed after.
+    vt = os.path.join(scratch, "verify_tmpdir_test")
+    os.makedirs(vt, exist_ok=True)
+    for f in os.listdir(vt):
+        shutil.rmtree(os.path.join(vt, f), ignore_errors=True)
+    os.environ["VERIFY_TMPDIR"] = vt
+    try:
+        v, d = mod.verify(poc, None, mod.Deadline(60))
+    finally:
+        del os.environ["VERIFY_TMPDIR"]
+    inside = all(os.path.commonpath([os.path.abspath(vt), p]) == os.path.abspath(vt) and existed
+                 for p, existed in seen["mounts"])
+    record("VERIFY_TMPDIR staging location and cleanup",
+           v == "not_reproduced" and len(seen["mounts"]) == 3 and inside and os.listdir(vt) == [],
+           f"verdict={v}; {len(seen['mounts'])} mounts, all inside VERIFY_TMPDIR and present during run: {inside}; "
+           f"VERIFY_TMPDIR empty afterwards: {os.listdir(vt) == []}; example src: {seen['mounts'][0][0] if seen['mounts'] else None}")
+    # 2. Default (VERIFY_TMPDIR unset): staging stays under tempfile's default directory.
+    seen["mounts"].clear()
+    v, d = mod.verify(poc, None, mod.Deadline(60))
+    default_root = os.path.abspath(tempfile.gettempdir())
+    under_default = all(os.path.commonpath([default_root, p]) == default_root for p, _ in seen["mounts"])
+    record("VERIFY_TMPDIR unset keeps tempfile default", v == "not_reproduced" and under_default,
+           f"verdict={v}; all mounts under {default_root}: {under_default}")
+    # 3. Exit 137 in verdict mode: inconclusive, named as a kill, never not_reproduced.
+    run_rc["value"] = 137
+    v, d = mod.verify(poc, None, mod.Deadline(60))
+    record("exit 137 in verdict mode -> inconclusive", v == "inconclusive" and "exit 137" in d, f"{v}: {d}")
+    # 4. Exit 137 in self-test: fail with 'environment cannot run the harness'.
+    ok_, d = mod.self_test(mod.Deadline(60))
+    record("exit 137 in --self-test -> environment failure", (not ok_) and "environment cannot run the harness" in d
+           and "exit 137" in d, f"ok={ok_}: {d}")
+    run_rc["value"] = 0
+    ok_, d = mod.self_test(mod.Deadline(60))
+    record("--self-test with clean runs -> pass", ok_, f"ok={ok_}: {d}")
+    # 5. Digest-only audit: every image docker was asked about or ran, every cases.json image, and
+    #    verify.py's source contain no tag-style reference.
+    doc = json.load(open(os.path.join(HERE, "cases.json"), encoding="utf-8"))
+    refs = [c[t]["image"] for c in doc["cases"].values() for t in ("vul", "fix")]
+    digest = re.compile(r"^n132/arvo@sha256:[0-9a-f]{64}$")
+    src = open(VERIFY, encoding="utf-8").read()
+    good = (all(digest.match(r) for r in refs) and all(digest.match(r) for r in seen["images"])
+            and "n132/arvo:" not in src and "n132/arvo:" not in json.dumps(doc))
+    record("digest-only image references", good,
+           f"cases.json refs={len(refs)} all digest; images used by verify.py in these tests={len(seen['images'])} "
+           f"all digest; 'n132/arvo:' in verify.py: {'n132/arvo:' in src}; in cases.json: {'n132/arvo:' in json.dumps(doc)}")
+    return all(results)
 
 
 def main():
     sys.stdout.reconfigure(errors="backslashreplace")  # Windows console is cp1252
     scratch =sys.argv[1] if len(sys.argv) > 1 else tempfile.mkdtemp(prefix="verify-test-")
     no_docker_ok = no_docker_tests(scratch)
+    fake_ok = fake_docker_tests(scratch)
     oversize = os.path.join(scratch, "oversize_65537.bin")
     exact = os.path.join(scratch, "exact_65536.ucl")
     with open(oversize, "wb") as f:
@@ -150,10 +234,30 @@ def main():
     tests.append(("inconclusive: timeout (VERIFY_CAP_SECONDS=6)", [poc("42482847")], "inconclusive",
                   {"VERIFY_CAP_SECONDS": "6"}))
 
+    vt = os.path.join(scratch, "verify_tmpdir_e2e")
+    os.makedirs(vt, exist_ok=True)
+    tests.append(("reproduced: VERIFY_TMPDIR set (real Docker)", [poc("42482847")], "reproduced", {"VERIFY_TMPDIR": vt}))
+
     results = [run(*t) for t in tests]
+    left_in_vt = os.listdir(vt)
+    print(f"[{'PASS' if not left_in_vt else 'FAIL'}] VERIFY_TMPDIR left empty after real run: {left_in_vt}")
+    results.append(not left_in_vt)
+
+    # --self-test (real Docker): separate output shape, never a "verdict" key.
+    t0 = time.time()
+    p = subprocess.run([sys.executable, "-I", VERIFY, "--self-test"], capture_output=True, text=True, timeout=90)
+    lines = p.stdout.splitlines()
+    obj = json.loads(lines[0]) if len(lines) == 1 else {}
+    good = (set(obj) == {"self_test", "detail"} and obj.get("self_test") == "pass" and p.returncode == 0
+            and leftover_containers() == 0)
+    print(f"[{'PASS' if good else 'FAIL'}] --self-test on this host ({time.time() - t0:.1f}s, exit {p.returncode})\n"
+          f"        {lines[0] if lines else '<no stdout>'}")
+    results.append(good)
+
     print(f"SUMMARY: {sum(results)}/{len(results)} end-to-end passed; "
-          f"no-docker tests {'all passed' if no_docker_ok else 'FAILED'}")
-    sys.exit(0 if all(results) and no_docker_ok else 1)
+          f"no-docker tests {'all passed' if no_docker_ok else 'FAILED'}; "
+          f"fake-docker tests {'all passed' if fake_ok else 'FAILED'}")
+    sys.exit(0 if all(results) and no_docker_ok and fake_ok else 1)
 
 
 if __name__ == "__main__":

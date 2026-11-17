@@ -86,8 +86,15 @@ Other limits in verify.py:
 - Backtest (43 calls): 2.0-3.9 s each. The first verdict after pulling images took 8.5 s (cold cache).
 - Worst case is bounded by the 60 s cap, and the server's own 60 s cap also applies.
 
+## Running on a Mac (Colima / arm64) and the self-test (added 2026-11-16)
+- Person A's run on an M5 Mac under amd64 emulation: containers were killed with exit 137. verify.py now reports that as `inconclusive` with detail `killed (exit 137: ...)`, so the bond is returned and never forfeited.
+- Run `python verifier/verify.py --self-test` first. It prints `{"self_test": "pass"|"fail", "detail": ...}` (no `verdict` key) and exits 1 when the host cannot run the harness. On this Windows amd64 host: `{"self_test": "pass", "detail": "host Windows AMD64: case 42482847 harmless input: vul clean, fix clean; harness runs here"}` in 2.0 s.
+- Colima shares only `$HOME`: set `VERIFY_TMPDIR` to an existing directory under `$HOME` (for example `export VERIFY_TMPDIR=$HOME/.verify-tmp && mkdir -p "$VERIFY_TMPDIR"`).
+- Pull images by digest: `docker pull n132/arvo@sha256:<digest>` for each image in cases.json. There are no tags in cases.json.
+- Exit 137 under emulation is expected. We make no claim that the harness works on arm64 or under emulation.
+
 ## Not verified
-- Behaviour on non-amd64 hosts, or under emulation (for example Apple Silicon running amd64 images).
+- Behaviour on non-amd64 hosts, or under emulation. Person A saw exit 137 on an M5 Mac; we did not reproduce that here. The exit-137 handling is tested only with a fake Docker that returns 137.
 - An input that genuinely hangs libucl (the timeout path was tested with a lowered cap).
 - Concurrent verify.py calls (the server must limit to 1-2).
 - The four bundled-header cases.

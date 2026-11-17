@@ -28,7 +28,17 @@ Lessons applied (docs/DECISIONS.md):
   3. detect_leaks=0, so leaks never count as a crash.
 Limits: 60 s wall clock for the whole call (the server enforces 60 s too), 64 KB input cap.
 
-Test hook: env VERIFY_CAP_SECONDS can only LOWER the 60 s cap (used to test the timeout path).
+Environment:
+  VERIFY_TMPDIR       optional; existing directory in which the input copy is staged before it is
+                      bind-mounted (default: tempfile's default). Needed on Colima, which only
+                      shares $HOME with its VM. Set but not a directory -> inconclusive, no Docker.
+  VERIFY_CAP_SECONDS  test hook; can only LOWER the 60 s cap (used to test the timeout path).
+
+Self-test (environment check, NOT a verdict):
+  python verify.py --self-test
+  Runs a harmless built-in input once on the default case's vul and fix images. Prints one JSON line
+  {"self_test": "pass"|"fail", "detail": "..."} (no "verdict" key) and exits 0 on pass, 1 on fail.
+  Fail means this host cannot run the harness (e.g. exit 137 under amd64 emulation or low memory).
 """
 import json
 import os
@@ -107,12 +117,28 @@ def load_cases():
     return doc
 
 
-def run_once(image, harness, input_path, expected, deadline):
-    """Run the harness once. Returns (kind, info).
-    kind: 'crash' (expected ASan error + library frame), 'clean', 'timeout', or 'other'."""
+def staging_parent():
+    """Directory to stage the input copy in. VERIFY_TMPDIR if set (it must already exist, e.g. a
+    directory under $HOME for Colima, which only shares $HOME with its VM); otherwise None, which
+    means tempfile's default. Raises ValueError if VERIFY_TMPDIR is set but unusable."""
+    d = os.environ.get("VERIFY_TMPDIR")
+    if d is None:
+        return None
+    if not d or not os.path.isdir(d):
+        raise ValueError("VERIFY_TMPDIR is set but is not an existing directory")
+    return os.path.abspath(d)
+
+
+def killed_info(rc):
+    return (f"killed (exit {rc}: SIGKILL, usually out of memory or amd64 emulation on a non-amd64 host)"
+            if rc == 137 else None)
+
+
+def docker_run(image, harness, input_path, deadline):
+    """One locked-down run. Returns (returncode or None on timeout, combined output or timeout info)."""
     budget = deadline.left() - KILL_RESERVE_SECONDS
     if budget <= 0:
-        return "timeout", "no time left in the total time cap"
+        return None, "no time left in the total time cap"
     name = "verify-" + uuid.uuid4().hex[:16]
     cmd = ["run", "--rm", "--name", name, "--pull", "never",
            "--network", "none", "--read-only", "--tmpfs", "/tmp:rw,size=16m",
@@ -128,23 +154,33 @@ def run_once(image, harness, input_path, expected, deadline):
             docker(["kill", name], timeout=KILL_RESERVE_SECONDS)
         except subprocess.TimeoutExpired:
             pass
-        return "timeout", f"run exceeded {budget:.0f} s, container killed"
-    out = (p.stdout or "") + (p.stderr or "")
-    if p.returncode in DOCKER_ERROR_EXITS and not ANY_SANITIZER.search(out):
-        return "other", f"sandbox error (docker exit {p.returncode}): {out.strip()[-160:]}"
+        return None, f"run exceeded {budget:.0f} s, container killed"
+    return p.returncode, (p.stdout or "") + (p.stderr or "")
+
+
+def run_once(image, harness, input_path, expected, deadline):
+    """Run the harness once. Returns (kind, info).
+    kind: 'crash' (expected ASan error + library frame), 'clean', 'timeout', or 'other'."""
+    rc, out = docker_run(image, harness, input_path, deadline)
+    if rc is None:
+        return "timeout", out
+    if rc in DOCKER_ERROR_EXITS and not ANY_SANITIZER.search(out):
+        return "other", f"sandbox error (docker exit {rc}): {out.strip()[-160:]}"
+    if killed_info(rc) and not ANY_SANITIZER.search(out):
+        return "other", killed_info(rc)
     err = ASAN_ERR.search(out)
     frames = LIB_FRAME.findall(out)
     if err and err.group(1) == expected and frames:
         fn, loc = frames[0]
         return "crash", f"{err.group(1)} at {fn} {loc}"
-    if p.returncode == 0 and not ANY_SANITIZER.search(out):
+    if rc == 0 and not ANY_SANITIZER.search(out):
         return "clean", "clean"
     if err:
         where = f" at {frames[0][0]} {frames[0][1]}" if frames else " with no library frame"
         return "other", f"{err.group(1)}{where}"
     if ANY_SANITIZER.search(out):
         return "other", "non-ASan sanitizer report"
-    return "other", f"exit {p.returncode} without sanitizer report"
+    return "other", f"exit {rc} without sanitizer report"
 
 
 def image_platform(image, deadline):
@@ -168,6 +204,10 @@ def verify(input_file, case, deadline):
         case = cfg["default_case"]
     if case not in cfg["cases"]:
         return "inconclusive", f"unknown case {show(case)}: not in cases.json"
+    try:
+        parent = staging_parent()
+    except ValueError as e:  # no path in detail
+        return "inconclusive", f"verifier config error: {e}"
     if not os.path.isfile(input_file):
         return "inconclusive", "input file not found"
     size = os.path.getsize(input_file)
@@ -185,7 +225,7 @@ def verify(input_file, case, deadline):
 
     # Copy the input into a private scratch dir so the mount source is a plain file we control
     # (no symlinks, no odd characters in the path, no changes after the size check).
-    scratch = tempfile.mkdtemp(prefix="verify-")
+    scratch = tempfile.mkdtemp(prefix="verify-", dir=parent)
     try:
         staged = os.path.join(scratch, "input")
         with open(input_file, "rb") as src:
@@ -221,6 +261,49 @@ def verify(input_file, case, deadline):
         shutil.rmtree(scratch, ignore_errors=True)
 
 
+SELF_TEST_INPUT = b'key = "value";\nsection { a = 1; b = [1, 2, 3]; }\n'  # valid UCL, never crashes
+
+
+def self_test(deadline):
+    """Run a harmless input once on the default case's vul and fix images.
+    Returns (ok, detail). This checks the ENVIRONMENT (can this host run the harness at all?);
+    it is never a verdict and never decides money."""
+    import platform as _platform
+    host = f"host {_platform.system()} {_platform.machine()}"
+    try:
+        cfg = load_cases()
+        parent = staging_parent()
+    except OSError as e:
+        return False, f"{host}: verifier config error: cannot read cases.json ({type(e).__name__})"
+    except ValueError as e:
+        return False, f"{host}: verifier config error: {e}"
+    case = cfg["default_case"]
+    entry = cfg["cases"][case]
+    scratch = tempfile.mkdtemp(prefix="verify-selftest-", dir=parent)
+    try:
+        staged = os.path.abspath(os.path.join(scratch, "input"))
+        with open(staged, "wb") as f:
+            f.write(SELF_TEST_INPUT)
+        parts = []
+        for t in ("vul", "fix"):
+            img = entry[t]["image"]
+            plat = image_platform(img, deadline)
+            if plat is None:
+                return False, f"{host}: image {img} ({t}) not present locally"
+            rc, out = docker_run(img, cfg["harness"], staged, deadline)
+            if rc is None:
+                return False, f"{host}: environment cannot run the harness: {t} image ({plat}) {out}"
+            if killed_info(rc):
+                return False, f"{host}: environment cannot run the harness: {t} image ({plat}) {killed_info(rc)}"
+            if rc != 0 or ANY_SANITIZER.search(out):
+                return False, (f"{host}: environment cannot run the harness: {t} image ({plat}) failed on a "
+                               f"harmless input (exit {rc}): {out.strip()[-120:]}")
+            parts.append(f"{t} clean")
+        return True, f"{host}: case {case} harmless input: {', '.join(parts)}; harness runs here"
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
 def parse_args(argv):
     args = argv[1:]
     case = None  # None -> default_case from cases.json
@@ -244,6 +327,15 @@ def main():
     except ValueError:
         pass
     deadline = Deadline(cap)
+    if sys.argv[1:] == ["--self-test"]:
+        # Separate mode: prints {"self_test": "pass"|"fail", "detail": ...}. No "verdict" key, so a
+        # caller can never mistake it for a settle decision. Exit 0 on pass, 1 on fail.
+        try:
+            ok, detail = self_test(deadline)
+        except Exception as e:
+            ok, detail = False, f"self-test error: {type(e).__name__}: {e}"[:300]
+        print(json.dumps({"self_test": "pass" if ok else "fail", "detail": detail}))
+        sys.exit(0 if ok else 1)
     input_file, case = parse_args(sys.argv)
     if input_file is None:
         emit("inconclusive", "usage: python verify.py <input_file> [--case <id>]")
