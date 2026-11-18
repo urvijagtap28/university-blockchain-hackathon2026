@@ -1,0 +1,9 @@
+.priority(-1)
+.priority(abc)
+.priority
+.inherit "x"
+.inherit(
+.load
+.try_include "nonexist"
+.nomacro = 1
+.foo(a=b,c=) bar

