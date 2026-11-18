@@ -1,0 +1,27 @@
+== sandbox_cap_test.sh 2026-11-18T01:05:47Z ==
+host: Linux x86_64; docker: x86_64 29.9.3
+
+-- A0 control (INDUCED harness: /bin/sh runs a script that exits immediately)
+A0: returncode=0 elapsed=0.43 s (deadline 20 s) info=ran | 
+PASS  A0: control script ran and exited 0 (setup works)
+PASS  A0: no verify-* container left
+
+-- A INDUCED hang: sh runs 'sleep 300'; real docker_run() with Deadline(8) -> budget 3 s
+A: returncode=None elapsed=3.15 s (deadline 8 s) info=run exceeded 3 s, container killed
+PASS  A: timed out and was killed within the deadline
+PASS  A: no verify-* container left
+
+-- B real verify.py end to end, VERIFY_CAP_SECONDS=5.2 (budget 0.2 s), harmless input
+verify.py output: {"verdict": "inconclusive", "detail": "case 42482847, 47 B input: vul run1: no time left in the total time cap; vul run2: no time left in the total time cap; vul run3: no time left in the total time cap"}
+elapsed: 0.32 s (cap 5.2 s)
+PASS  B: inconclusive via the timeout path within the cap
+PASS  B: no verify-* container left
+
+-- C INDUCED hang against the REAL 60 s cap (takes ~60 s)
+C: returncode=None elapsed=55.23 s (deadline 60 s) info=run exceeded 55 s, container killed
+PASS  C: timed out and was killed within the deadline
+PASS  C: no verify-* container left
+
+== summary: FAIL=0 NOT-EXERCISED/NOT-POSSIBLE=0 ==
+amd64 host
+All hangs above are INDUCED, not collected bugs; the server's 60 s cap is not exercised here.

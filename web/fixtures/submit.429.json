@@ -1,0 +1,5 @@
+{
+  "error": "rate_limited",
+  "message": "Too many submissions.",
+  "retryAfterSeconds": 8
+}

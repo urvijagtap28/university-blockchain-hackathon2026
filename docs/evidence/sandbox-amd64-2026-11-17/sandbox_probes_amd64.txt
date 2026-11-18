@@ -1,0 +1,63 @@
+== sandbox_probes.sh 2026-11-18T01:05:35Z ==
+host: Linux x86_64; docker server arch: x86_64 29.9.3
+image: n132/arvo@sha256:76a841ce67b750f5abf59477c391f1701384a5f1f84053f4ac5afb112a199483 (linux/amd64)
+flags derived from verifier/verify.py docker_run() (after 'docker run'):
+  --rm --pull never --network none --read-only --tmpfs /tmp:rw,size=16m --user 1000:1000 --cpus 1 --memory 1g --memory-swap 1g --pids-limit 64 --cap-drop ALL --security-opt no-new-privileges -e ASAN_OPTIONS=alloc_dealloc_mismatch=0:allocator_may_return_null=1:detect_leaks=0:detect_stack_use_after_return=1:fast_unwind_on_fatal=0:handle_abort=1:handle_segv=1:symbolize=1:print_scariness=1:dedup_token_length=3 --mount type=bind,src=/tmp/sandbox-probe.X4Rs79/input,dst=/in/input,readonly
+
+-- P0 flag audit (derived flags vs spec)
+PASS  flag present: --rm
+PASS  flag present: --network none
+PASS  flag present: --read-only
+PASS  flag present: --tmpfs /tmp (scratch)
+PASS  flag present: --user non-root
+PASS  flag present: --cpus
+PASS  flag present: --memory
+PASS  flag present: --memory-swap
+PASS  flag present: --pids-limit
+PASS  flag present: --cap-drop ALL
+PASS  flag present: no-new-privileges
+PASS  flag present: --pull never
+PASS  flag present: input mount readonly
+INFO  weaker/missing vs a maximal hardening (not in spec; see QE report): no --ulimit (fsize/nofile/core), /tmp tmpfs flags are docker defaults (probe (c) prints them), /dev/shm stays default writable 64m, default seccomp/apparmor profile only, no in-container timeout (wall clock is host-side + docker kill)
+
+-- precheck: hardened container starts at all
+PASS  precheck: container started with the derived flags
+
+-- probes (each in its own fresh container)
+PASS  (a) outbound network blocked: tcp connect and DNS lookup both failed; interfaces above
+        | tcp 1.1.1.1:53 connect exit/err: ok=0 err=bash: connect: Network is unreachable bash: /dev/tcp/1.1.1.1/53: Network is unreachable 
+        | dns example.com via getent: ok=0 out=
+        | interfaces: lo 
+WARN  (b) cannot write outside scratch: root FS, /etc, /out, /usr, /root, /in, /src all read-only; but /dev/shm (docker default 64m tmpfs) is writable. Not in spec; bounded by docker default
+        | root fs mount flags: ro,relatime
+        | writable outside scratch (should be empty):[ ]; /dev/shm writable=yes
+PASS  (c) scratch writable and size-capped: scratch writable; fill stopped at 16384 KiB (cap 16384 KiB)
+        | /tmp size KiB: 16384; mount: rw,nosuid,nodev,noexec,relatime
+        | 15+0 records out 16773120 bytes (17 MB, 16 MiB) copied, 0.0246419 s, 681 MB/s 
+WARN  (d) no env secrets, no host paths: no secret-looking names and no host paths, but extra image env names/contents listed above
+        | env var NAMES: ARCHITECTURE ASAN_OPTIONS CC CCC CFLAGS COVERAGE_FLAGS COVERAGE_FLAGS_coverage COVERAGE_FLAGS_dataflow CXX CXXFLAGS CXXFLAGS_EXTRA DEBIAN_FRONTEND DFSAN_OPTIONS FUZZER_LDFLAGS FUZZING_ENGINE GOPATH HOME HOSTNAME LIB_FUZZING_ENGINE LIB_FUZZING_ENGINE_DEPRECATED OUT PATH PRECOMPILED_DIR PWD SANITIZER SANITIZER_FLAGS_address SANITIZER_FLAGS_coverage SANITIZER_FLAGS_dataflow SANITIZER_FLAGS_memory SANITIZER_FLAGS_undefined SHLVL SRC UBSAN_OPTIONS WORK _ 
+        | extra (image-owned, not secrets-looking) names: DFSAN_OPTIONS CXXFLAGS_EXTRA SANITIZER UBSAN_OPTIONS SANITIZER_FLAGS_address OUT CCC FUZZING_ENGINE COVERAGE_FLAGS CXXFLAGS FUZZER_LDFLAGS WORK SANITIZER_FLAGS_undefined LIB_FUZZING_ENGINE SRC PRECOMPILED_DIR CXX SANITIZER_FLAGS_dataflow COVERAGE_FLAGS_coverage CFLAGS SANITIZER_FLAGS_coverage COVERAGE_FLAGS_dataflow LIB_FUZZING_ENGINE_DEPRECATED DEBIAN_FRONTEND GOPATH ARCHITECTURE CC SANITIZER_FLAGS_memory 
+        | host-ish paths visible:[ /home() ]
+        | mount destinations: / /proc /dev /dev/pts /sys /sys/fs/cgroup /dev/mqueue /dev/shm /tmp /etc/hostname /etc/hosts /etc/resolv.conf /in/input /proc/bus /proc/fs /proc/irq /proc/sys /proc/sysrq-trigger /proc/acpi /proc/interrupts /proc/kcore /proc/keys /proc/scsi /proc/timer_list /sys/firmware 
+        | /in contents: input 
+PASS  (e) non-root, no capabilities: uid 1000, CapEff and CapBnd all zero, NoNewPrivs=1 (Seccomp=2; 2 = docker default filter)
+        | uid=1000 gid=1000 CapEff=0000000000000000 CapBnd=0000000000000000 CapInh=0000000000000000 CapAmb=0000000000000000 NoNewPrivs=1 Seccomp=2
+PASS  (f) pids limit caps forks (bounded at limit+36 attempts): started 62 of 100 attempts, then fork refused (limit 64)
+        | attempted=100 started=62 failed=38 last_err=[Errno 11] Resource temporarily unavailable
+        | cgroup /sys/fs/cgroup/pids.max=64
+        (fork-probe container cleanup is checked in (i))
+PASS  (g) memory limit: killed after touching ~1008 MiB (limit 1024 MiB, ceiling 1536 MiB, docker exit 137)
+PASS  (h) input mount read-only (container side): append, truncate, delete, move, create in /in all refused
+        | errors: /bin/bash: line 2: /in/input: Permission denied rm: cannot remove '/in/input': Read-only file system 
+        | mount options: ro,nosuid,nodev
+        | content still: probe-input-do-not-modify
+PASS  (h2) host copy of input unchanged (sha256 60a993c5)...
+PASS  (j) cgroup limits applied: cpu 1.0, memory 1 GiB, swap 0 extra (memory-swap = memory), pids 64 (cgroup v2)
+        | cgroup view: cpu.max=100000 100000 memory.max=1073741824 memory.swap.max=0 pids.max=64
+
+-- cleanup
+PASS  (i) no leftover probe containers (10 probe containers all removed by --rm)
+INFO  no verify-* containers present
+
+== summary: FAIL=0 NOT-POSSIBLE=0 WARN=2 ==
+host arch amd64: results authoritative for the configured limits only (not an escape test)

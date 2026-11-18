@@ -1,0 +1,81 @@
+{
+  "mode": "real",
+  "busy": false,
+  "csrfToken": "fixture-csrf-token-0000000000000000",
+  "policy": {
+    "perReportCapUsd": 0.25,
+    "sessionBudgetUsd": 2,
+    "approvalThresholdUsd": 0.1,
+    "retryBudget": 3,
+    "allowedUrl": "http://localhost:4021/report"
+  },
+  "session": {
+    "budgetAtomic": "2000000",
+    "spentAtomic": "500000",
+    "reservedAtomic": "250000",
+    "remainingAtomic": "1250000"
+  },
+  "target": {
+    "caseId": "42482847",
+    "targetCommit": "875c25115a36f59a333de79f88235bdfb537c539",
+    "fixCommit": "45997ade65d18806f52e3a2f5b8ca2c3e3283554",
+    "vulImage": "n132/arvo@sha256:76a841ce67b750f5abf59477c391f1701384a5f1f84053f4ac5afb112a199483",
+    "fixImage": "n132/arvo@sha256:02a979ebbb0d5dab1455d079a993baebee8119ea210ea75622afd31e60e63d3d",
+    "caveat": "The fixed image is a later libucl version, not the per-bug fix commit. So reproduced means the input triggers the expected ASan error on the pinned vulnerable build and the crash is gone in a later libucl."
+  },
+  "limits": {
+    "maxInputBytes": 65536,
+    "verifierTimeoutSeconds": 60,
+    "maxConcurrent": 2,
+    "rateLimitSeconds": 10,
+    "sandbox": [
+      "no network",
+      "1 CPU, 1 GB memory",
+      "60 s wall-clock cap",
+      "read-only filesystem except scratch",
+      "non-root user",
+      "no secrets in the container"
+    ]
+  },
+  "wallet": {
+    "buyerAddress": "2BPj3UYjD2tyRhgSBjzSVMV7VqER9ue7M2iTHKsCnrXA",
+    "payTo": "8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib"
+  },
+  "demoInputs": [
+    {
+      "id": "arvo_42482847",
+      "label": "ARVO 42482847 crashing input (real bug, this case's own)",
+      "category": "real_bug",
+      "handMade": false,
+      "sizeBytes": 2
+    },
+    {
+      "id": "arvo_42482848",
+      "label": "ARVO 42482848 crashing input (real bug; backtest set C: also crashes the 42482847 vulnerable build)",
+      "category": "real_bug",
+      "handMade": false,
+      "sizeBytes": 36
+    },
+    {
+      "id": "fake_near_miss",
+      "label": "HAND-MADE fake: near miss of 42482847 input, string closed",
+      "category": "hand_made_fake",
+      "handMade": true,
+      "sizeBytes": 3
+    },
+    {
+      "id": "fake_random",
+      "label": "HAND-MADE robustness check: 4096 random bytes (not representative of LLM slop)",
+      "category": "hand_made_fake",
+      "handMade": true,
+      "sizeBytes": 4096
+    },
+    {
+      "id": "fake_asan_claim",
+      "label": "HAND-MADE fake: prose claiming an ASan crash",
+      "category": "hand_made_fake",
+      "handMade": true,
+      "sizeBytes": 111
+    }
+  ]
+}

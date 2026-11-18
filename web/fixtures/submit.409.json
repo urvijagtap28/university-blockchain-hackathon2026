@@ -1,0 +1,4 @@
+{
+  "error": "busy",
+  "message": "A report is already being processed. Try again when it finishes (one job at a time)."
+}

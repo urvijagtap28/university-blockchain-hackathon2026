@@ -24,7 +24,7 @@ The sandbox is a filter, not a judge. A human still triages every `reproduced` r
 14. [Related work](#14-related-work)
 15. [Credits](#15-credits)
 
-Status legend used below: **stub** means the payment path ran but the verdict came from a filename-routed fake (`verifier/verify_stub.py`), so it says nothing about any bug. **real** means the Docker/ASan verifier produced the verdict.
+Status legend used below: **stub** means the payment path ran but the verdict came from a filename-routed fake (`verifier/verify_stub.py`), so it says nothing about any bug. **real** means the Docker/ASan verifier produced the verdict. Real-verifier evidence is in [docs/evidence/real-run-2026-11-17/](docs/evidence/real-run-2026-11-17/).
 
 ## 1. The problem
 
@@ -32,11 +32,9 @@ curl ended its bug bounty effective January 31, 2026. Its maintainer wrote that 
 
 curl did not leave HackerOne. On March 1, 2026 it moved reports back to HackerOne, without a bounty.
 
-Sources (checked 2026-11-17 by reading the maintainer's own posts; see [docs/verified-facts.md](docs/verified-facts.md)):
+Sources (read from the maintainer's own posts; a team member re-opened the links on 2026-11-17 and confirmed the end date, the "below 5%" line and the 87 confirmed vulnerabilities; see [docs/verified-facts.md](docs/verified-facts.md)):
 - https://daniel.haxx.se/blog/2026/01/26/the-end-of-the-curl-bug-bounty/
 - https://daniel.haxx.se/blog/2026/02/25/curl-security-moves-again/
-
-TODO (human): re-open both links and confirm the quotes before submission; docs/verified-facts.md says the fetch returned short quotes only and a person should re-check.
 
 The idea here: a maintainer is not paid to read a report that cannot be shown to crash anything. If the sender must put up a small refundable bond that only comes back when the proof actually reproduces (or the sandbox cannot decide), then a report with no working proof costs its sender something. It is an experiment in using a payment as a cheap pre-filter. It does not decide whether a report is good.
 
@@ -111,7 +109,7 @@ This is the agent's own log of what it decided. It is not the signed verdict log
 
 Limits of the limits: budget and approval are client-side code. A compromised host holding the agent key can bypass them. The budget is in memory and resets per process. The agent trusts the server's reported settled amount when releasing its reservation (it does not check on-chain).
 
-Verified (stub verifier, Solana devnet, dedicated RPC): reproduced -> $0 refund, not_reproduced -> $0.25 forfeit, a non-allowlisted URL refused with no network call, over-cap refused, budget refused, approval n / no answer / y, one live 429 backoff retry that succeeded. Details in BUILD_LOG.md. Not verified: the prompt on a real interactive terminal (only piped stdin tested), a live `busy`/`rate_limited` retry, real verifier.
+Verified (stub verifier, Solana devnet, dedicated RPC): reproduced -> $0 refund, not_reproduced -> $0.25 forfeit, a non-allowlisted URL refused with no network call, over-cap refused, budget refused, approval n / no answer / y, one live 429 backoff retry that succeeded. Details in BUILD_LOG.md. Not verified: the prompt on a real interactive terminal (only piped stdin tested), a live `busy`/`rate_limited` retry. The agent also ran in the real-verifier demo on Person B's laptop (section 8), which we did not reproduce.
 
 ## 5. The verifier and the three verdicts
 
@@ -147,7 +145,12 @@ What it cannot show:
 - Replacement by a whole new log signed with another key, unless the checker pins the public key obtained out of band.
 - That a request that was never paid or failed before payment did not happen: those are not logged.
 
-TODO (human): publish the signer public key and the head hash/seq of the final real run here, so truncation becomes detectable. The stub demo run's values are in RESULTS.md and are for stub data only.
+Published head of the first real run (2026-11-17, [docs/evidence/real-run-2026-11-17/](docs/evidence/real-run-2026-11-17/)), so that tail truncation of that log is detectable:
+
+- Signer public key (ed25519): `ASYuieG7nRUN7ecnLVGGUtoeLSER8KEwCq5qYmt1C3Cx`
+- Head: seq 4 (5 records), sha256 of the last line, without its trailing newline: `302a6a41f75b6cc926bd00a78f51acb77cf38e56c3c1c8b9f0005d55740277d3`
+
+We re-ran the checker on the committed log from our Mac: `OK: 5 records ... (pinned)`, and the last-line hash matches the one above. A final run for submission would have its own key and head; those would need to be published the same way.
 
 ## 7. How Solana is used
 
@@ -182,24 +185,48 @@ Read these with care:
 - Set C: 8 real-bug inputs were forfeited because the chosen case's vulnerable build ran them clean. A real bug sent against the wrong pinned build loses its bond. We did not investigate why each build is clean.
 - Crash-on-both and flaky/timeout results were not produced and we did not fake them.
 
-### Demo run: stub only
+### Demo run: real verifier, one run
 
-[RESULTS.md](RESULTS.md) (repo root) is generated by `demo/run.mjs` from a verdict log. The checked-in copy is from a **stub** run on 2026-11-17: 5 reports (2 stub "reproduced", 3 stub "forfeited"), all payments confirmed on devnet, log verified with a pinned key. **These verdicts came from a filename-routed stub. They show that the payment, settlement, agent and signed-log plumbing works. They are not sandbox results and must not be quoted as such.** The hand-made fakes in it are labeled HAND-MADE; buyer and receiver wallets are both ours, so a forfeit is a transfer between our own wallets.
+Full report: [docs/evidence/real-run-2026-11-17/RESULTS.md](docs/evidence/real-run-2026-11-17/RESULTS.md), generated by `demo/run.mjs` from the signed log [verdicts.jsonl](docs/evidence/real-run-2026-11-17/verdicts.jsonl) in the same folder. Run once, on 2026-11-17, by Person B on an amd64 laptop (WSL2 Ubuntu, Docker linux/amd64), `bash scripts/demo.sh --real`, exit 0, Solana devnet, dedicated RPC. The run was **not reproduced by us**; we checked its log and transactions afterwards (section 9).
 
-TODO: replace RESULTS.md with the output of the first real run (`bash scripts/demo.sh --real` on an amd64 host). Waits on: Person B's amd64 machine (H-006 resolved: B's laptop hosts the real run). Until then, the expected counts (2 reproduced, 3 forfeited) are an expectation from the backtest, not a result.
+| Outcome | Count |
+|---|---|
+| Reproduced (bond returned) | 2 |
+| Not reproduced (bond forfeited) | 3 |
+| Wrongly forfeited real bugs | 0 |
+| Hand-made fakes judged reproduced | 0 |
+| Inconclusive | 0 |
+| Errors or failures | 0 |
+
+Read this with care:
+- The batch is 2 real-bug inputs (ARVO crashing inputs, in-sample) and 3 inputs we made by hand (a near-miss of a real input, 4096 random bytes, prose claiming an ASan crash). It is a small, hand-picked batch, not a sample of real-world reports. The fakes are hand-made inputs, not LLM-written reports; the random-bytes one is a robustness check, not a model of LLM slop.
+- Four other hand-made fakes exist and were not in this batch (empty, config, deep nesting, large config); all seven are in the backtest above.
+- Flaky/timeout and crash-on-both verdicts were NOT demonstrated, in the demo or the backtest.
+- Buyer and receiver wallets are both ours, so a forfeit is a transfer between our own wallets, not a payment to a third party.
+- These results do not show that spam is stopped.
+
+The root `RESULTS.md` is gitignored: it is whatever the last local demo run wrote, and the earlier copy was from a stub run. Do not quote a root `RESULTS.md` as results. Stub-routed verdicts are payment-plumbing evidence only, never sandbox results.
 
 ## 9. Devnet transaction signatures
 
 Explorer links use `https://explorer.solana.com/tx/<signature>?cluster=devnet`.
 
-### Real verifier (one returned bond, one forfeited bond)
+### Real verifier, first real run (2026-11-17)
 
-TODO: no real-verifier payment has been run yet. Fill from the first real run's `RESULTS.md`, and confirm each by RPC `getTransaction` (needs `maxSupportedTransactionVersion` 1).
+These are the **settle transactions** from the real-verifier run in section 8. The demo recorded settle transactions only, not the deposit (open) transactions.
 
-```
-RETURNED bond  (verdict reproduced or inconclusive, settled 0):   TODO <signature>
-FORFEITED bond (verdict not_reproduced, settled 0.25 USDC):        TODO <signature>
-```
+Returned bond (verdict `reproduced`, settled 0):
+- [`5ywoH1tfvzUcA6K1E6wcW1GXoS7tvq31213V6ujGF7GLvKLqepJm8nDZRT2ej46v8jWE6YekCwWMjtVE8XfdeFdb`](https://explorer.solana.com/tx/5ywoH1tfvzUcA6K1E6wcW1GXoS7tvq31213V6ujGF7GLvKLqepJm8nDZRT2ej46v8jWE6YekCwWMjtVE8XfdeFdb?cluster=devnet)
+- [`4tBpapbJPsyWS3eNay3WSukmVkRPY1jhB35L5bDTwkg3GHLb5Ku26dnJDvmG1gwRbtzJXQ1KYQuArMbi6NNr1hwv`](https://explorer.solana.com/tx/4tBpapbJPsyWS3eNay3WSukmVkRPY1jhB35L5bDTwkg3GHLb5Ku26dnJDvmG1gwRbtzJXQ1KYQuArMbi6NNr1hwv?cluster=devnet)
+
+Forfeited bond (verdict `not_reproduced`, settled 0.25 USDC):
+- [`3wTyH7SaZWqnKwcqD6neJG8nCuz64enJDJpRUNUBH9vsY4W9iFayKtJ8scZ9qRi2pgPd2fjovT9wLwNvPUAcyHGL`](https://explorer.solana.com/tx/3wTyH7SaZWqnKwcqD6neJG8nCuz64enJDJpRUNUBH9vsY4W9iFayKtJ8scZ9qRi2pgPd2fjovT9wLwNvPUAcyHGL?cluster=devnet)
+- [`22oAjCovvAtB8GThk4swBAknCQ69cR9hvmqUdSRZ1Y2kMJU8ax59b1d8KvLuNrjobHnFaopmZUArfZAdZwj5yBbs`](https://explorer.solana.com/tx/22oAjCovvAtB8GThk4swBAknCQ69cR9hvmqUdSRZ1Y2kMJU8ax59b1d8KvLuNrjobHnFaopmZUArfZAdZwj5yBbs?cluster=devnet)
+- [`3eLGnyA4LgGBorY6mR9FF5t51nvxpp2K1ETqfpd52ybQ68nXbWJwHdAZSx8htTG4QxU9SiiRt2WQC4UJusbazzdi`](https://explorer.solana.com/tx/3eLGnyA4LgGBorY6mR9FF5t51nvxpp2K1ETqfpd52ybQ68nXbWJwHdAZSx8htTG4QxU9SiiRt2WQC4UJusbazzdi?cluster=devnet)
+
+We checked all five by RPC `getTransaction` from our Mac on 2026-11-17: no transaction error; for the two returned-bond transactions the buyer wallet's USDC rose by 0.25 (refund from escrow); for the three forfeit transactions the receiver (payTo) wallet's USDC rose by 0.25. Both wallets are ours.
+
+To verify yourself: `cd server && node scripts/verify-log.ts ../docs/evidence/real-run-2026-11-17/verdicts.jsonl --pubkey ASYuieG7nRUN7ecnLVGGUtoeLSER8KEwCq5qYmt1C3Cx`, then fetch each signature with `getTransaction` on a devnet RPC (set `maxSupportedTransactionVersion` to 1) or open the links above. Details: [docs/evidence/real-run-2026-11-17/README.md](docs/evidence/real-run-2026-11-17/README.md).
 
 ### Stub-verifier payment-path evidence only (NOT sandbox results)
 
@@ -207,7 +234,7 @@ From BUILD_LOG.md entry "X402_PAYMENTS H-004 rerun" (stub verifier, repo .env, d
 - Stub "reproduced", $0 settle, escrow refunded to buyer: `3BUWFfzEDNQRFZyjY9opdSmJ3aHjv1tGPHRf71HHeXcSzwDo7kR29HVwK2oC6fzecZaky5ayFA8JJpsETJUkH4Z5`
 - Stub "not_reproduced", $0.25 settle, seller +0.25: `fpME7x1GvpA2JtLA6anMy4tqeNhDELHktTZkDM8tzG9qs2kExoqJ73y8JGQnKoDP277hPmET56JDRJgKW6kcDX1`
 
-The five-report stub demo batch has its own links in [RESULTS.md](RESULTS.md).
+The earlier five-report stub demo batch is not checked in as results.
 
 ## 10. Setup and run
 
@@ -223,15 +250,29 @@ The five-report stub demo batch has its own links in [RESULTS.md](RESULTS.md).
 
 We run the upstream x402 `upto` facilitator example, unmodified, at x402-foundation/x402 commit `f0de923456b89b11a77a1609c4b84a780edd1bd2` (packages `@x402/svm`, `@x402/core`, `@x402/express`, `@x402/fetch` 2.31.0):
 
+These are the commands that worked for Person B on WSL2 Ubuntu (x86_64). **They were run on Person B's machine only; the clean-machine test is still pending.**
+
 ```
+# Node v26.10.0: official linux-x64 tarball, checked against
+# sha256 ca70e9e349de048b9522abb3adc05b3bd6f43c5ffd3ec57916c7da292f59f022
+npm install -g pnpm@11.1.1
+
+mkdir -p ~/upto-spike/scratch && cd ~/upto-spike/scratch
 git clone https://github.com/x402-foundation/x402
 cd x402 && git checkout f0de923456b89b11a77a1609c4b84a780edd1bd2
-# facilitator lives in examples/typescript/facilitator/upto
+cd examples/typescript
+pnpm install     # exit 0
+pnpm build       # exit 1, see note below
 ```
 
-TODO (Person A): the spike notes say the example was "built locally from the workspace" but do not record the exact install and build commands. Add them here after re-running on a clean checkout (this also belongs to CLEAN_MACHINE_TESTER).
+The `pnpm build` exit 1 is only because the unrelated `fullstack/next` example needs `FACILITATOR_URL`; `packages/core`, `mechanisms/svm` and `mechanisms/evm` built fine. Then, from our repo root:
 
-Point our script at it: `FACILITATOR_DIR=<x402>/examples/typescript/facilitator/upto sh server/scripts/start-facilitator.sh`. The default `FACILITATOR_DIR` is `$HOME/upto-spike/scratch/x402/...`, which only exists on the author's machine. The script sets `PORT` for the facilitator process only (it listens on `FACILITATOR_PORT`, default 4022).
+```
+set -a; . ./.env; set +a
+FACILITATOR_DIR=~/upto-spike/scratch/x402/examples/typescript/facilitator/upto server/scripts/start-facilitator.sh
+```
+
+The facilitator reads its keys from the shell environment loaded from the repo `.env`; nothing is copied into the facilitator folder. The default `FACILITATOR_DIR` is `$HOME/upto-spike/scratch/x402/...`. The script sets `PORT` for the facilitator process only (it listens on `FACILITATOR_PORT`, default 4022).
 
 The facilitator keeps open channels in memory and runs its own cleanup manager. Do not restart it mid-demo.
 
@@ -254,7 +295,7 @@ Copy `.env.example` to `.env` and fill it. Names (values are never printed or co
 | `LOG_SIGNING_KEY`, `LOG_PATH` | server | verdict log key (generate with `node server/scripts/gen-log-key.mjs`) and path |
 | `ALLOW_STUB_VERIFIER` | server | test only; never set for real runs |
 
-TODO (human): STATUS.md and AGENTS/DECISIONS.md D-014 say `.env.example` was still missing several of these names as of 2026-11-17 (the last STATUS line says an edit was blocked for Claude, while HUMAN_INPUT_NEEDED H-003 says the user updated it). Check `.env.example` lists every variable above and fix this table to match.
+This table was written from AGENTS/INTERFACES.md and `.env.example` (updated by the user in commit 1ef1b15). We have not re-checked each row against `.env.example` since that update.
 
 ### Run the demo
 
@@ -266,7 +307,7 @@ bash scripts/demo.sh --real                    # amd64 + Docker + ARVO images
 
 It starts the facilitator and server, runs one agent process per report from `demo/manifest.json` (2 real-bug inputs and 3 hand-made fakes, 11.5 s apart to respect the 10 s per-wallet limit), stops both by PID, verifies the signed log with a pinned key, checks each tx by RPC and compares wallet balance changes to the log, then writes `RESULTS.md`. Exit 0 means every check passed. The demo spends 0.75 USDC between our own wallets per batch.
 
-Status: `--stub` ran end to end twice on an arm64 Mac (BUILD_LOG.md, "DEMO_RUNNER") with all checks passing, plus negative tests (killed server, tampered log, deleted record, SIGINT, occupied port all fail loudly). `--real` is written but **not yet run**: only its Docker preflight on the Mac was checked (it refuses, exit 2).
+Status: `--stub` ran end to end twice on an arm64 Mac (BUILD_LOG.md, "DEMO_RUNNER") with all checks passing, plus negative tests (killed server, tampered log, deleted record, SIGINT, occupied port all fail loudly). `--real` ran once, on Person B's amd64 laptop, exit 0 (section 8); on our arm64 Mac it refuses at the Docker preflight (exit 2). We have not run `--real` ourselves.
 
 Individual tests: `cd server && node test/unit.ts`, `node test/verdictlog.test.ts`; `cd agent && node test/unit.ts`; `python verifier/test_verify.py`.
 
@@ -279,6 +320,8 @@ The verifier executes untrusted input (it runs a C parser on a stranger's file u
 Intended deployment: the maintainer runs the verifier on their own infrastructure, split from the machine that holds payment keys. Never run submissions on a machine that holds real keys.
 
 Our demo host does not follow that split: it runs proofs on the same machine as the payment server and facilitator, which hold devnet-only fake-money keys. This is acceptable for a demo and not for production. The container itself receives no keys.
+
+Container flags were reviewed from the code and probed by `scripts/sandbox_probes.sh` and `scripts/sandbox_cap_test.sh --full`. Person B ran them on amd64 (WSL2, Docker 29.9.3) on 2026-11-17: probes 23 PASS, 2 WARN, 0 FAIL; cap test 8 PASS, 0 FAIL; no leftover containers (output in [docs/evidence/sandbox-amd64-2026-11-17/](docs/evidence/sandbox-amd64-2026-11-17/)). The two warnings are a writable 64 MiB in-memory `/dev/shm` and the image's own build-time env var names. These checks show that the configured limits held; they are not an escape test, and the sandbox is not claimed escape-proof. The profile is Docker's default seccomp/AppArmor. Both kill tests used an INDUCED hang (`sleep 300`); no real hanging libucl input exists, and the server's own 60 s cap with the real verifier was not tested. One open P2 finding: if `docker kill` after a timeout fails, `verify.py` swallows the `TimeoutExpired` and the container can outlive the call (`--rm` removes it only when it exits); the suggested fix is a best-effort `docker rm -f` afterwards, not yet merged.
 
 Abuse limits in code: 64 KB input cap (HTTP 413 before any deposit), per-wallet rate limit (1 request per 10 s), at most 2 concurrent verifier runs (over the cap returns `busy`, $0), 60 s hard cap. The limits are in memory and reset on restart.
 
@@ -295,15 +338,17 @@ Abuse limits in code: 64 KB input cap (HTTP 413 before any deposit), per-wallet 
 - If a settle cannot be confirmed, the server returns HTTP 402 and the bond is returned only by the facilitator's abandon-close, observed about 7 to 10 minutes later on devnet. We cannot settle $0 in that case because the facilitator never confirmed anything.
 - Errors are returned as HTTP 200 on purpose, because the x402 middleware skips settlement for handler statuses of 400 or above.
 - Buyer and receiver wallets are both ours in every run so far; a "forfeit" is a transfer between our wallets.
+- The first real run was run by Person B on the same laptop that held the devnet keys, so untrusted proofs and keys shared a machine (section 11).
 - The log is signed by the server we run; it is not third-party evidence.
 
 ## 13. What was NOT verified
 
 Taken from STATUS.md, BUILD_LOG.md and the agents' files as of 2026-11-17.
 
-- Any payment settled using the real verifier. No real-verifier devnet transaction exists yet (section 9 TODO).
-- `bash scripts/demo.sh --real` past its Docker preflight.
-- The real verifier on this repo's arm64 Mac: it cannot run the amd64 images (QEMU exit 137; a Rosetta attempt failed, BUILD_LOG.md). The Phase 1 gate and `verify.py` results are "verified by builder only" (Person B, x86_64 Windows); our own independent re-run (H-005, `scripts/rerun_gate.sh`) was still open at last record in AGENTS/HUMAN_INPUT_NEEDED.md. TODO: confirm its status.
+- Reproducing the real-verifier demo run ourselves. It was run once by Person B on an amd64 laptop; we checked its signed log and its five settle transactions on-chain from the Mac (section 9) but did not run it. Deposit transactions were not recorded. Records are server-signed.
+- The real verifier on this repo's arm64 Mac: it cannot run the amd64 images (QEMU exit 137; a Rosetta attempt failed, BUILD_LOG.md). The Phase 1 gate and `verify.py` tests (34) are "verified by builder only" (Person B, x86_64 Windows). Person B's WSL clean-clone gate re-run (H-005, f38958e) is recorded as passed in STATUS.md; we have not run it ourselves.
+- The server's own 60 s cap and concurrency with the real verifier, and any escape attempt against the sandbox. The sandbox probes themselves ran on amd64 (see section 11); the kill tests there were induced hangs.
+- Server-side 60 s cap and settle $0 on kill with the real verifier.
 - The Coinbase CDP-hosted facilitator.
 - Concurrency and repeated load on the real verifier (backtest ran one call at a time); the concurrency cap and rate limit were tested against the stub only.
 - A genuinely hanging input for the real verifier (the timeout path was tested with a lowered cap in `verifier/test_verify.py`), a flaky result, and a crash-on-both result.
@@ -314,9 +359,8 @@ Taken from STATUS.md, BUILD_LOG.md and the agents' files as of 2026-11-17.
 - Buyer-initiated recovery (`request_close`, `withdraw_payer`); only facilitator-driven recovery was observed.
 - The facilitator's abandon-close timing is from observation on devnet, not from documentation.
 - The program ID against the hackathon rules page (section 7).
-- Clean-machine setup, and the exact facilitator build steps.
+- Clean-machine setup: the facilitator install steps in section 10 worked on Person B's machine only, and "one-command demo passes on a clean machine" is still unchecked.
 - Prior-art search: not exhaustive (section 14).
-- The submission wording itself: curl quotes need a person to re-check them against the links.
 
 ## 14. Related work
 

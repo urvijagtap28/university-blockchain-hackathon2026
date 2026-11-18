@@ -1,0 +1,18 @@
+event: started
+data: {"jobId":"fixture-job-1","reportHash":"386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"allow","detail":"<img src=x onerror=alert(1)>"}
+
+event: verdict
+data: {"verdict":"reproduced","detail":"<img src=x onerror=alert(1)>"}
+
+event: settled
+data: {"settledAtomic":"0","txSignature":"not base58 <img src=x onerror=alert(1)>","bondOutcome":"returned"}
+
+event: error
+data: {"message":"<img src=x onerror=alert(1)>","settledAtomic":"0"}
+
+event: done
+data: {"recordSeq":0}
+

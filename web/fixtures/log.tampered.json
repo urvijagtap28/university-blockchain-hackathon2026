@@ -1,0 +1,90 @@
+{
+  "mode": "stub",
+  "signer": "6vYi5vh11HPCtFDiY7uCdwFt7shT3maXXPTen8PAFNGY",
+  "verify": {
+    "ok": false,
+    "records": 5,
+    "verified": 3,
+    "problems": [
+      {
+        "line": 3,
+        "message": "BAD SIGNATURE"
+      },
+      {
+        "line": 4,
+        "message": "prev hash mismatch"
+      }
+    ]
+  },
+  "head": {
+    "seq": 4,
+    "hash": "a2f67691458b4c94083fe8b07b74abd1a4c1c6cd04f9adda34e4d846d58594c9"
+  },
+  "records": [
+    {
+      "seq": 0,
+      "timestamp": "2026-11-17T18:43:39.400Z",
+      "reportHash": "386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f",
+      "label": "ARVO 42482847 crashing input (real bug, this case's own)",
+      "category": "real_bug",
+      "verdict": "reproduced",
+      "detail": "stub: filename contains 'real'",
+      "settledAtomic": "0",
+      "settlementStatus": "settled",
+      "txSignature": "49hbmUddNRyJ4RAfSrM66fEx1WYkHWeShiMH1kNpDYRVCG7jB9WvAvXywXBWTsV8SdScd6qWDLxtuTr75fZ8MJxT",
+      "sigOk": true
+    },
+    {
+      "seq": 1,
+      "timestamp": "2026-11-17T18:43:52.980Z",
+      "reportHash": "345ed91c5404ab059efb58fea1fb91df8e19503744930c866432b428b8c4ca83",
+      "label": "ARVO 42482848 crashing input (real bug; backtest set C: also crashes the 42482847 vulnerable build)",
+      "category": "real_bug",
+      "verdict": "reproduced",
+      "detail": "stub: filename contains 'real'",
+      "settledAtomic": "0",
+      "settlementStatus": "settled",
+      "txSignature": "56hJLFUPBXiCp2hp9XxNs7YnWPTwCkStx7jv1ifo5LzaJp1BXMevTpx9cT9NE7CbWjMkaZwHDFWvSqQWG1nYQ24L",
+      "sigOk": true
+    },
+    {
+      "seq": 2,
+      "timestamp": "2026-11-17T18:44:06.844Z",
+      "reportHash": "491a8669f95d3552993b2deef0d3d9fcf5a70d53804121ca10d964abc7639419",
+      "label": "HAND-MADE fake: near miss of 42482847 input, string closed",
+      "category": "hand_made_fake",
+      "verdict": "not_reproduced",
+      "detail": "stub: default",
+      "settledAtomic": "0",
+      "settlementStatus": "settled",
+      "txSignature": "5YQLCw1qrfLCV5tbBvh4nfu2Y65HYDLtBV26uRvCMVRip51sCKoW55zEGxqQjTik6nM31TVnRLFh65hqmZipeXGS",
+      "sigOk": false
+    },
+    {
+      "seq": 3,
+      "timestamp": "2026-11-17T18:44:20.890Z",
+      "reportHash": "2e34da4f15520dd21f1857ed0194386c3237700dc6feb3167e39c5483f9acbc3",
+      "label": "HAND-MADE robustness check: 4096 random bytes (not representative of LLM slop)",
+      "category": "hand_made_fake",
+      "verdict": "not_reproduced",
+      "detail": "stub: default",
+      "settledAtomic": "250000",
+      "settlementStatus": "settled",
+      "txSignature": "5t3aVc4Pe9kSaiQj4NGWUtcYy3tUGxzw5mKpRiibLzFWXWh1eC8JqQZN7xARwC3UKPsaMmPiuTsw32XnD4sZ5nPM",
+      "sigOk": false
+    },
+    {
+      "seq": 4,
+      "timestamp": "2026-11-17T18:44:34.418Z",
+      "reportHash": "b9cf9035d4563a5c8d738107a8c6c05ee6829fe79730d10ef7819c1dee88578b",
+      "label": "HAND-MADE fake: prose claiming an ASan crash",
+      "category": "hand_made_fake",
+      "verdict": "not_reproduced",
+      "detail": "stub: default",
+      "settledAtomic": "250000",
+      "settlementStatus": "settled",
+      "txSignature": "3wneJhzLaCYiSDjqNwAmXQ8iapkFsRwEgpgiPHeHSvEd1QUGGFfCtQdmm2GdTSzUvQgXFvtaikPpEv5uNrLTfosJ",
+      "sigOk": true
+    }
+  ]
+}

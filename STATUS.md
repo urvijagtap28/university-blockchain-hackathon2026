@@ -1,6 +1,6 @@
 # Status (update after every milestone)
 
-Last updated: Tue Nov 17 (payments hardened, submitter agent built; all verified on devnet against the STUB verifier only; real verifier still needs an amd64 host).
+Last updated: Tue Nov 17 evening (first REAL-verifier demo run passed on Person B's amd64 laptop; Mac-side work verified against the stub only).
 
 ## Checklist
 - [x] Environment check: macOS 26.6 arm64, node v26.10.0, npm 11.19.1, python3 3.14.7. docker 29.10.0 and pnpm 11.1.1 now present (checked 2026-11-16); gh not checked
@@ -15,9 +15,11 @@ Last updated: Tue Nov 17 (payments hardened, submitter agent built; all verified
 - [x] verify.py returns all three verdicts with control run: verified by builder only (Person B, 34/34 tests, backtest 6/6 real reproduced, 7/7 hand-made fakes forfeited, on x86_64). Not run by us (Mac cannot). Server treats it as amd64-only.
 - [x] /report endpoint against the stub/fake verifiers (BUILD_LOG.md): $0 settle on handler exception (incl. escaped throw), verifier timeout at the 60 s cap, bad output; settle clamped to cap; settlement_pending polling (45 s) verified only via a proxy simulating the pending status; concurrency cap 2 (3rd concurrent request got busy, settled $0); per-wallet rate limit 1/10 s (limited paid request settled $0); 64 KB cap (413). NOT done: real Docker verifier through the server, real settlement_pending from the facilitator, gate release after timeout on devnet. Unconfirmed settle returns 402 settle_failed and the bond only returns via facilitator abandon_close (~10 min).
 - [x] Agent script (agent/): per-report cap, session budget, allowlist, approval prompt, 429/busy backoff, JSON-lines decision log; `node test/unit.ts` prints agent unit ok; devnet (stub): reproduced refund, not_reproduced forfeit, refusals before signing, approval n/y. NOT verified: prompt on a real interactive terminal, busy retry live, redirects against a real server, any non-localhost endpoint.
-- [ ] Signed verdict log (Option A decided 2026-11-17: read verifier/cases.json; separate devnet-only signing key)
+- [x] Signed verdict log (Option A decided 2026-11-17: read verifier/cases.json; separate devnet-only signing key): server/src/verdictlog.ts, verify-log.ts; `node test/verdictlog.test.ts` -> verdictlog ok, `node test/recorder.test.ts` -> recorder ok, `node demo/run.mjs --analyze demo/run` -> ALL CHECKS PASSED (re-run 2026-11-17). Verified against STUB verdicts only; not run with the real verifier. Not checked: that every Option A field in docs/INTERFACES.md is written.
 - [ ] OPTIONAL, only after real verifier, verdict log, demo runner and clean-machine test all pass: tiny static results page rendering RESULTS.md with explorer links to tx signatures (user wants it on the list; first on the cut list)
 - [x] Backtest run, backtest/RESULTS.md generated (2026-11-16, f2af4bf): real bugs 6/6 reproduced, 0 wrongly forfeited; 7 hand-made fakes 7/7 forfeited; 30 cross-case real inputs 17 reproduced / 8 forfeited / 5 inconclusive; 0 failures. No genuine crash-on-both or flaky result found (not faked).
+- [x] First real-verifier run (Person B, WSL2 Ubuntu x86_64, Docker linux/amd64, `bash scripts/demo.sh --real`, exit 0, 2026-11-17 19:14-19:16 ET, branch at 4262375): 2 real bugs reproduced (bond returned), 3 hand-made fakes not_reproduced (forfeited), 0 wrongly forfeited, 0 inconclusive, 0 errors; log verified against signer ASYuieG7nRUN7ecnLVGGUtoeLSER8KEwCq5qYmt1C3Cx; log head seq 4 sha256 302a6a41f75b6cc926bd00a78f51acb77cf38e56c3c1c8b9f0005d55740277d3. Run by B, not reproduced by us. WE checked the 5 settle txs on-chain from the Mac via RPC getTransaction (no tx error; reproduced txs: buyer +0.25 USDC; forfeited txs: payTo +0.25 USDC). Deposit txs were not recorded by the demo (settle txs only). Still unverified: hanging input at the 60 s cap with real Docker, concurrency with the real verifier, sandbox security probes, real settlement_pending.
+- [x] Sandbox probes on amd64 (Person B, WSL2, Docker 29.9.3, 6e2fa19): probes 23 PASS / 2 WARN / 0 FAIL, cap test 8 PASS / 0 FAIL, no leftover containers; evidence in docs/evidence/sandbox-amd64-2026-11-17/. WARNs: writable /dev/shm (left as is), image env var names. Kill tests are INDUCED hangs; server 60 s cap with the real verifier and concurrency NOT tested; not an escape test. Open P2: verify.py swallows a failed `docker kill` (B adding best-effort `docker rm -f` on sandbox).
 - [ ] One-command demo passes on a clean machine
 - [ ] README complete
 - [ ] Demo video (under 3:00)
@@ -32,14 +34,15 @@ Last updated: Tue Nov 17 (payments hardened, submitter agent built; all verified
 - Open human items: H-005 (Person B setting up WSL Ubuntu + Docker, has not yet run scripts/rerun_gate.sh). Resolved 2026-11-17: H-006 (B's laptop hosts the real verifier and the recorded run, with new devnet-only keys; untrusted proofs run on the same machine as those keys, README must say so), H-007 (libucl via ARVO approved, fix-image caveat accepted), H-003, H-004. Verdict log signer public key on the Mac (stub runs only): 6vYi5vh11HPCtFDiY7uCdwFt7shT3maXXPTen8PAFNGY; the demo host needs its own LOG_SIGNING_KEY. Demo set (2 real bugs + 3 hand-made fakes, demo/manifest.json) approved by user 2026-11-17; hand-made wording: random-bytes fake is a robustness check, not a model of LLM slop; RESULTS.md must disclose the 0-byte, 6 KB and 40 KB fakes were dropped from the demo (still in backtest). H-005 PASSED (B, WSL clean clone, f38958e: vul 3/3 heap-buffer-overflow ucl_parser.c:1036, fix clean, verify.py reproduced). B wallets funded (buyer 20 USDC + 0.5 SOL, seller 20 USDC, facilitator 1 SOL; mint 4zMMC9sr...DncDU checked in explorer).
 - Spike used self-hosted facilitator; CDP-hosted facilitator untested (see docs/SPIKE_NOTES.md).
 - Devnet tx signatures for README: stub-verifier runs only (server skeleton, BUILD_LOG.md); none yet from the real verifier, so no README-grade returned/forfeited pair.
-- curl primary-source numbers: not fetched.
-- Prior-art check: not done.
+- curl primary-source numbers: fetched 2026-11-17 (docs/verified-facts.md); a person should re-open the links.
+- Prior-art check: done 2026-11-17 (docs/verified-facts.md); strong overlap on refundable bug-report deposits (Cantina, Decred, Cohen proposal), so no novelty claim.
+- NOT demonstrated: realistic LLM-generated slop. The demo and backtest fakes are hand-made and labeled that way.
 
 ## Guardrails to implement
 - DONE in server/ (stub refused unless ALLOW_STUB_VERIFIER=1, settled $0 on devnet, BUILD_LOG.md); still to re-test with the real verifier. /report must fail closed: if verifier output has `"stub": true` outside test mode, settle $0 and return an error. (verifier/verify_stub.py is the filename-routed stub; verifier/verify.py is real and never emits stub.)
 
 ## Next action
-1. Person B: H-005 gate re-run on x86; answer H-006 and H-007.
-2. On the amd64 host: real verifier through the server end to end, verdict log with case id and digests (docs/INTERFACES.md), QE sandbox security probes, three-verdict run (reproduced, forfeited, flaky/timeout).
-3. Set AGENT_AUTO_APPROVE_USD=0.25 in .env for non-interactive demo runs.
-4. Then: demo runner, README (Solana section, known weaknesses, unverified list), video. A stale facilitator on port 3000 was killed by mistake on 2026-11-17 (unused).
+1. Get B's real RESULTS.md, run log and signer key into the repo as evidence (do not commit the Mac's stub RESULTS.md as the results); decide where (e.g. docs/evidence/).
+2. Real README signatures block: use the real settle txs above (one returned, one forfeited), labeled as settle txs.
+3. Still to do on the amd64 host: hanging-input 60 s cap with real Docker, sandbox security probes, clean-machine test from a fresh clone.
+4. Fix .env.example duplicate SVM_RECEIVER_AUTHORIZER_PRIVATE_KEY (B still sees it), then README TODOs, video, Devpost.
