@@ -1,4 +1,5 @@
-// QE_FUNCTIONAL round 2 helpers (new DOM: tabs overview/submit/run=Activity/results=Ledger/inbox/policy=Agent; file chooser via label .drop)
+// QE_FUNCTIONAL helpers. Single-board layout (user restructure, commit "UI: single-board layout"): the board (Reports #panel-submit, Console #panel-run, maintainer pane #panel-overview) is always visible;
+// Ledger (#panel-results) and Agent (#panel-policy) are drawers opened by #tab-results / #tab-policy; the Inbox tab, Overview cards and radio chips are gone (see BUILD_LOG.md). File chooser via label .drop.
 // (round 1 helpers) (key-free: reads .env only to get SVM_RPC_URL and to DERIVE public addresses; never prints or sends key material).
 // Headless Chrome over the DevTools Protocol (node global WebSocket), RPC reads, balance snapshots.
 import { createRequire } from "node:module";
@@ -76,7 +77,21 @@ export class Page {
   async clickText(css, text) { const i = await this.eval(`(()=>{const l=[...document.querySelectorAll(${JSON.stringify(css)})];const e=l.find(x=>x.textContent.includes(${JSON.stringify(text)}));if(!e)return null;e.setAttribute('data-qe','1');return 1})()`); if (!i) throw new Error(`no ${css} with text ${text}`); await this.click("[data-qe='1']"); await this.eval(`document.querySelector("[data-qe='1']")?.removeAttribute('data-qe')`); }
   async pickFile(filePath) { this.chooser = null; await this.click(".drop"); for (let i = 0; i < 40 && !this.chooser; i++) await sleep(100); if (!this.chooser) throw new Error("file chooser did not open"); await this.c.send("DOM.setFileInputFiles", { files: [filePath], backendNodeId: this.chooser.backendNodeId }); await sleep(400); }
   async shot(name) { const r = await this.c.send("Page.captureScreenshot", { format: "png" }); const f = path.join(SCRATCH, "shots", name + ".png"); writeFileSync(f, Buffer.from(r.data, "base64")); return f; }
-  async tab(name) { await this.click("#tab-" + name); await sleep(700); }
+  /** single board: "results" / "policy" open the Ledger / Agent drawer (any open drawer is closed first); submit / run / overview are always visible (no-op); inbox no longer exists. */
+  async tab(name) {
+    await this.eval(`['ledger','agent','trust','confirm'].forEach(i => { const d = document.getElementById(i); if (d && d.open) d.close(); })`);
+    if (name === "results" || name === "policy") { await this.click("#tab-" + name); await sleep(700); }
+    else if (name === "inbox") throw new Error("the Inbox tab was removed by the single-board layout");
+    else await sleep(300);
+  }
+  /** pick a Reports row by its label (old chip labels like "Hand made fake near miss" are mapped to the compact row name "Near miss") */
+  async chip(label) {
+    const want = String(label).replace(/^hand made fake /i, "").toLowerCase();
+    const ok = await this.eval(`(()=>{document.querySelectorAll('[data-qe-run]').forEach(x=>x.removeAttribute('data-qe-run'));const li=[...document.querySelectorAll('#panel-submit .rep')].find(l=>l.querySelector('.rep-n').textContent.toLowerCase().replace(/\\s+/g,' ').includes(${JSON.stringify(want)}));if(!li)return false;li.querySelector('button').setAttribute('data-qe-run','1');return true})()`);
+    if (!ok) throw new Error("no Reports row for " + label); await sleep(100);
+  }
+  /** click the Run button of the row chosen with chip(), or of the last row (an uploaded file) after pickFile(); opens the confirm dialog */
+  async runSelected() { await this.eval(`(()=>{if(!document.querySelector('[data-qe-run]')){const b=[...document.querySelectorAll('#panel-submit .rep button')].pop();if(b)b.setAttribute('data-qe-run','1')}})()`); await this.click("[data-qe-run='1']"); }
   text(sel) { return this.eval(`document.querySelector(${JSON.stringify(sel)})?.innerText ?? null`); }
   async close() { try { await this.c.send("Page.close"); } catch { /* ok */ } try { this.c.ws.close(); } catch { /* ok */ } }
 }

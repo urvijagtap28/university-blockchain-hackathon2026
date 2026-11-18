@@ -18,17 +18,17 @@ async function check(label, setup) {
   const r = await ev(`(() => { const t = document.body.innerText; return JSON.stringify({ xss: window.__xss ?? null, bad: document.querySelectorAll('img,svg:not(.ic),script:not([src]),#injected,a[href^="javascript"],[onerror],[onload]').length, injectedId: !!document.getElementById('injected'), textHasPayload: t.includes('<img src=x') , textHasScriptTag: t.includes('<script>'), len: t.length }); })()`);
   out.push([label.name ?? label, r]); console.log(label.name ?? label, r);
 }
-const tabs = ["submit", "run", "results", "inbox", "policy"];
-for (const t of tabs) await check({ name: "tab:" + t }, async () => { await ev(`document.getElementById('tab-${t}').click()`); await sleep(500); });
-await check({ name: "run (demo submit through the UI)" }, async () => {
-  await ev(`document.getElementById('tab-submit').click()`); await sleep(300);
-  await ev(`document.querySelector('input[name=demo]').click()`); await sleep(200);
-  await ev(`document.getElementById('submit-btn').click()`); await sleep(300);
+// single-board layout: no tabs. The board (Reports / Console / maintainer pane) is always visible; Ledger and Agent are drawers opened from the top bar, the trust drawer from the badge.
+const drawers = [["ledger", "tab-results"], ["agent", "tab-policy"], ["trust", "#headline .trustbtn"]];
+await check({ name: "board (reports, console, maintainer pane)" }, async () => { await sleep(300); console.log("maintainer pane sample:", (await ev(`document.getElementById('panel-overview').innerText.slice(0,300)`)).replace(/\n/g, " | ")); });
+for (const [d, opener] of drawers) await check({ name: "drawer:" + d }, async () => { await ev(opener.startsWith("tab-") ? `document.getElementById('${opener}').click()` : `document.querySelector('${opener}').click()`); await sleep(500); });
+await check({ name: "run (demo Run button through the UI)" }, async () => {
+  await ev(`document.querySelector('#panel-submit .rep button').click()`); await sleep(300);
   await ev(`document.getElementById('confirm-ok').click()`); await sleep(2500);
   console.log("run panel text sample:", (await ev(`document.getElementById('panel-run').innerText.slice(0,400)`)).replace(/\n/g, " | "));
 });
-await check({ name: "results after run" }, async () => { await ev(`document.getElementById('tab-results').click()`); await sleep(500); });
-await check({ name: "inbox after run" }, async () => { await ev(`document.getElementById('tab-inbox').click()`); await sleep(500); console.log("inbox sample:", (await ev(`document.getElementById('panel-inbox').innerText.slice(0,500)`)).replace(/\n/g, " | ")); });
+await check({ name: "ledger drawer after run" }, async () => { await ev(`document.getElementById('tab-results').click()`); await sleep(500); await ev(`document.querySelectorAll('#panel-results .exp').forEach(b => b.click())`); await sleep(200); });
+await check({ name: "agent drawer after run" }, async () => { await ev(`document.getElementById('tab-policy').click()`); await sleep(500); console.log("agent sample:", (await ev(`document.getElementById('panel-policy').innerText.slice(0,300)`)).replace(/\n/g, " | ")); });
 await check({ url: "/?fixtures=1&mode=real&xss=1", name: "fixtures=1 on live server" }, async () => { console.log("fixtures-mode page text:", (await ev(`document.body.innerText.slice(0,200)`)).replace(/\n/g, " | ")); });
 await check({ url: "/?<img src=x onerror=window.__xss=1>#<img src=x onerror=window.__xss=1>", name: "payload in query+hash" });
 console.log("console/log events:", logs.length); logs.slice(0, 8).forEach(l => console.log("  ", l));

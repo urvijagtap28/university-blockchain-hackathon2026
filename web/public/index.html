@@ -27,11 +27,13 @@
   </div>
 </main>
 <dialog id="confirm" aria-labelledby="confirm-title" class="modal">
+  <div id="confirm-bars" class="dbars"></div>
   <h2 id="confirm-title">Approve payment</h2>
   <div class="amt"><span class="num" id="confirm-amt">$0.25</span><span class="mute" id="confirm-info"></span></div>
   <dl class="kv">
     <dt>Input</dt><dd id="confirm-what"></dd>
     <dt>Wallet</dt><dd id="confirm-wallet" class="mono"></dd>
+    <dt>Budget left</dt><dd id="confirm-budget"></dd>
   </dl>
   <div class="actions end">
     <button id="confirm-cancel" type="button" class="btn" autofocus>Cancel</button>
@@ -40,14 +42,17 @@
 </dialog>
 <dialog id="ledger" aria-labelledby="ledger-title" class="drawer wide">
   <div class="drawer-h"><h2 id="ledger-title">Ledger</h2><button id="ledger-close" type="button" class="btn icon-btn" aria-label="Close"></button></div>
+  <div id="ledger-bars" class="dbars"></div>
   <div class="drawer-b"><section id="panel-results" aria-labelledby="ledger-title"></section></div>
 </dialog>
 <dialog id="agent" aria-labelledby="agent-title" class="drawer wide">
   <div class="drawer-h"><h2 id="agent-title">Agent</h2><button id="agent-close" type="button" class="btn icon-btn" aria-label="Close"></button></div>
+  <div id="agent-bars" class="dbars"></div>
   <div class="drawer-b"><section id="panel-policy" aria-labelledby="agent-title"></section></div>
 </dialog>
 <dialog id="trust" aria-labelledby="trust-title" class="drawer">
   <div class="drawer-h"><h2 id="trust-title">Log verification</h2><button id="trust-close" type="button" class="btn icon-btn" aria-label="Close"></button></div>
+  <div id="trust-bars" class="dbars"></div>
   <div id="trust-body" class="drawer-b"></div>
 </dialog>
 <script src="evidence.js"></script>

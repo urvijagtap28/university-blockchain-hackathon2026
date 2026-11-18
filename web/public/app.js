@@ -15,6 +15,7 @@
     inbox: Q.get("inbox") || "ok",      // ok | empty | xss
     xss: Q.get("xss") === "1",
     busy: Q.get("busy") === "1",
+    lowbudget: Q.get("lowbudget") === "1", // remaining session budget $0.75 (fixtures only)
     scenario: Q.get("scenario") || "auto", // auto | success_returned | success_forfeited | refused | settlement_pending | error | xss | busy | budget_exhausted | rate_limited
     base: new URL("../fixtures/", location.href).href,
     delay: Number(Q.get("delay") || 700),
@@ -159,11 +160,11 @@
   let fxInbox = null;
   async function api(path) {
     if (!FIX) return getJson(path);
-    if (path === "/api/config") { const c = await fx(FX.busy ? "config.busy.json" : FX.xss ? "config.xss.json" : "config." + FX.mode + ".json"); if (FX.busy && FX.mode === "real") c.mode = "real"; return c; }
+    if (path === "/api/config") { const c = await fx(FX.busy ? "config.busy.json" : FX.xss ? "config.xss.json" : "config." + FX.mode + ".json"); if (FX.busy && FX.mode === "real") c.mode = "real"; if (FX.lowbudget) { c.session.remainingAtomic = "750000"; c.session.spentAtomic = String(Number(c.session.budgetAtomic) - 750000 - Number(c.session.reservedAtomic)); } return c; }
     if (path === "/api/log") {
       if (FX.log === "error") throw new Error("fixture: log unavailable");
       const real = FX.mode === "real";
-      const name = FX.log === "tampered" ? (real ? "log.real.tampered.json" : "log.tampered.json") : FX.log === "empty" ? "log.empty.json" : FX.log === "returned_only" ? (real ? "log.real.returned_only.json" : "log.stub.returned_only.json") : FX.log === "xss" ? "log.xss.json" : real ? "log.real.json" : "log.stub.json";
+      const name = FX.log === "unverified" ? (real ? "log.real.unverified.json" : "log.stub.unverified.json") : FX.log === "tampered" ? (real ? "log.real.tampered.json" : "log.tampered.json") : FX.log === "empty" ? "log.empty.json" : FX.log === "returned_only" ? (real ? "log.real.returned_only.json" : "log.stub.returned_only.json") : FX.log === "xss" ? "log.xss.json" : real ? "log.real.json" : "log.stub.json";
       const l = await fx(name); l.mode = FX.mode; return l;
     }
     if (path === "/api/inbox") {
@@ -245,6 +246,7 @@
     if (!cfg) return;
     const verifyOk = !!(logData && logData.verify && logData.verify.ok === true);
     const V = (logData && logData.verify) || {};
+    renderDialogBars();
     // mode pill
     let mp, mtext, mnote = [];
     if (cfg.mode === "stub") {
@@ -266,18 +268,27 @@
     // budget meter
     const b = el("div", "budget"); b.title = "Session budget: " + usd(cfg.session.spentAtomic) + " spent, " + usd(cfg.session.reservedAtomic) + " reserved, " + usd(cfg.session.remainingAtomic) + " left of " + usd(cfg.session.budgetAtomic);
     b.appendChild(meter(cfg.session, true)); b.appendChild(el("span", "num", usd(cfg.session.remainingAtomic))); b.appendChild(el("span", "bl", "left")); tr.appendChild(b);
-    // bars
-    if (cfg.mode === "stub") { const s = el("div", "bar-msg stub banner stub"); s.setAttribute("role", "alert"); s.appendChild(icon("alert", "sm")); s.appendChild(el("span", "", "STUB MODE: not a real sandbox run")); w.appendChild(s); }
-    if (cfg.mode !== "stub" && cfg.mode !== "real") w.appendChild(el("div", "bar-msg fail")).appendChild(errorBox("UNKNOWN RUN MODE (" + cfg.mode + "): do not treat anything here as evidence."));
+    // bars (the same set is repeated inside every dialog, because a modal dialog covers the page header)
+    statusBars(true).forEach(b => w.appendChild(b));
+  }
+  // Mode/verification bars. Always built from cfg + log, never dismissable. withView adds the "View" button (top bar only).
+  function statusBars(withView) {
+    const out = []; if (!cfg) return out;
+    const V = (logData && logData.verify) || {}, verifyOk = !!(logData && logData.verify && logData.verify.ok === true);
+    if (cfg.mode === "stub") { const s = el("div", "bar-msg stub banner stub"); s.setAttribute("role", "alert"); s.appendChild(icon("alert", "sm")); s.appendChild(el("span", "", "STUB MODE: not a real sandbox run")); out.push(s); }
+    if (cfg.mode !== "stub" && cfg.mode !== "real") { const b = el("div", "bar-msg fail"); b.appendChild(errorBox("UNKNOWN RUN MODE (" + cfg.mode + "): do not treat anything here as evidence.")); out.push(b); }
     if (logData && !verifyOk) {
       // Compact bar; the broken line names live in the drawer behind "View".
       const bar = el("div", "bar-msg fail"); bar.setAttribute("role", "alert"); bar.appendChild(icon("alert", "sm"));
       bar.appendChild(el("span", "grow", "CHECKS FAILED: signed log did not verify (" + (V.verified ?? "?") + " of " + (V.records ?? "?") + " entries)"));
-      const vb = el("button", "barlink", "View"); vb.type = "button"; vb.setAttribute("aria-haspopup", "dialog"); vb.addEventListener("click", () => openTrust()); bar.appendChild(vb); w.appendChild(bar);
+      if (withView) { const vb = el("button", "barlink", "View"); vb.type = "button"; vb.setAttribute("aria-haspopup", "dialog"); vb.addEventListener("click", () => openTrust()); bar.appendChild(vb); }
+      out.push(bar);
     } else if (cfg.mode === "real" && !logData) {
-      const bar = el("div", "bar-msg fail"); bar.setAttribute("role", "alert"); bar.appendChild(icon("alert", "sm")); bar.appendChild(el("span", "", "Real mode, log not checked (" + (logErr || "no log") + ")")); w.appendChild(bar);
+      const bar = el("div", "bar-msg fail"); bar.setAttribute("role", "alert"); bar.appendChild(icon("alert", "sm")); bar.appendChild(el("span", "", "Real mode, log not checked (" + (logErr || "no log") + ")")); out.push(bar);
     }
+    return out;
   }
+  function renderDialogBars() { ["confirm", "ledger", "agent", "trust"].forEach(id => { const h = $(id + "-bars"); if (h) { h.replaceChildren(); statusBars(false).forEach(b => h.appendChild(b)); } }); }
 
   // ---------- Submit ----------
   function quoteInfo() {
@@ -320,7 +331,9 @@
       const st = el("div", "rep-s");
       if (live) st.appendChild(pill("chk", "Running", "spin")); else if (rec) { st.appendChild(verdictPill(rec.verdict)); st.appendChild(el("span", "num mute", rec.settledAtomic === null ? "" : String(rec.settledAtomic) === "0" ? "bond back" : "-" + usd(rec.settledAtomic))); } else st.appendChild(el("span", "mute", "not run yet"));
       if (live) st.firstChild.querySelector(".ic").classList.add("spin");
-      row(chipName(d), d.handMade ? el("span", "tag", "HAND-MADE") : el("span", "tag real", "REAL"), st, () => { sel = { demo: d, file: null, fileErr: null }; pendingQueue = null; openConfirm(); }, live);
+      // Stub verdicts follow the filename, so a REAL / HAND-MADE tag beside one would mislead: tags show in real mode, or in stub mode only while no verdict is shown.
+      const showTag = cfg.mode !== "stub" || (!rec && !live);
+      row(chipName(d), !showTag ? null : d.handMade ? el("span", "tag", "HAND-MADE") : el("span", "tag real", "REAL"), st, () => { sel = { demo: d, file: null, fileErr: null }; pendingQueue = null; openConfirm(); }, live);
     });
     if (sel.file) row(sel.file.name, el("span", "tag", "YOURS"), el("div", "rep-s mute", sel.file.size < 1024 ? sel.file.size + " B" : (sel.file.size / 1024).toFixed(1) + " KB"), () => { pendingQueue = null; openConfirm(); }, false);
     p.appendChild(list);
@@ -342,18 +355,40 @@
     if (submitMsg) { const m = errorBox(submitMsg.text); if (submitMsg.kind === "busy") m.classList.add("calm"); foot.appendChild(m); }
     p.appendChild(foot);
   }
+  // Money gate. n x cap is the worst case (a forfeit settles the whole cap; a return settles $0). Refuse up front, before any request, when it cannot fit the remaining session budget.
+  const capUsdText = () => usdNum(cfg.policy.perReportCapUsd);
+  function budgetProblem(n) {
+    const cap = capAtomic(), rem = cfg.session ? Number(cfg.session.remainingAtomic) : NaN;
+    if (cap === null || !Number.isFinite(rem)) return "Cannot confirm the cap or the remaining session budget, so nothing was submitted.";
+    if (n * cap > rem) return "Refused up front, nothing was submitted: " + n + " \u00d7 " + usd(cap) + " = " + usd(n * cap) + " worst case is over the remaining session budget (" + usd(rem) + " left of " + usd(cfg.session.budgetAtomic) + "). Limit hit: session budget.";
+    return null;
+  }
   function openConfirm() {
-    const cap = usdNum(cfg.policy.perReportCapUsd);
-    $("confirm-amt").textContent = cap + (pendingQueue ? " each" : "");
-    const what = pendingQueue ? pendingQueue.length + " demo inputs, one after another (REAL and HAND-MADE)" : sel.demo ? (sel.demo.handMade ? "HAND-MADE: " : "") + chipName(sel.demo) : sel.file.name + " (" + sel.file.size + " bytes)";
+    const n = pendingQueue ? pendingQueue.length : 1;
+    const bp = budgetProblem(n);
+    if (bp) { pendingQueue = null; submitMsg = { kind: "err", text: bp }; renderSubmit(); return; }
+    const cap = capAtomic(), rem = Number(cfg.session.remainingAtomic);
+    $("confirm-title").textContent = pendingQueue ? "Approve up to " + n + " payments" : "Approve payment";
+    $("confirm-amt").textContent = usd(n * cap);
+    $("confirm-info").textContent = pendingQueue ? "worst case: " + n + " \u00d7 " + capUsdText() + ". Reports run one at a time, at least 11.5 s apart. Each bond is returned if reproduced or inconclusive, forfeited if not." : "worst case. Returned if reproduced or inconclusive, forfeited if not.";
+    $("confirm-budget").textContent = usd(rem) + " left of " + usd(cfg.session.budgetAtomic) + (pendingQueue ? " (" + usd(rem - n * cap) + " after)" : "");
+    const real = cfg.mode === "real";
+    const what = pendingQueue ? pendingQueue.length + " demo inputs, one after another" + (real ? " (REAL and HAND-MADE)" : "") : sel.demo ? (real && sel.demo.handMade ? "HAND-MADE: " : "") + chipName(sel.demo) : sel.file.name + " (" + sel.file.size + " bytes)";
     $("confirm-what").textContent = what;
     const wa = typeof cfg.wallet.buyerAddress === "string" ? cfg.wallet.buyerAddress : null; $("confirm-wallet").textContent = wa ? short(wa) : "not configured"; $("confirm-wallet").title = wa || "";
     const dlg = $("confirm"); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
   }
-  // "Run all": the same single-submit path, one input at a time. Every run keeps the per-report cap, session budget and rate limit; any refusal or error stops the queue.
-  let pendingQueue = null, queue = null;
+  // "Run all": the same single-submit path, strictly one input at a time (never concurrent), >= 11.5 s after the previous run ended (the server's own spacing; a 429 is only the backstop).
+  // Every run keeps the per-report cap, session budget and rate limit. The first refusal, error, lost connection or missing settlement stops the queue and says why.
+  const SPACING_MS = 11500;
+  let pendingQueue = null, queue = null, queueTimer = null, lastEndMs = 0;
+  function stopQueue(text) { const left = queue ? queue.length : 0; queue = null; if (queueTimer) { clearTimeout(queueTimer); queueTimer = null; } if (text) submitMsg = { kind: "err", text: text + (left ? " " + left + " not submitted." : "") }; renderSubmit(); }
   function nextInQueue() {
+    queueTimer = null;
     if (!queue || !queue.length) { queue = null; renderSubmit(); return; }
+    const bp = budgetProblem(1); if (bp) { stopQueue("Batch stopped. " + bp); return; }
+    const wait = lastEndMs + (FIX ? FX.delay : SPACING_MS) - Date.now();
+    if (wait > 0) { queueTimer = setTimeout(nextInQueue, wait); renderSubmit(); return; }
     sel = { demo: queue.shift(), file: null, fileErr: null }; doSubmit();
   }
   async function doSubmit() {
@@ -362,14 +397,14 @@
     // QE-W2-002: the "record is new" baseline comes from a fresh log read made now, before the POST (never from the page-load copy)
     let freshBase = null; const submitMs = Date.now();
     try { const L0 = await api("/api/log"); if (L0 && Array.isArray(L0.records)) freshBase = L0.records.reduce((m, x) => Math.max(m, Number(x.seq) + 1 || 0), 0); } catch (_) { freshBase = null; }
-    try { r = await postSubmit(sel); } catch (e) { queue = null; submitMsg = { kind: "err", text: "Submit failed: " + e.message + ". Nothing was paid (the request did not complete)." }; renderSubmit(); return; }
+    try { r = await postSubmit(sel); } catch (e) { stopQueue("Submit failed: " + e.message + ". Nothing was paid (the request did not complete)."); return; }
     if (r.status === 202 && r.body && r.body.jobId) {
       const sb = r.body.baselineSeq; // optional additive field: the server's log length at submit time
       startRun(r.body.jobId, Number.isSafeInteger(sb) && sb >= 0 ? Math.max(sb, freshBase || 0) : freshBase, submitMs); return;
     }
     const b = r.body || {}; const msg = typeof b.message === "string" ? b.message : "no message";
-    if (r.status === 429 && queue) { queue.unshift(sel.demo); const w = (Number(b.retryAfterSeconds) || 11) + 1; setTimeout(nextInQueue, w * 1000); renderSubmit(); return; }
-    queue = null;
+    if (r.status === 429 && queue) { queue.unshift(sel.demo); const w = (Number(b.retryAfterSeconds) || 11) + 1; queueTimer = setTimeout(nextInQueue, w * 1000); renderSubmit(); return; }
+    queue = null; if (queueTimer) { clearTimeout(queueTimer); queueTimer = null; }
     const m = { 409: "Busy (409): ", 422: "Refused (422, session budget): ", 429: "Rate limited (429): ", 413: "Too large (413): ", 403: "Blocked (403): ", 400: "Bad input (400): " }[r.status] || ("Error (HTTP " + r.status + "): ");
     submitMsg = { kind: r.status === 409 ? "busy" : "err", text: m + msg + (r.status === 429 && b.retryAfterSeconds ? " Retry in " + b.retryAfterSeconds + " s." : "") + " No payment was made." };
     refreshConfig(); renderSubmit();
@@ -380,11 +415,11 @@
   function newRun(jobId) { const steps = {}; STEPS.forEach(([k]) => steps[k] = { st: "pending", text: "" }); return { jobId, reportHash: null, steps, notes: [], outcome: null, error: null, lost: false, done: false, events: [], chain: null, verdict: null, verdictDetail: null, facts: {} }; }
   function startRun(jobId, baseSeq, submitMs) {
     run = newRun(jobId); runDone = false;
-    run.demoId = sel.demo ? sel.demo.id : null; run.name = sel.demo ? chipName(sel.demo) + (sel.demo.handMade ? " (hand-made)" : "") : sel.file ? sel.file.name : "proof";
+    run.demoId = sel.demo ? sel.demo.id : null; run.name = sel.demo ? chipName(sel.demo) + (sel.demo.handMade && cfg && cfg.mode === "real" ? " (hand-made)" : "") : sel.file ? sel.file.name : "proof";
     run.baseSeq = baseSeq === undefined ? null : baseSeq; run.submitMs = submitMs || 0; // only a record with seq >= baseSeq, the same hash and a timestamp not before submit can belong to this run (null: never adopt)
     renderRun(); renderSubmit(); $("panel-run").focus({ preventScroll: true });
     const mine = run;
-    openStream(jobId, onEvent, () => { if (!runDone && run === mine && !mine.lost) { mine.lost = true; queue = null; renderRun(); recover(mine); } });
+    openStream(jobId, onEvent, () => { if (!runDone && run === mine && !mine.lost) { mine.lost = true; if (queue) stopQueue("Batch stopped: the live connection to " + mine.name + " was lost."); renderRun(); recover(mine); } });
   }
   // After a dropped stream: look for the signed record of THIS proof hash (bounded retries). Never invents an outcome.
   async function recover(r) {
@@ -440,9 +475,17 @@
       run.outcome = { kind: d.bondOutcome, atomic: d.settledAtomic, tx: d.txSignature };
       if (run.verdictEv && run.verdictEv.verdict === "error") setVerdictStep("error", run.verdictEv.detail, d.settledAtomic);
     } else if (t === "error") { run.error = { message: d.message, atomic: d.settledAtomic }; if (run.verdictEv && run.verdictEv.verdict === "error") setVerdictStep("error", run.verdictEv.detail, d.settledAtomic); }
-    else if (t === "done") { run.done = true; runDone = true; if (stream) stream.close(); refreshConfig(); refreshLog(); if (queue) setTimeout(nextInQueue, 1500); }
+    else if (t === "done") { run.done = true; runDone = true; if (stream) stream.close(); lastEndMs = Date.now(); refreshConfig(); refreshLog(); if (queue) afterBatchRun(); }
     if (t === "done") STEPS.forEach(([k]) => { if (run.steps[k].st === "pending" || run.steps[k].st === "active") run.steps[k] = { st: "skip", text: "not reached" }; });
     renderRun();
+  }
+  // Continue a batch only after a clean, settled run with a known verdict; anything else stops it and is shown.
+  function afterBatchRun() {
+    const r = run, name = r.name;
+    if (r.refused) return stopQueue("Batch stopped: " + name + " was refused (" + money(r.steps.policy.text || "policy") + ").");
+    if (r.error) return stopQueue("Batch stopped: " + name + " ended with an error (" + money(r.error.message) + ").");
+    if (!KNOWN.includes(r.verdict) || !r.outcome) return stopQueue("Batch stopped: " + name + " did not finish with a settled verdict. Check the Ledger.");
+    queueTimer = setTimeout(nextInQueue, 300); renderSubmit();
   }
   function stepper() {
     const ol = el("ol", "stepper"); ol.setAttribute("aria-label", "Progress");
@@ -582,10 +625,19 @@
 
   // ---------- Headline + maintainer pane ----------
   const newest = list => list.slice().sort((a, b) => b.seq - a.seq)[0] || null;
+  // One honest line, by mode. Stub verdicts follow the file name, so the stub line says so; real mode states the rule, and only while the signed log verifies.
+  function headlineNode() {
+    const cap = cfg && cfg.policy ? usdNum(cfg.policy.perReportCapUsd) : null;
+    let t = "";
+    if (cfg && cfg.mode === "stub") t = "Rehearsal: stub verdicts follow the filename, not a sandbox.";
+    else if (cfg && cfg.mode === "real") t = !logData ? "The signed log is not checked. Do not trust these results." : (!logData.verify || logData.verify.ok !== true) ? "The signed log did not verify. Do not trust these results." : "A crash that reproduces reaches a maintainer. A clean run forfeits the " + (cap || "$0.25") + " bond.";
+    else if (cfg) t = "Unknown run mode: do not treat anything here as evidence.";
+    return el("h2", "", t);
+  }
   function renderOverview() {
     const h = $("headline"), p = $("panel-overview"); h.replaceChildren(); p.replaceChildren();
-    h.appendChild(el("h2", "", "Only reports that crash the library reach a maintainer."));
-    p.appendChild(paneHead("For a maintainer", info("What this pane is", "Reproduced reports only: the sandbox saw the expected ASan error on the vulnerable build and a clean fixed build. The sandbox is a filter, not a judge; a human still triages these.")));
+    h.appendChild(headlineNode());
+    p.appendChild(paneHead("For a maintainer", info("What this pane is", "Reproduced reports only: the sandbox saw the expected ASan error on the vulnerable build and a clean fixed build. The sandbox is a filter, not a judge: a crash on the vulnerable build is not proof of a valid bug, inconclusive runs are not listed here, and a human still triages these.")));
     if (logErr) { p.appendChild(errorBox("Could not load the log: " + logErr, loadLog)); return; }
     if (!logData) { p.appendChild(skeleton(3)); return; }
     const L = logData, recs = L.records, good = recs.filter(r => r.sigOk === true);
@@ -598,10 +650,16 @@
     if (inc) sum.appendChild(el("span", "num", inc + " inconclusive"));
     sum.appendChild(trustBadge(L.verify)); h.appendChild(sum);
     const list = el("ul", "mnt");
-    if (!rep.length) list.appendChild(el("li", "mnt-empty", "Nothing yet. Reports that do not reproduce never show up here."));
+    if (!rep.length && !recs.some(r => r.sigOk !== true && r.verdict === "reproduced")) list.appendChild(el("li", "mnt-empty", "Nothing yet. Reports that do not reproduce never show up here."));
     rep.slice().sort((a, b) => b.seq - a.seq).forEach(r => {
       const li = el("li", "mnt-i"); const t = el("div", "rep-t"); const nm = el("span", "rep-n", rowName(r)); nm.title = r.label || "Unlabeled submission"; t.appendChild(nm); const tg = labelTag(r); if (tg) t.appendChild(tg); li.appendChild(t);
       li.appendChild(evidenceNode(r.verdict, r.detail, false)); li.appendChild(txBtn(r.txSignature, false)); list.appendChild(li);
+    });
+    // Records whose signature did not verify but claim "reproduced": shown only as unverified, with no label, evidence, link or copy.
+    recs.filter(r => r.sigOk !== true && r.verdict === "reproduced").sort((a, b) => b.seq - a.seq).forEach(r => {
+      const li = el("li", "mnt-i unv"); const t = el("div", "rep-t"); t.appendChild(el("span", "rep-n", rowName(r))); t.appendChild(pill("err", "Unverified record", "alert")); li.appendChild(t);
+      li.appendChild(el("p", "mute sm", "The signature did not verify. Do not triage this."));
+      list.appendChild(li);
     });
     p.appendChild(list);
   }
@@ -739,7 +797,8 @@
   // dialogs
   $("confirm-info").textContent = "Returned if reproduced or inconclusive. Forfeited if not.";
   $("confirm-cancel").addEventListener("click", () => { pendingQueue = null; $("confirm").close(); });
-  $("confirm-ok").addEventListener("click", () => { $("confirm").close(); if (pendingQueue) { queue = pendingQueue; pendingQueue = null; nextInQueue(); } else doSubmit(); });
+  $("confirm-ok").addEventListener("click", () => { const q = pendingQueue; pendingQueue = null; $("confirm").close(); if (q) { queue = q; lastEndMs = 0; nextInQueue(); } else doSubmit(); });
+  $("confirm").addEventListener("close", () => { pendingQueue = null; });
   $("confirm").addEventListener("click", e => { if (e.target === $("confirm")) { pendingQueue = null; $("confirm").close(); } });
   $("trust-close").appendChild(icon("x"));
   $("trust-close").addEventListener("click", () => $("trust").close());
@@ -749,7 +808,7 @@
     const fb = $("fixbar"); fb.hidden = false;
     fb.appendChild(el("strong", "", "FIXTURE MODE")); fb.appendChild(document.createTextNode(" no backend. "));
     const d = el("details"); d.appendChild(el("summary", "", "Params"));
-    d.appendChild(el("p", "mono sm", "mode=stub|real, log=ok|tampered|empty|xss|error, inbox=ok|empty|xss, xss=1, busy=1, scenario=success_returned|success_forfeited|refused|settlement_pending|error|xss|busy|budget_exhausted|rate_limited|too_large|dropped|dropped_norecord, delay=ms. Current: mode=" + FX.mode + ", scenario=" + FX.scenario + "."));
+    d.appendChild(el("p", "mono sm", "mode=stub|real, log=ok|tampered|unverified|empty|xss|error, inbox=ok|empty|xss, xss=1, busy=1, scenario=success_returned|success_forfeited|refused|settlement_pending|error|xss|busy|budget_exhausted|rate_limited|too_large|dropped|dropped_norecord, delay=ms. Current: mode=" + FX.mode + ", scenario=" + FX.scenario + "."));
     fb.appendChild(d);
   }
   renderOverview(); renderSubmit(); renderRun(); renderResults(); renderPolicy();

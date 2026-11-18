@@ -359,3 +359,10 @@ dialog::backdrop{background:rgba(5,6,9,.72)}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+/* status bars repeated inside dialogs (a modal covers the page header) */
+.dbars:empty{display:none}
+.dbars{padding:var(--s1) var(--s3) 0}
+.dbars .bar-msg{margin-bottom:var(--s1)}
+.modal .dbars{padding:0 0 var(--s1)}
+.mnt-i.unv{border-top-style:dashed;border-top-color:var(--line2);color:var(--mute)}

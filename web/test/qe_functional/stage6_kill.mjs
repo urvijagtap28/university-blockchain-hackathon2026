@@ -10,7 +10,7 @@ const runText = p => p.eval(`document.getElementById('panel-run').innerText`);
 try {
   await sleep(2500); const b0 = await balances(); const n0 = recs().length;
   const p = await br.newPage("http://127.0.0.1:4033/"); await p.tab("submit"); await p.pickFile(f);
-  await p.click("#submit-btn"); await p.waitFor(`document.getElementById('confirm').open`, 5000); await p.click("#confirm-ok");
+  await p.runSelected(); await p.waitFor(`document.getElementById('confirm').open`, 5000); await p.click("#confirm-ok");
   await p.waitFor(`[...document.querySelectorAll('#panel-run .stepper li')].some(li=>/^Signed, done/.test(li.getAttribute('aria-label')))`, 30000, 30);
   // agent tab decision stream first (the page must be able to reach the backend to open that tab), then back to Activity, then kill
   await p.tab("policy"); out.agentTab = await p.eval(`({budget:document.querySelector('.budget')?.title, text:document.getElementById('panel-policy').innerText, decisions:[...document.querySelectorAll('#panel-policy .tl-list li')].map(l=>l.innerText.replace(/\\n+/g,' | '))})`); await p.shot("s6_agent_stream");

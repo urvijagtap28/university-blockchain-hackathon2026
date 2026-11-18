@@ -54,27 +54,29 @@ const hostile = [
 writeFileSync(A.logFile, lines.concat(hostile.map(h => JSON.stringify(h))).join("\n") + "\n");
 const log = await (await fetch(A.base + "/api/log", { headers: A.H })).json();
 ok(!log.verify.ok, `A: tampered log: /api/log verify.ok=${log.verify.ok}, verified ${log.verify.verified}/${log.records.length}`);
-const tabs = ["overview", "submit", "run", "results", "inbox", "policy"];
+// single-board layout: no tabs. "board" = Reports + Console + maintainer pane (always visible); "results"/"policy" = Ledger/Agent drawers (opened by tab-results / tab-policy); the old inbox tab no longer exists.
+const tabs = ["board", "results", "policy", "trust"];
 const probe = `(() => { const t = document.body.innerText; return JSON.stringify({ xss: window.__xss ?? null, bad: document.querySelectorAll('img,svg:not(.ic),script:not([src]),#injected,a[href^="javascript"],[onerror],[onload],iframe,object,embed,link[rel=stylesheet][href^=http]').length, banner: document.getElementById('banners').innerText.slice(0,120), csp: window.__csp, len: t.length }); })()`;
 await send("Page.navigate", { url: A.base + "/" }); await sleep(1500);
 for (const t of tabs) {
-  await ev(`document.getElementById('tab-${t}').click()`); await sleep(500);
+  await ev(`['ledger','agent','trust','confirm'].forEach(i => { const d = document.getElementById(i); if (d.open) d.close(); })`);
+  if (t === "results" || t === "policy") { await ev(`document.getElementById('tab-${t}').click()`); await sleep(500); }
+  if (t === "trust") { await ev(`document.querySelector('#headline .trustbtn').click()`); await sleep(500); }
   if (t === "results") { await ev(`document.querySelectorAll('#panel-results .exp').forEach(b => b.click())`); await sleep(300); }
-  if (t === "inbox") { await ev(`document.querySelectorAll('#panel-inbox .hashbtn').forEach(b => b.click())`); await sleep(400); await ev(`document.querySelectorAll('#panel-inbox details summary, #panel-inbox [aria-expanded=false]').forEach(b => b.click())`); }
+  if (t === "board") await sleep(500);
   const r = JSON.parse(await ev(probe)); const hasBanner = /log|verif|tamper|check/i.test(r.banner);
   ok(r.xss === null && r.bad === 0 && r.csp.length === 0, `A tab:${t}: window.__xss=${r.xss}, injected/dangerous elements=${r.bad}, CSP violations=${JSON.stringify(r.csp)}, banner="${r.banner.replace(/\n/g, " ")}" (tamper banner shown: ${hasBanner})`);
-  if (t === "overview" || t === "results" || t === "inbox") await shot(`r2_A_${t}.png`);
+  if (t === "board" || t === "results" || t === "trust") await shot(`r2_A_${t}.png`);
 }
 // Activity: UI-driven run with hostile facts through the confirm dialog (fresh job)
-await ev(`document.getElementById('tab-submit').click()`); await sleep(300); await ev(`document.querySelector('input[name=demo]').click()`); await sleep(200);
-await ev(`document.getElementById('submit-btn').click()`); await sleep(300); await ev(`document.getElementById('confirm-ok').click()`); await sleep(3500);
+await ev(`['ledger','agent','trust'].forEach(i => { const d = document.getElementById(i); if (d.open) d.close(); })`);
+await ev(`document.querySelector('#panel-submit .rep button').click()`); await sleep(300); await ev(`document.getElementById('confirm-ok').click()`); await sleep(3500);
 const ra = JSON.parse(await ev(probe)); ok(ra.xss === null && ra.bad === 0 && ra.csp.length === 0, `A run (hostile D-019 facts via UI): __xss=${ra.xss}, bad elements ${ra.bad}, CSP ${JSON.stringify(ra.csp)}`);
 console.log("run panel text:", (await ev(`document.getElementById('panel-run').innerText.slice(0,500)`)).replace(/\n/g, " | ")); await shot("r2_A_run.png");
 const clip = JSON.parse(await ev(`JSON.stringify(window.__clip.map(s => ({ len: s.length, head: s.slice(0, 40) })))`));
 console.log("clipboard writes:", JSON.stringify(clip));
-const okClip = clip.length > 0 && clip.every(c => c.len === 64 && /^[0-9a-f]+$/.test(c.head.slice(0, 40)));
-ok(clip.length > 0 && clip.some(c => c.len === 64), `A clipboard: ${clip.length} copy click(s) captured; copies of valid 64-hex hashes present: ${clip.some(c => c.len === 64)}`);
-ok(clip.every(c => c.len === 64), `A clipboard: EVERY copy is a 64-char hash: ${okClip ? "yes" : "NO, hostile reportHash from the tampered log was copied verbatim: " + JSON.stringify(clip.filter(c => c.len !== 64))}`);
+// single-board layout: the maintainer pane has no copy-hash button any more, so the old "copies of valid 64-hex hashes" check cannot apply. The intent (a hostile reportHash is never copied verbatim) is kept as: NO clipboard write at all.
+ok(clip.length === 0, `A clipboard: ${clip.length} clipboard write(s) (no copy control exists in the single-board layout; hostile reportHash can never be copied)`);
 const reqs = events.filter(e => e.method === "Network.requestWillBeSent").map(e => e.params.request.url);
 const ext = reqs.filter(u => !u.startsWith(A.base + "/") && !u.startsWith("data:") && !u.startsWith("about:"));
 ok(ext.length === 0, `A network log: ${reqs.length} requests, non-origin: ${JSON.stringify(ext)}`);
@@ -94,8 +96,7 @@ await send("Fetch.enable", { patterns: [{ urlPattern: "*/events", requestStage: 
 const pump = setInterval(() => { while (events.length) { const j = events.shift(); if (j.method === "Fetch.requestPaused") { const jobId = /jobs\/([0-9a-f-]+)\/events/.exec(j.params.request.url)[1];
   const body = `id: 0\nevent: started\ndata: ${JSON.stringify({ jobId, reportHash: B.sha })}\n\n`;
   send("Fetch.fulfillRequest", { requestId: j.params.requestId, responseCode: 200, responseHeaders: [{ name: "content-type", value: "text/event-stream" }, { name: "cache-control", value: "no-store" }], body: Buffer.from(body).toString("base64") }); } } }, 20);
-await ev(`document.getElementById('tab-submit').click()`); await sleep(200); await ev(`document.querySelector('input[name=demo]').click()`); await sleep(200);
-await ev(`document.getElementById('submit-btn').click()`); await sleep(300); await ev(`document.getElementById('confirm-ok').click()`);
+await ev(`document.querySelector('#panel-submit .rep button').click()`); await sleep(300); await ev(`document.getElementById('confirm-ok').click()`);
 await sleep(5500); // recover() polls at 2.5 s: the new job's own record is not written until ~9 s
 const mid = await ev(`document.getElementById('panel-run').textContent`); await shot("r2_B_mid.png");
 const settledMid = /Bond forfeited|forfeit|Not reproduced|\$0\.25/.test(mid) && /read back from the signed verdict log/.test(mid);

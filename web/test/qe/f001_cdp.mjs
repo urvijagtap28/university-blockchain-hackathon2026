@@ -49,13 +49,13 @@ const pump = setInterval(async () => {
       send("Fetch.fulfillRequest", { requestId: j.params.requestId, responseCode: 200, responseHeaders: [{ name: "content-type", value: "text/event-stream" }, { name: "cache-control", value: "no-store" }], body: Buffer.from(body).toString("base64") }); }
     else if (j.method === "Fetch.requestPaused") {} } }, 20);
 await send("Page.navigate", { url: base + "/" }); await sleep(1500);
-await ev(`document.getElementById('tab-submit').click()`); await sleep(200);
-await ev(`document.querySelector('input[name=demo]').click()`); await sleep(200);
-await ev(`document.getElementById('submit-btn').click()`); await sleep(300);
+// single-board layout: the demo input's own "Run" button (was radio + #submit-btn) opens the confirm dialog
+await ev(`document.querySelector('#panel-submit .rep button').click()`); await sleep(300);
+const confirmOpen = await ev(`document.getElementById('confirm').open`); ok(confirmOpen === true, "Run opens the confirm dialog (no payment before Approve)");
 await ev(`document.getElementById('confirm-ok').click()`); await sleep(1200);
-// M8: on the LIVE (non-fixture) path the nav highlight follows the visible panel after submit.
-const navState = JSON.parse(await ev(`JSON.stringify({ sel: [...document.querySelectorAll('[role=tab]')].filter(t => t.getAttribute('aria-selected') === 'true').map(t => t.id), shown: [...document.querySelectorAll('[role=tabpanel]')].filter(p => !p.hidden).map(p => p.id) })`));
-ok(navState.sel.length === 1 && navState.sel[0] === "tab-run" && navState.shown.length === 1 && navState.shown[0] === "panel-run", "M8: live submit selects the Activity tab and it is the only visible panel: " + JSON.stringify(navState));
+// M8 (adapted to the single board; the tabs are gone): on the LIVE path submitting moves focus to the Console pane, which shows the run, and no drawer opened.
+const navState = JSON.parse(await ev(`JSON.stringify({ focus: document.activeElement && document.activeElement.id, drawers: ['ledger','agent','trust'].filter(i => document.getElementById(i).open), steps: document.querySelectorAll('#panel-run .stepper li').length })`));
+ok(navState.focus === "panel-run" && navState.drawers.length === 0 && navState.steps === 5, "M8: live submit focuses the Console pane, shows the 5-step stepper, opens no drawer: " + JSON.stringify(navState));
 let t1 = await text("panel-run"); await shot("f001_1_after_drop.png");
 console.log("--- run panel right after the drop ---\n" + t1.replace(/\n+/g, " | "));
 ok(intercepted >= 1, "SSE request was intercepted (partial stream served)");

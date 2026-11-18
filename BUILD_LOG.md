@@ -660,3 +660,23 @@ Ran (real output):
 - r2_agent_log: one FAIL line is an INFO check expecting >300 chars (now truncated at 300). r2_evidence_redos: FAILs are in the script's private copies of the OLD regexes, not app.js; the real source is timed in web/test/redos.test.mjs (pass).
 - Screenshots (headless Chrome 1280 px, fixtures): scratchpad/shots/w2/{progress,ovstub,ovreal,inbox_unv}.png. Looked at all four: Signed step shown, stub Overview cards have no REAL/HAND-MADE tag, real fixture shows HAND-MADE tag, inbox shows two dashed 'Unverified record' cards without copy/triage.
 UNVERIFIED: any real paid run; real system clipboard; r2_cdp phase A clipboard on a clean log.
+
+## 2026-11-17 WEB_FRONTEND single-board follow-up (key-free, no devnet, ports 4131-4139 / Chrome 9461-9491)
+Changed: web/public/{index.html (bars containers, confirm budget row), app.js, styles.css}; web/fixtures (log.{real,stub}.unverified.json, README); web/test/qe/{f001_cdp,xss_cdp,r2_cdp,layout_cdp(new)}.mjs; web/test/qe_functional/{lib,stage2_paid,stage5_422,stage6_kill}.mjs; AGENTS/WEB_FRONTEND.md.
+Code read first: the old 'Run all' showed only "$0.25 each", never refused up front, and continued the queue after a refusal/error; fixed (see WEB_FRONTEND.md).
+Selector changes (only where the element legitimately changed, assertions' intent kept):
+- f001_cdp.mjs: radio+#submit-btn became the row's Run button (confirm opens, Approve); the M8 tab-highlight assertion became "focus moves to the Console pane, 5-step stepper shown, no drawer opened" (tabs no longer exist). The earlier '5 FAILED' was these stale selectors; now all passed.
+- xss_cdp.mjs / r2_cdp.mjs: tab loop became board + Ledger/Agent/trust drawers; Inbox tab dropped (gone). r2_cdp clipboard checks: the copy button no longer exists, so "copies of valid hashes present" cannot apply; kept intent as "no clipboard write at all".
+- qe_functional/lib.mjs: tab() opens drawers (results/policy), no-op for board panes, throws for inbox; new chip()/runSelected(). stage3_views/stage4_notes/ui/analyze2 still target removed Overview cards/Inbox: STALE, not run. stage2/5/6 not run (need .env + devnet).
+Ran (real output):
+- node --check app.js evidence.js and all changed mjs: ok.
+- env -i node --test web.test.mjs evidence.test.mjs redos.test.mjs: tests 55 pass 55 fail 0.
+- node web/test/fixtures.test.mjs: 40 fixtures, 2090 checks, 0 failures. cd agent && node test/unit.ts: agent unit ok.
+- env -i node web/test/qe/f001_cdp.mjs: all passed. r2_cdp.mjs: all passed. xss_cdp.mjs on xss_server (facts): xss null, bad=0, injectedId false on board, 3 drawers, run, ledger/agent after run, fixtures-on-live, query/hash (the "/?<img..." page 404s from the server itself, unchanged behaviour). facts_e2e.mjs unaffected (no DOM).
+- env -i node web/test/qe/web_security.mjs: SUMMARY 75/75 PASS (one run; no flake seen).
+- env -i node web/test/qe/layout_cdp.mjs: 128 PASS, 0 FAIL ("all passed"); live part: Run all of 2 inputs, confirm $0.50, Cancel sent no /api/submit, jobs 11.4 s apart, exactly 2 sequential submits. Output: /private/tmp/claude-501/-Users-liezeil-university-blockchain-hackathon2026/e452d3df-a6f8-484f-b1ba-ed7167e32680/scratchpad/layout_out3.txt.
+- Word count of the default state (whole page, innerText incl. top bar and stub bar): stub 117, real 144.
+Screenshots (1280 px, fixtures, looked at): /private/tmp/claude-501/-Users-liezeil-university-blockchain-hackathon2026/e452d3df-a6f8-484f-b1ba-ed7167e32680/scratchpad/shots/{default_stub,default_real,running_stub,running_batch,outcome_returned,outcome_forfeited,outcome_refused,outcome_error,real_returned,run_all_confirm,confirm_single_stub,run_all_refused_budget,batch_stopped_refused,ledger_stub,ledger_real,agent_stub,trust_stub,trust_tampered,tampered_real,unverified_maintainer}.png.
+Defects found by looking and fixed: unverified item had a full dashed box (now top border only); batch-stop message printed raw "250000 atomic" (now dollars, with a test).
+Regressions found and fixed vs the earlier guarantees: stub bar hidden behind modal dialogs (now repeated inside each); queue continued after errors/refusals; trust badge selector moved to #headline.
+UNVERIFIED: any live backend with real money, real-mode view with a real run, the qe_functional scripts, 1600 px, Firefox/Safari, screen readers, mobile.

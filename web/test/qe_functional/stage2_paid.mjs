@@ -22,7 +22,7 @@ await br.constructor;
 let lastEnd = 0;
 async function spacing() { const w = lastEnd + 12500 - Date.now(); if (w > 0) { log("spacing wait", w); await sleep(w); } }
 const jobIdOf = p => p.eval(`(document.getElementById('panel-run').textContent.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)||[])[0]||null`);
-async function openConfirm(p) { await p.click("#submit-btn"); await p.waitFor(`document.getElementById('confirm').open`, 5000); return p.text("#confirm"); }
+async function openConfirm(p) { await p.runSelected(); await p.waitFor(`document.getElementById('confirm').open`, 5000); return p.text("#confirm"); }
 async function waitDone(p, oldId) { await p.waitFor(`(()=>{const t=document.getElementById('panel-run').textContent;const m=t.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);return m&&m[0]!==${JSON.stringify(oldId)}&&[...document.querySelectorAll('#panel-run button')].some(b=>b.textContent==='Submit another')})()`, 150000, 250); lastEnd = Date.now(); }
 const snapRun = p => p.eval(`(()=>{const q=s=>[...document.querySelectorAll(s)];
   const steps=q('#panel-run .stepper li').map(li=>({name:li.querySelector('.nm')?.textContent,label:li.getAttribute('aria-label'),subs:[...li.querySelectorAll('.sub')].map(s=>({t:s.textContent,no:s.classList.contains('no')}))}));
@@ -49,7 +49,7 @@ async function run(p, name, selectFn) {
   ev.runs.push(r); save(); log(name, "title:", fin.ocardTitle, "| hero:", fin.hero.join(" "), "| links", fin.links.length, "| buyer", r.bal.buyer.usdc, "payTo", r.bal.payTo.usdc, "| new recs", recs.length, "| agentLog lines", (r.agentLog ?? "").split("\n").filter(Boolean).length);
   return r;
 }
-const chip = label => async p => { await p.clickText("label.chip", label); await sleep(300); };
+const chip = label => async p => { await p.chip(label); await sleep(300); };
 try {
   const p = await br.newPage(BASE);
   // R1

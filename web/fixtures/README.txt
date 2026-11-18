@@ -20,3 +20,7 @@ PRODUCT PASS 2 additions (illustrative unless stated):
 D-019/D-020 additions (ILLUSTRATIVE, not recorded from a run; shapes follow the optional `facts` field in INTERFACES.md):
 - sse.facts_{returned,forfeited,refused}.txt (scenario=facts_*): decision events with `facts` as web/lib/jobs.mjs now sends them. The verdict/settled tail of returned/forfeited is copied from sse.real_*.
 - hostile.facts.txt (scenario=hostile_facts): facts that VIOLATE the contract (HTML, 500-char network, 88-char payTo, unknown key). fixtures.test.mjs asserts the contract checker rejects it; the UI must show only the valid parts (0.25 USDC, cap tick) and execute nothing.
+
+SINGLE-BOARD LAYOUT additions (ILLUSTRATIVE, derived from log.real.json / log.stub.json):
+- log.real.unverified.json, log.stub.unverified.json (log=unverified): seq 1 (a reproduced record) has sigOk false and verify.ok false (one BAD SIGNATURE at line 2). The maintainer pane must show it only as 'Unverified record'.
+- Fixture-only query param lowbudget=1: config.session.remainingAtomic becomes 750000 ($0.75), so 'Run all 5' ($1.25 worst case) must be refused up front.
