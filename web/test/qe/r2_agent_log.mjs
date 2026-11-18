@@ -31,7 +31,7 @@ for (const [name, v] of Object.entries(variants)) {
   const mapped = lines.map(mapDecision).filter(Boolean); const facts = mapped.flatMap(m => m.facts ? [m.facts] : []);
   const maxFact = Math.max(0, ...facts.flatMap(f => Object.values(f).map(x => String(x).length)));
   ok(facts.every(f => Object.entries(f).every(([k, x]) => k === "route" || k === "maxTimeoutSeconds" || typeof x === "string")) && maxFact <= 50, `real agent log (${name}) -> mapDecision: ${mapped.length} events, ${facts.length} with facts ${stripped(facts).slice(0, 220)} (longest fact value ${maxFact})`);
-  if (name === "hostile") ok(!!reserve && reserve.network.length > 1000, "INFO real agent writes the server-supplied 402 network string unbounded into decisions.log (" + (reserve?.network.length ?? 0) + " chars); the web layer drops it (see mapDecision line)");
+  if (name === "hostile") ok(!!reserve && reserve.network.length <= 300, "round 3: real agent now truncates the server-supplied 402 network string to <=300 chars in decisions.log (QE-W2-006 fix) (" + (reserve?.network.length ?? 0) + " chars); the web layer drops it (see mapDecision line)");
 }
 srv.close();
 // makeLogger unit probes

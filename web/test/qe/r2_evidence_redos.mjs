@@ -3,6 +3,11 @@
 import vm from "node:vm"; import { readFileSync } from "node:fs"; import path from "node:path"; import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ctx = { globalThis: null }; ctx.globalThis = ctx; vm.createContext(ctx); vm.runInContext(readFileSync(path.join(HERE, "../../public/evidence.js"), "utf8"), ctx);
+// round 3: the app.js helpers below are the REAL current code, cut out of web/public/app.js (round 2 tested stale regex copies)
+const appSrc = readFileSync(path.join(HERE, "../../public/app.js"), "utf8");
+const cut = (a0, e0) => { const a = appSrc.indexOf(a0), b = appSrc.indexOf(e0, a); if (a < 0 || b < 0) throw new Error("cannot find " + a0); return appSrc.slice(a, b + e0.length); };
+const actx = {}; vm.createContext(actx); vm.runInContext(cut("const rowName = r => {", "\n  };") + "\n" + cut("function overCap(m)", "}\n") + "\n" + cut("function refusalTitle(m)", "}\n") + "\nthis.f = { rowName, refusalTitle };", actx);
+const { rowName, refusalTitle } = actx.f;
 const E = ctx.Evidence; const N = 65536;
 const T = "case 42482847, 5 B input: ";
 const inputs = {
@@ -17,13 +22,13 @@ for (const [name, s] of Object.entries(inputs)) {
   const res = [];
   for (const v of ["reproduced", "not_reproduced", "inconclusive"]) res.push(time(name, () => E.parseEvidence(v, s)).ms);
   for (const a of ["allow", "refuse", "approve", "reject", "sign"]) res.push(time(name, () => E.parseDecision(a, s)).ms, time(name, () => E.factLines(a, s, { askAtomic: s, capAtomic: s, remainingAtomic: s, network: s, scheme: s, maxTimeoutSeconds: s })).ms);
-  res.push(time(name, () => /allowlist|endpoint|URL/i.test(s) || /per-report cap|above .*cap/i.test(s) || /budget/i.test(s)).ms); // app.js refusalTitle
+  res.push(time(name, () => refusalTitle(s)).ms); // real app.js refusalTitle (server clips to 300 chars, but tested at 64 KB)
   res.push(time(name, () => s.replace(/\b(\d{1,12}) atomic\b/g, "$")).ms); // app.js money()
-  res.push(time(name, () => s.replace(/^HAND-MADE[^:]*:\s*/i, "").split(/\s*[(,]/)[0]).ms); // app.js rowName
+  res.push(time(name, () => rowName({ label: s })).ms); // real app.js rowName
   const mx = Math.max(...res); const bad = mx > 250; if (bad) fails++;
   console.log(`${bad ? "FAIL" : "PASS"} ${name}: len ${s.length}, max single call ${mx.toFixed(1)} ms over ${res.length} calls`);
 }
 // bounded growth check for the one quadratic candidate (above .*cap): double the size, compare
-const q = n => time("q", () => /per-report cap|above .*cap/i.test("above ".repeat(n))).ms; const a = q(5000), b = q(10000), c = q(20000);
+const q = n => time("q", () => refusalTitle("above ".repeat(n))).ms; const a = q(5000), b = q(10000), c = q(20000);
 console.log(`scaling of /above .*cap/ on 'above '*n: n=5000 ${a.toFixed(1)} ms, 10000 ${b.toFixed(1)} ms, 20000 ${c.toFixed(1)} ms (quadratic if it ~x4 per doubling)`);
 console.log(`worst single call ${worst.toFixed(1)} ms; ${fails ? fails + " FAILED (>250 ms)" : "all bounded"}`); process.exit(fails ? 1 : 0);
