@@ -15,7 +15,7 @@ const out = [];
 async function check(label, setup) {
   await send("Page.navigate", { url: base + (label.url || "/") }); await sleep(1200);
   if (setup) await setup();
-  const r = await ev(`(() => { const t = document.body.innerText; return JSON.stringify({ xss: window.__xss ?? null, bad: document.querySelectorAll('img,svg,script:not([src]),#injected,a[href^="javascript"],[onerror],[onload]').length, injectedId: !!document.getElementById('injected'), textHasPayload: t.includes('<img src=x') , textHasScriptTag: t.includes('<script>'), len: t.length }); })()`);
+  const r = await ev(`(() => { const t = document.body.innerText; return JSON.stringify({ xss: window.__xss ?? null, bad: document.querySelectorAll('img,svg:not(.ic),script:not([src]),#injected,a[href^="javascript"],[onerror],[onload]').length, injectedId: !!document.getElementById('injected'), textHasPayload: t.includes('<img src=x') , textHasScriptTag: t.includes('<script>'), len: t.length }); })()`);
   out.push([label.name ?? label, r]); console.log(label.name ?? label, r);
 }
 const tabs = ["submit", "run", "results", "inbox", "policy"];

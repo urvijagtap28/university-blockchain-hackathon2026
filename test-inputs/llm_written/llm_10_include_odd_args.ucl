@@ -1,0 +1,6 @@
+.include "/dev/zero"
+.include(try=true,glob=true,priority=99999999999) "/etc/*"
+.include(path="\0") ""
+.include(
+.include "http://127.0.0.1:1/x"
+.include(key=) "a"

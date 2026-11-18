@@ -1,0 +1,10 @@
+a = <<EOD
+line one
+EOD
+b = <<EOD
+never terminated
+/* open comment
+# hash
+c = <<
+d = <<EOD x
+EOD

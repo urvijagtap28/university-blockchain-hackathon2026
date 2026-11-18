@@ -1,0 +1,12 @@
+event: started
+data: {"jobId":"fixture-job-1","reportHash":"386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"refuse","detail":"session budget exhausted: need $0.25, remaining $0.00"}
+
+event: error
+data: {"message":"Refused by agent policy: session budget exhausted: need $0.25, remaining $0.00","settledAtomic":null}
+
+event: done
+data: {"recordSeq":null}
+

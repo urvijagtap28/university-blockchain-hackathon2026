@@ -11,7 +11,7 @@ event: decision
 data: {"ts":"2026-11-17T18:50:02.000Z","action":"sign","detail":"x402 upto authorization signed for 250000 atomic to 8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib"}
 
 event: verdict
-data: {"verdict":"not_reproduced","detail":"vulnerable 3/3 runs clean"}
+data: {"verdict":"not_reproduced","detail":"stub: default"}
 
 event: decision
 data: {"ts":"2026-11-17T18:50:06.000Z","action":"settle","detail":"settled 250000 atomic"}

@@ -10,3 +10,9 @@ submit.{202,409,413,422,429}.json, sse.{success_returned,success_forfeited,refus
 
 sse.dropped.txt / sse.dropped_norecord.txt: stream ends after the 'sign' event with no done (simulated connection drop, QE-F-001); the first has a matching log record, the second does not.
 Fixture mode is honored only from file:// or when /fixtures/ is served next to the page; the live server ignores ?fixtures=1.
+
+PRODUCT PASS 2 additions (illustrative unless stated):
+- log.real.json / inbox.real.json / log.real.tampered.json details now use the exact strings verifier/verify.py writes. seq 0,1,2 (and the 47 B / 3 B clean ones) are copied from the recorded docs/evidence/real-run-2026-11-17 and backtest/RESULTS.md; the SEGV inconclusive (seq 5) is a recorded backtest string. The records themselves (hashes, labels, tx signature on seq 5, timestamps) are ILLUSTRATIVE, not a recorded run through this app.
+- log.{real,stub}.returned_only.json (log=returned_only): two reproduced records, no forfeited one (Overview one-card state).
+- sse.real_{returned,forfeited,inconclusive,refused}.txt (scenario=real_*; mode=real picks real_returned / real_forfeited automatically): decision wording is what web/lib/jobs.mjs mapDecision emits today. Verdict details are verify.py format; ILLUSTRATIVE transcripts, not recorded.
+- sse.success_forfeited.txt detail is now "stub: default" (what the stub verifier writes).

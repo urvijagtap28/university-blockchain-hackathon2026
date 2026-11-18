@@ -79,7 +79,7 @@ Single-use: the verdict decides the money. Nothing depends on a later maintainer
                                               |  signed verdict log        |
                                               +------|-----|---------------+
                                                      |     |
-                         facilitator (self-hosted)   |     |  python verifier/verify.py <file>
+                         facilitator (self-hosted)   |     |  python3 verifier/verify.py <file>
                          x402 upto example, :4022 <--+     v
                                  |              +--------------------------------+
                                  v              | Docker, per run: no network,   |
@@ -113,7 +113,7 @@ Verified (stub verifier, Solana devnet, dedicated RPC): reproduced -> $0 refund,
 
 ## 5. The verifier and the three verdicts
 
-Contract: `python verifier/verify.py <input_file>` prints exactly one line of JSON, `{"verdict": "...", "detail": "..."}`, exit code 0. The real verifier never emits `"stub": true`; the server refuses a stub-flagged answer unless `ALLOW_STUB_VERIFIER=1` (test mode) and settles $0.
+Contract: `python3 verifier/verify.py <input_file>` prints exactly one line of JSON, `{"verdict": "...", "detail": "..."}`, exit code 0. The real verifier never emits `"stub": true`; the server refuses a stub-flagged answer unless `ALLOW_STUB_VERIFIER=1` (test mode) and settles $0.
 
 Target: libucl (a C library), using prebuilt ARVO images (`n132/arvo`, pulled by digest from `verifier/cases.json`) and libucl's OSS-Fuzz harness `ucl_add_string_fuzzer`. Six cases are pinned: 42482847, 42482848, 42486194, 42490132, 42497487, 42512369, all heap-buffer-overflow. The server config chooses the case (`VERIFIER_CASE`), never the sender. See [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -129,7 +129,7 @@ The server clamps the settle amount to the cap and settles $0 on any exception, 
 
 Important caveat on the control run: the ARVO "fixed" image is a later libucl version, not the per-bug fix commit. Five of the six fixed images share libucl commit `45997ad`. So `reproduced` means "this input triggers the expected ASan error in libucl code on the pinned vulnerable build, and the crash is gone in a later libucl". A fixed image is also not bug-free: ARVO 42512369's input still crashes the `45997ad` build (`backtest/RESULTS.md`).
 
-Platform: the images are `linux/amd64`. On an arm64 Mac they run under emulation and were killed with exit 137, so the verifier returns `inconclusive` there and never `not_reproduced`. The real verifier needs an amd64 host. Verifier tests: `python verifier/test_verify.py` (34 tests, run by Person B on x86_64 Windows per STATUS.md; not run by the author of this README).
+Platform: the images are `linux/amd64`. On an arm64 Mac they run under emulation and were killed with exit 137, so the verifier returns `inconclusive` there and never `not_reproduced`. The real verifier needs an amd64 host. Verifier tests: `python3 verifier/test_verify.py` (34 tests, run by Person B on x86_64 Windows per STATUS.md; not run by the author of this README).
 
 ## 6. Signed verdict log
 
@@ -205,13 +205,19 @@ Read this with care:
 - Buyer and receiver wallets are both ours, so a forfeit is a transfer between our own wallets, not a payment to a third party.
 - These results do not show that spam is stopped.
 
+### Demo run: real verifier, second run (final verify.py)
+
+A second clean-machine `--real` run, 2026-11-17 20:49 to 20:51 ET, by Person B (WSL2 Ubuntu x86_64, Docker 29.9.3), with `verifier/verify.py` sha256 `1bd695e02decdd8557216ba69f6479154c14edd97af33af10d5f4d0bd6a9d432`: 2 real bugs reproduced, 3 hand-made fakes forfeited, 0 wrongly forfeited, 0 inconclusive, 0 errors; signed log OK with pinned key `ASYuieG7nRUN7ecnLVGGUtoeLSER8KEwCq5qYmt1C3Cx`, head seq 4, sha256 `7606cb75fb21edef17948c5d812d3b2dbd1a030620dde33e6c596cf30aca85a2`. Balances: buyer 19.25 -> 18.50 USDC, payTo 20.75 -> 21.50. Settle transactions are in section 9. Provided by Person B, not reproduced by us. TODO: evidence files are not in the repo yet; to be committed under `docs/evidence/`.
+
+The first run above and the backtest used `verify.py` sha256 `8022c685...5465` (full: `8022c68553836304c5ef074631ed9afe767f0802e40992edb660379eab959465`). The final file differs only by a best-effort `docker rm -f` after a kill (section 11); it is not claimed to fix a bug.
+
 The root `RESULTS.md` is gitignored: it is whatever the last local demo run wrote, and the earlier copy was from a stub run. Do not quote a root `RESULTS.md` as results. Stub-routed verdicts are payment-plumbing evidence only, never sandbox results.
 
 ## 9. Devnet transaction signatures
 
 Explorer links use `https://explorer.solana.com/tx/<signature>?cluster=devnet`.
 
-### Real verifier, first real run (2026-11-17)
+### Real verifier, first real run (2026-11-17, verify.py 8022c685...)
 
 These are the **settle transactions** from the real-verifier run in section 8. The demo recorded settle transactions only, not the deposit (open) transactions.
 
@@ -228,6 +234,19 @@ We checked all five by RPC `getTransaction` from our Mac on 2026-11-17: no trans
 
 To verify yourself: `cd server && node scripts/verify-log.ts ../docs/evidence/real-run-2026-11-17/verdicts.jsonl --pubkey ASYuieG7nRUN7ecnLVGGUtoeLSER8KEwCq5qYmt1C3Cx`, then fetch each signature with `getTransaction` on a devnet RPC (set `maxSupportedTransactionVersion` to 1) or open the links above. Details: [docs/evidence/real-run-2026-11-17/README.md](docs/evidence/real-run-2026-11-17/README.md).
 
+### Real verifier, second real run (2026-11-17 20:49 to 20:51 ET, verify.py 1bd695e0...)
+
+Settle transactions as reported by Person B (confirmed on chain per B's run; not re-checked by us). All five signatures below are the `txSignature` values in the signed log from this run (we re-verified that log with the pinned key and recomputed its head hash from B's `verdicts.jsonl`, and each signature decodes to 64 bytes); we did not re-read the transactions on chain for this second run. TODO: evidence files to be committed under `docs/evidence/`.
+
+Returned bond (reproduced, settled 0):
+- `24RCWjKpgWDjGXFUMpduLy1Syw8uiheezu8BuiRRAF2hWPN85F9jGxQSmA2MFXQ5icQFjgy2GiFW6MY8F7KZw4Bm`
+- `56qVSojh4Csyy8DVVzirAW9yBu3VucATDdUiMWANzWxRAoAwXV1X7NWhQHYLy69Mg2Nqy4CTz8T6S8rjr1Bzk47x`
+
+Forfeited bond (not_reproduced, 0.25 USDC each):
+- `436MsnJZoYy6DNwRKdKiNFwEnuhBjLENdzMqme6X4EcwMaaLHTFWpWqQu19v8BsREosfvjnptmymSx9GhttwTdkf`
+- `5Q7yXhBfrDrDnauph8WJBGmh7uygsMyEPZMrLmcZ8EXaXTX2FtkfMjWgYa4WpkRRJp5cSpAhG9ufeUnv3E4wwCRM`
+- `55E93tcrdotXEGHLFgaofGVEdMDVsLvwhToqpGpA37WTWo1MxtKU7pp1w5U53Vj94de1LZF4irrTkd2PwuHw3jLV`
+
 ### Stub-verifier payment-path evidence only (NOT sandbox results)
 
 From BUILD_LOG.md entry "X402_PAYMENTS H-004 rerun" (stub verifier, repo .env, dedicated RPC; each checked by RPC getTransaction):
@@ -240,23 +259,32 @@ The earlier five-report stub demo batch is not checked in as results.
 
 ### Prerequisites
 
-- Node v26.10.0 (the server and agent run `.ts` directly), pnpm 11.1.1, Python 3.
+- Node v26.10.0 (the server and agent run `.ts` directly), pnpm 11.1.1, `python3` (Ubuntu has no `python` command; use `python3` everywhere).
+  - Node: download the official linux-x64 tarball for v26.10.0 from <https://nodejs.org/en/download> (all releases: <https://nodejs.org/dist/>), check it with `sha256sum` against `ca70e9e349de048b9522abb3adc05b3bd6f43c5ffd3ec57916c7da292f59f022`, extract it, and put its `bin` directory on `PATH`. These exact steps were not tested from scratch.
+  - pnpm: `npm install -g pnpm@11.1.1` (needs a user-writable npm prefix, or use `sudo`).
 - For the **stub** demo: any machine, including an arm64 Mac.
-- For the **real** verifier: an **amd64 (x86_64) host** with Docker, and the `n132/arvo` images from `verifier/cases.json` pulled by digest. The demo's `--real` mode refuses on a non-amd64 Docker. Use `python verifier/verify.py --self-test` to check a host; if it fails, do not take payments there.
+- For the **real** verifier: an **amd64 (x86_64) host** with Docker, and the 12 `n132/arvo` images from `verifier/cases.json`, pulled by digest with `sh scripts/pull-images.sh` (`--dry-run` lists them; the dry run was checked on the Mac, a real pull was not, and it needs network). The demo's `--real` mode refuses on a non-amd64 Docker. Use `python3 -I verifier/verify.py --self-test` to check a host; it fails on our arm64 Mac (emulation), and if it fails on a host, do not take payments there.
 - A dedicated devnet RPC URL (QuickNode and Helius free tiers were suggested; the team used a QuickNode devnet endpoint).
 - Devnet SOL (facilitator fee payer) and Circle devnet USDC (sender wallet). Devnet only; never put real keys in this repo.
+
+Tested on: these steps were run once, literally, on a machine that already had Node 26.10.0, pnpm 11.1.1 and the 12 ARVO images, with wallets and `.env` reused. First-time Node/pnpm/image installs, key generation and faucets are untested.
+
+### Install dependencies (repo)
+
+```
+cd server && pnpm install --frozen-lockfile && cd ..
+cd agent  && pnpm install --frozen-lockfile && cd ..
+cp .env.example .env     # then fill it in; .env.example is the source of truth for variable names
+node --env-file=.env scripts/check-env.mjs     # plain `node scripts/check-env.mjs` does not read .env and fails
+```
 
 ### Facilitator at the pinned commit
 
 We run the upstream x402 `upto` facilitator example, unmodified, at x402-foundation/x402 commit `f0de923456b89b11a77a1609c4b84a780edd1bd2` (packages `@x402/svm`, `@x402/core`, `@x402/express`, `@x402/fetch` 2.31.0):
 
-These are the commands that worked for Person B on WSL2 Ubuntu (x86_64). **They were run on Person B's machine only; the clean-machine test is still pending.**
+These are the commands that worked for Person B on WSL2 Ubuntu (x86_64), and they were followed again on a fresh clone (see "Tested on").
 
 ```
-# Node v26.10.0: official linux-x64 tarball, checked against
-# sha256 ca70e9e349de048b9522abb3adc05b3bd6f43c5ffd3ec57916c7da292f59f022
-npm install -g pnpm@11.1.1
-
 mkdir -p ~/upto-spike/scratch && cd ~/upto-spike/scratch
 git clone https://github.com/x402-foundation/x402
 cd x402 && git checkout f0de923456b89b11a77a1609c4b84a780edd1bd2
@@ -265,14 +293,22 @@ pnpm install     # exit 0
 pnpm build       # exit 1, see note below
 ```
 
-The `pnpm build` exit 1 is only because the unrelated `fullstack/next` example needs `FACILITATOR_URL`; `packages/core`, `mechanisms/svm` and `mechanisms/evm` built fine. Then, from our repo root:
+The `pnpm build` exit 1 is only because the unrelated `fullstack/next` example needs `FACILITATOR_URL`; `packages/core`, `mechanisms/svm` and `mechanisms/evm` built fine.
+
+Tell the demo where this clone is, from our repo root, before running it:
+
+```
+export FACILITATOR_DIR=~/upto-spike/scratch/x402/examples/typescript/facilitator/upto   # use your clone's path
+```
+
+If `FACILITATOR_DIR` is unset, the scripts silently fall back to `$HOME/upto-spike/scratch/x402/examples/typescript/facilitator/upto`, which can be an old install. The demo preflight prints the directory it will use and refuses if it has no `index.ts`. Do not start the facilitator by hand for the demo: the demo starts and stops its own facilitator and server, and a leftover facilitator on port 4022 makes the preflight refuse. The manual start is only for standalone tests of the server or agent:
 
 ```
 set -a; . ./.env; set +a
-FACILITATOR_DIR=~/upto-spike/scratch/x402/examples/typescript/facilitator/upto server/scripts/start-facilitator.sh
+server/scripts/start-facilitator.sh      # uses FACILITATOR_DIR
 ```
 
-The facilitator reads its keys from the shell environment loaded from the repo `.env`; nothing is copied into the facilitator folder. The default `FACILITATOR_DIR` is `$HOME/upto-spike/scratch/x402/...`. The script sets `PORT` for the facilitator process only (it listens on `FACILITATOR_PORT`, default 4022).
+The facilitator reads its keys from the shell environment loaded from the repo `.env`; nothing is copied into the facilitator folder. The script sets `PORT` for the facilitator process only (it listens on `FACILITATOR_PORT`, default 4022).
 
 The facilitator keeps open channels in memory and runs its own cleanup manager. Do not restart it mid-demo.
 
@@ -282,26 +318,30 @@ Copy `.env.example` to `.env` and fill it. Names (values are never printed or co
 
 | Variable | Used by | Meaning |
 |---|---|---|
-| `SVM_RPC_URL` | server, facilitator | dedicated devnet RPC (https, ASCII); check with `node scripts/check-env.mjs` |
+| `SVM_RPC_URL` | server, facilitator | dedicated devnet RPC (https, ASCII); check with `node --env-file=.env scripts/check-env.mjs` |
 | `SVM_ADDRESS` | server | receiver (payTo) public key |
 | `SVM_RECEIVER_AUTHORIZER_PRIVATE_KEY` | server | signs settle vouchers |
 | `SVM_PRIVATE_KEY` | facilitator | fee payer, needs devnet SOL |
 | `FACILITATOR_URL`, `FACILITATOR_PORT` | server, scripts | `http://localhost:4022`, 4022 |
-| `SERVER_PORT` | server | default 4021 |
+| `SERVER_PORT` | server | default 4021 (the demo fixes 4021, 4022 and web 4030) |
+| `WEB_PORT` | web app | default 4030 |
+| `RATE_LIMIT_SECONDS`, `SETTLEMENT_POLL_SECONDS` | server | per-wallet spacing (default 10 s); how long to poll an unconfirmed settle (default 45, max 120) |
 | `AGENT_SVM_PRIVATE_KEY` | agent | sender wallet, needs devnet USDC |
 | `AGENT_ALLOWED_URL` | agent | the one endpoint it may pay, e.g. `http://localhost:4021/report` |
 | `AGENT_PER_REPORT_CAP_USD`, `AGENT_SESSION_BUDGET_USD`, `AGENT_APPROVAL_THRESHOLD_USD`, `AGENT_AUTO_APPROVE_USD`, `AGENT_RETRY_BUDGET` | agent | see section 4 |
+| `AGENT_LOG_PATH` | agent | decision log; default `agent/decisions.log` (the demo uses `demo/run/agent-decisions.log`) |
 | `VERIFIER_CASE`, `VERIFIER_PYTHON`, `VERIFIER_TIMEOUT_SECONDS`, `VERIFIER_MAX_CONCURRENT`, `MAX_INPUT_BYTES` | server | case id, python, 60 s cap, concurrency (max 2), 64 KB cap |
-| `LOG_SIGNING_KEY`, `LOG_PATH` | server | verdict log key (generate with `node server/scripts/gen-log-key.mjs`) and path |
+| `LOG_SIGNING_KEY`, `LOG_PATH` | server | verdict log key (generate with `node server/scripts/gen-log-key.mjs`) and path; default `server/verdicts.jsonl`. The demo sets `demo/run/verdicts.jsonl` and the web app `web/run/<stub or real>/verdicts.jsonl`, whatever `LOG_PATH` says |
 | `ALLOW_STUB_VERIFIER` | server | test only; never set for real runs |
 
-This table was written from AGENTS/INTERFACES.md and `.env.example` (updated by the user in commit 1ef1b15). We have not re-checked each row against `.env.example` since that update.
+`.env.example` is the source of truth for names. This table was derived from the code and AGENTS/INTERFACES.md; we did not diff it against `.env.example` (the author cannot read that file).
 
 ### Run the demo
 
 ```
 bash scripts/demo.sh --preflight-only --stub   # checks env, balances, ports; starts nothing
-bash scripts/demo.sh --stub                    # any machine; about 2.5 minutes
+bash scripts/demo.sh --real --preflight-only   # same, plus Docker arch, images and python for the real verifier
+bash scripts/demo.sh --stub                    # any machine; about 1.5 to 2.5 minutes (84 s was measured on one clean --real run)
 bash scripts/demo.sh --real                    # amd64 + Docker + ARVO images
 ```
 
@@ -309,9 +349,9 @@ It starts the facilitator and server, runs one agent process per report from `de
 
 Status: `--stub` ran end to end twice on an arm64 Mac (BUILD_LOG.md, "DEMO_RUNNER") with all checks passing, plus negative tests (killed server, tampered log, deleted record, SIGINT, occupied port all fail loudly). `--real` ran once, on Person B's amd64 laptop, exit 0 (section 8); on our arm64 Mac it refuses at the Docker preflight (exit 2). We have not run `--real` ourselves.
 
-Individual tests: `cd server && node test/unit.ts`, `node test/verdictlog.test.ts`; `cd agent && node test/unit.ts`; `python verifier/test_verify.py`.
+Individual tests: `cd server && node test/unit.ts`, `node test/verdictlog.test.ts`; `cd agent && node test/unit.ts`; `python3 verifier/test_verify.py`.
 
-TODO: "one-command demo passes on a clean machine" is unchecked in STATUS.md. Waits on CLEAN_MACHINE_TESTER.
+TODO: STATUS.md still lists the clean-machine demo as unchecked; update it from Person B's report.
 
 ## 11. Security note
 
@@ -321,7 +361,7 @@ Intended deployment: the maintainer runs the verifier on their own infrastructur
 
 Our demo host does not follow that split: it runs proofs on the same machine as the payment server and facilitator, which hold devnet-only fake-money keys. This is acceptable for a demo and not for production. The container itself receives no keys.
 
-Container flags were reviewed from the code and probed by `scripts/sandbox_probes.sh` and `scripts/sandbox_cap_test.sh --full`. Person B ran them on amd64 (WSL2, Docker 29.9.3) on 2026-11-17: probes 23 PASS, 2 WARN, 0 FAIL; cap test 8 PASS, 0 FAIL; no leftover containers (output in [docs/evidence/sandbox-amd64-2026-11-17/](docs/evidence/sandbox-amd64-2026-11-17/)). The two warnings are a writable 64 MiB in-memory `/dev/shm` and the image's own build-time env var names. These checks show that the configured limits held; they are not an escape test, and the sandbox is not claimed escape-proof. The profile is Docker's default seccomp/AppArmor. Both kill tests used an INDUCED hang (`sleep 300`); no real hanging libucl input exists, and the server's own 60 s cap with the real verifier was not tested. One open P2 finding: if `docker kill` after a timeout fails, `verify.py` swallows the `TimeoutExpired` and the container can outlive the call (`--rm` removes it only when it exits); the suggested fix is a best-effort `docker rm -f` afterwards, not yet merged.
+Container flags were reviewed from the code and probed by `scripts/sandbox_probes.sh` and `scripts/sandbox_cap_test.sh --full`. Person B ran them on amd64 (WSL2, Docker 29.9.3) on 2026-11-17: probes 23 PASS, 2 WARN, 0 FAIL; cap test 8 PASS, 0 FAIL; no leftover containers (output in [docs/evidence/sandbox-amd64-2026-11-17/](docs/evidence/sandbox-amd64-2026-11-17/)). The two warnings are a writable 64 MiB in-memory `/dev/shm` and the image's own build-time env var names. These checks show that the configured limits held; they are not an escape test, and the sandbox is not claimed escape-proof. The profile is Docker's default seccomp/AppArmor. Both kill tests used an INDUCED hang (`sleep 300`); no real hanging libucl input exists, and the server's own 60 s cap with the real verifier was not tested. One open P2 finding: if `docker kill` after a timeout fails, `verify.py` swallows the `TimeoutExpired` and the container can outlive the call (`--rm` removes it only when it exits); Person B added a best-effort `docker rm -f` after the kill (commit 9be5ef4, merged into this branch in a541f90; `verify.py` sha256 is now `1bd695e0...`). Their test run on that version passed (34/34 end-to-end, cap test FAIL=0, no leftover containers; [docs/evidence/verify-rmf-2026-11-17/](docs/evidence/verify-rmf-2026-11-17/)), and the real demo run and the backtest in this repository were made with the earlier `verify.py` (sha256 `8022c685...`).
 
 Abuse limits in code: 64 KB input cap (HTTP 413 before any deposit), per-wallet rate limit (1 request per 10 s), at most 2 concurrent verifier runs (over the cap returns `busy`, $0), 60 s hard cap. The limits are in memory and reset on restart.
 
@@ -359,7 +399,7 @@ Taken from STATUS.md, BUILD_LOG.md and the agents' files as of 2026-11-17.
 - Buyer-initiated recovery (`request_close`, `withdraw_payer`); only facilitator-driven recovery was observed.
 - The facilitator's abandon-close timing is from observation on devnet, not from documentation.
 - The program ID against the hackathon rules page (section 7).
-- Clean-machine setup: the facilitator install steps in section 10 worked on Person B's machine only, and "one-command demo passes on a clean machine" is still unchecked.
+- Clean-machine setup: section 10 was run once on Person B's machine, which already had Node, pnpm and the images (see "Tested on" there). First-time installs, key generation and faucets, and the real `scripts/pull-images.sh` pull, are untested.
 - Prior-art search: not exhaustive (section 14).
 
 ## 14. Related work

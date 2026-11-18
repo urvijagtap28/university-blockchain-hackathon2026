@@ -1,0 +1,9 @@
+$VAR = "x"
+a = "${VAR}${"
+b = "${}"
+c = "$$ ${VAR"
+d = "${${VAR}}"
+e = "$"
+f = "${UNDEF}${UNDEF}"
+g = ${VAR
+h = "$VAR$VA$V$"
