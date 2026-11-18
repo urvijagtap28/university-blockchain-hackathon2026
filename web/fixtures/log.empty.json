@@ -1,0 +1,12 @@
+{
+  "mode": "stub",
+  "signer": "6vYi5vh11HPCtFDiY7uCdwFt7shT3maXXPTen8PAFNGY",
+  "verify": {
+    "ok": true,
+    "records": 0,
+    "verified": 0,
+    "problems": []
+  },
+  "head": null,
+  "records": []
+}

@@ -1,0 +1,24 @@
+event: started
+data: {"jobId":"fixture-job-1","reportHash":"491a8669f95d3552993b2deef0d3d9fcf5a70d53804121ca10d964abc7639419"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"allow","detail":"allowlist: http://localhost:4021/report"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"approve","detail":"auto-approved: ask 250000 atomic is within AGENT_AUTO_APPROVE_USD 0.25"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:02.000Z","action":"sign","detail":"x402 upto authorization signed for 250000 atomic to 8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib"}
+
+event: verdict
+data: {"verdict":"not_reproduced","detail":"vulnerable 3/3 runs clean"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:06.000Z","action":"settle","detail":"settled 250000 atomic"}
+
+event: settled
+data: {"settledAtomic":"250000","txSignature":"5YQLCw1qrfLCV5tbBvh4nfu2Y65HYDLtBV26uRvCMVRip51sCKoW55zEGxqQjTik6nM31TVnRLFh65hqmZipeXGS","bondOutcome":"forfeited"}
+
+event: done
+data: {"recordSeq":2}
+

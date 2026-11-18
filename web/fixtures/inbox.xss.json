@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "seq": 0,
+      "reportHash": "386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f",
+      "verdict": "reproduced",
+      "errorType": "<img src=x onerror=alert(1)>",
+      "topFrame": "<img src=x onerror=alert(1)>",
+      "detail": "d <img src=x onerror=alert(1)>",
+      "caseId": "<img src=x onerror=alert(1)>",
+      "targetCommit": "<img src=x onerror=alert(1)>",
+      "timestamp": "2026-11-17T18:43:39.400Z",
+      "note": {
+        "decision": "misuse",
+        "text": "<img src=x onerror=alert(1)>",
+        "ts": "2026-11-17T19:00:00.000Z"
+      }
+    }
+  ]
+}
