@@ -4,41 +4,43 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
-<title>Prove-It Bond demo (local)</title>
+<title>Prove-It Bond</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-  <h1>Prove-It Bond: local demo app</h1>
-  <p class="sub">Local only (127.0.0.1). Devnet only. A $0.25 refundable bond is posted with a proof input file; a sandbox runs it under AddressSanitizer.</p>
+<header class="top">
+  <div class="top-in">
+    <h1 class="brand" id="brand">Prove-It Bond</h1>
+    <nav role="tablist" aria-label="Screens" id="tabs" class="tabs"></nav>
+    <div class="top-r" id="topr"></div>
+  </div>
   <div id="banners" aria-live="polite"></div>
   <div id="fixbar" class="fixbar" hidden></div>
-  <nav role="tablist" aria-label="Screens" id="tabs">
-    <button role="tab" id="tab-submit" aria-controls="panel-submit" aria-selected="true" tabindex="0">1 Submit</button>
-    <button role="tab" id="tab-run" aria-controls="panel-run" aria-selected="false" tabindex="-1">2 Run</button>
-    <button role="tab" id="tab-results" aria-controls="panel-results" aria-selected="false" tabindex="-1">3 Results and trust</button>
-    <button role="tab" id="tab-inbox" aria-controls="panel-inbox" aria-selected="false" tabindex="-1">4 Maintainer inbox</button>
-    <button role="tab" id="tab-policy" aria-controls="panel-policy" aria-selected="false" tabindex="-1">5 Agent policy</button>
-  </nav>
 </header>
 <main>
-  <noscript><p class="banner fail">This app needs JavaScript. No data is shown without it.</p></noscript>
-  <section role="tabpanel" id="panel-submit" aria-labelledby="tab-submit" tabindex="0"></section>
-  <section role="tabpanel" id="panel-run" aria-labelledby="tab-run" tabindex="0" hidden></section>
-  <section role="tabpanel" id="panel-results" aria-labelledby="tab-results" tabindex="0" hidden></section>
-  <section role="tabpanel" id="panel-inbox" aria-labelledby="tab-inbox" tabindex="0" hidden></section>
-  <section role="tabpanel" id="panel-policy" aria-labelledby="tab-policy" tabindex="0" hidden></section>
+  <noscript><p class="bar-msg fail">This app needs JavaScript.</p></noscript>
+  <section role="tabpanel" id="panel-submit" aria-labelledby="tab-submit" tabindex="-1"></section>
+  <section role="tabpanel" id="panel-run" aria-labelledby="tab-run" tabindex="-1" hidden></section>
+  <section role="tabpanel" id="panel-results" aria-labelledby="tab-results" tabindex="-1" hidden></section>
+  <section role="tabpanel" id="panel-inbox" aria-labelledby="tab-inbox" tabindex="-1" hidden></section>
+  <section role="tabpanel" id="panel-policy" aria-labelledby="tab-policy" tabindex="-1" hidden></section>
 </main>
-<dialog id="confirm" aria-labelledby="confirm-title">
-  <h2 id="confirm-title">Approve this payment?</h2>
-  <p id="confirm-what"></p>
-  <p><strong>The demo agent will pay up to $0.25 from the demo wallet.</strong> If the report is reproduced or inconclusive the bond is returned ($0 settled). If it is not reproduced the bond is forfeited ($0.25 settled). Your click here is the approval.</p>
-  <div class="actions">
-    <button id="confirm-cancel" type="button" class="btn">Cancel</button>
-    <button id="confirm-ok" type="button" class="btn primary">Approve and submit</button>
+<dialog id="confirm" aria-labelledby="confirm-title" class="modal">
+  <h2 id="confirm-title">Approve payment</h2>
+  <div class="amt"><span class="num" id="confirm-amt">$0.25</span><span class="mute" id="confirm-info"></span></div>
+  <dl class="kv">
+    <dt>Input</dt><dd id="confirm-what"></dd>
+    <dt>Wallet</dt><dd id="confirm-wallet" class="mono"></dd>
+  </dl>
+  <div class="actions end">
+    <button id="confirm-cancel" type="button" class="btn" autofocus>Cancel</button>
+    <button id="confirm-ok" type="button" class="btn primary">Approve</button>
   </div>
 </dialog>
-<footer><p class="fn">Static page: no framework, no CDN, no web fonts, no external requests (CSP blocks them). Explorer links are plain links you click yourself.</p></footer>
+<dialog id="trust" aria-labelledby="trust-title" class="drawer">
+  <div class="drawer-h"><h2 id="trust-title">Log verification</h2><button id="trust-close" type="button" class="btn icon-btn" aria-label="Close"></button></div>
+  <div id="trust-body" class="drawer-b"></div>
+</dialog>
 <script src="app.js"></script>
 </body>
 </html>

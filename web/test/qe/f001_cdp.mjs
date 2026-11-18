@@ -87,7 +87,7 @@ r = await run("scenario=refused", 3000); ok(/no payment was made/i.test(r), "ref
 await send("Page.navigate", { url: fx("log=empty&tab=results") }); await sleep(1200);
 const em = await text("panel-results"); ok(/No entries to verify yet/.test(em) && !/0 of 0/.test(em), "QE-F-005: empty log wording is neutral");
 await send("Page.navigate", { url: fx("tab=results") }); await sleep(1200);
-const st = await text("panel-results"); ok(/not meaningful in stub mode/.test(st), "QE-F-004: stub mode footnotes the wrongly-forfeited tile");
+const st = await ev(`document.getElementById('panel-results').textContent`); /* UI redesign: the note now lives in a (hidden) info popover, so read textContent, not innerText */ ok(/not meaningful in stub mode/.test(st), "QE-F-004: stub mode footnotes the wrongly-forfeited tile");
 
 ws.close(); chrome.kill("SIGKILL"); await app.close();
 console.log(fails ? `${fails} FAILED` : "all passed"); process.exit(fails ? 1 : 0);
