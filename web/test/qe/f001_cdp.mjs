@@ -53,6 +53,9 @@ await ev(`document.getElementById('tab-submit').click()`); await sleep(200);
 await ev(`document.querySelector('input[name=demo]').click()`); await sleep(200);
 await ev(`document.getElementById('submit-btn').click()`); await sleep(300);
 await ev(`document.getElementById('confirm-ok').click()`); await sleep(1200);
+// M8: on the LIVE (non-fixture) path the nav highlight follows the visible panel after submit.
+const navState = JSON.parse(await ev(`JSON.stringify({ sel: [...document.querySelectorAll('[role=tab]')].filter(t => t.getAttribute('aria-selected') === 'true').map(t => t.id), shown: [...document.querySelectorAll('[role=tabpanel]')].filter(p => !p.hidden).map(p => p.id) })`));
+ok(navState.sel.length === 1 && navState.sel[0] === "tab-run" && navState.shown.length === 1 && navState.shown[0] === "panel-run", "M8: live submit selects the Activity tab and it is the only visible panel: " + JSON.stringify(navState));
 let t1 = await text("panel-run"); await shot("f001_1_after_drop.png");
 console.log("--- run panel right after the drop ---\n" + t1.replace(/\n+/g, " | "));
 ok(intercepted >= 1, "SSE request was intercepted (partial stream served)");
@@ -60,7 +63,7 @@ ok(/Lost the live connection/.test(t1) && /UNKNOWN/.test(t1), "drop shows the 'L
 ok(!/no payment was made/i.test(t1), "drop does NOT claim 'no payment was made'");
 ok(!/Settled amount: none/.test(t1), "no fabricated 'Settled amount: none'");
 ok(/Checking the chain/.test(t1), "shows 'Checking the chain' while waiting");
-await sleep(5500); let t2 = await text("panel-run"); await shot("f001_2_recovered.png");
+await sleep(5500); let t2 = await ev(`document.getElementById('panel-run').textContent`); /* redesign: the read-back note lives in the Details block */ await shot("f001_2_recovered.png");
 console.log("--- run panel after recovery polling ---\n" + t2.replace(/\n+/g, " | "));
 ok(/read back from the signed verdict log/.test(t2) && /Bond returned/.test(t2), "UI re-fetched /api/log, showed the matched record: bond returned ($0 settled)");
 ok(!/no payment was made/i.test(t2), "recovered view still never says 'no payment was made'");
@@ -76,7 +79,7 @@ ok(!/verified|REAL verifier/i.test(JSON.parse(fb).body) || /STUB/.test(JSON.pars
 // ---- C: fixture scenarios over file:// ----
 const fx = (q) => "file://" + path.resolve(HERE, "../../public/index.html") + "?fixtures=1&delay=150&" + q;
 const run = async (q, wait) => { await send("Page.navigate", { url: fx(q) }); await sleep(900); await ev(`window.__app.pick(0); window.__app.doSubmit()`); await sleep(wait); return text("panel-run"); };
-let r = await run("scenario=dropped", 5000); await shot("f001_3_fixture_dropped.png");
+let r = await run("scenario=dropped", 5000); await shot("f001_3_fixture_dropped.png"); r = await ev(`document.getElementById('panel-run').textContent`); /* read-back note is in Details */
 ok(/read back from the signed verdict log/.test(r) && /Bond returned/.test(r) && !/no payment was made/i.test(r), "fixture dropped (record exists): recovers from the log, no 'no payment' claim");
 r = await run("scenario=dropped_norecord", 6000);
 ok(/UNKNOWN/.test(r) && /Checking the chain|No signed record/.test(r) && !/no payment was made/i.test(r) && !/Bond returned/.test(r), "fixture dropped (no record): stays UNKNOWN, no invented outcome");

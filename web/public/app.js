@@ -31,7 +31,13 @@
   const short = (s, a = 4, b = 4) => (typeof s === "string" && s.length > a + b + 1) ? s.slice(0, a) + "\u2026" + s.slice(-b) : String(s);
   const KNOWN = ["reproduced", "not_reproduced", "inconclusive"];
   const word = v => v === "not_reproduced" ? "not reproduced" : String(v);
-  const clock = ts => { const m = /T(\d\d:\d\d:\d\d)/.exec(String(ts)); return m ? m[1] : String(ts); };
+  // Local time like "Nov 17, 2:41 PM". Falls back to the raw text if it does not parse.
+  const when = ts => { const d = new Date(String(ts)); return isNaN(d.getTime()) ? String(ts) : d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); };
+  // Never show raw "N atomic" amounts: turn them into dollars (USDC has 6 decimals).
+  const money = t => String(t === undefined || t === null ? "" : t).replace(/\b(\d{1,12}) atomic\b/g, (_, n) => "$" + (Number(n) / 1e6).toFixed(2));
+  // Amount of the bond that went back: per-report cap (from config) minus what was settled. Never hardcoded.
+  const capAtomic = () => (cfg && cfg.policy && Number.isFinite(Number(cfg.policy.perReportCapUsd))) ? Math.round(Number(cfg.policy.perReportCapUsd) * 1e6) : null;
+  const backAtomic = settled => { const c = capAtomic(); return (c !== null && AMT.test(String(settled)) && Number(settled) <= c) ? String(c - Number(settled)) : null; };
   // Compact display name for a demo input or ledger row. The full label stays in title/aria-label.
   const chipName = d => String(d.id || d.label || "").replace(/^fake_/, "").split("_").map((w, i) => w.toLowerCase() === "arvo" ? "ARVO" : w.toLowerCase() === "asan" ? "ASan" : i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(" ");
   const rowName = r => r.label ? String(r.label).replace(/^HAND-MADE[^:]*:\s*/i, "").split(/\s*[(,]/)[0] : "Unlabeled";
@@ -55,7 +61,7 @@
     wallet: ["M4 7h14a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2z", "M4 7V6a2 2 0 012-2h11", "M16 14h.01"],
     file: ["M7 3h7l5 5v13H7z", "M14 3v5h5"],
     chevron: ["M9 6l6 6-6 6"],
-    spin: ["M12 3a9 9 0 019 9"],
+    spin: ["M12 21a9 9 0 100-18 9 9 0 000 18z", "M12 3a9 9 0 019 9"],
     ring: ["M12 21a9 9 0 100-18 9 9 0 000 18z"],
     undo: ["M9 14L4 9l5-5", "M4 9h10a6 6 0 010 12h-3"],
     ban: ["M12 21a9 9 0 100-18 9 9 0 000 18z", "M5.6 5.6l12.8 12.8"],
@@ -64,7 +70,7 @@
     const s = document.createElementNS(NS, "svg");
     s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("aria-hidden", "true"); s.setAttribute("focusable", "false");
     s.setAttribute("class", "ic" + (cls ? " " + cls : ""));
-    (ICONS[name] || ICONS.dot).forEach(d => { const p = document.createElementNS(NS, "path"); p.setAttribute("d", d); s.appendChild(p); });
+    (ICONS[name] || ICONS.dot).forEach((d, i) => { const p = document.createElementNS(NS, "path"); p.setAttribute("d", d); if (name === "spin" && i === 0) p.setAttribute("opacity", ".25"); s.appendChild(p); });
     return s;
   }
   const btnIcon = (name, label, cls) => { const b = el("button", "btn icon-btn" + (cls ? " " + cls : "")); b.type = "button"; b.setAttribute("aria-label", label); b.appendChild(icon(name)); return b; };
@@ -99,11 +105,11 @@
 
   function txBtn(sig, big) {
     if (typeof sig === "string" && SIG.test(sig)) {
-      const a = el("a", big ? "btn primary lnk" : "txl", big ? "View transaction" : "Tx");
+      const a = el("a", big ? "btn primary lnk" : "txl", big ? "View transaction" : "");
       a.href = "https://explorer.solana.com/tx/" + sig + "?cluster=devnet"; a.target = "_blank"; a.rel = "noopener noreferrer";
-      a.setAttribute("aria-label", "settle tx on Solana Explorer (devnet)"); a.appendChild(icon("external")); return a;
+      a.setAttribute("aria-label", big ? "settle tx on Solana Explorer (devnet)" : "View transaction"); a.title = "settle tx on Solana Explorer (devnet)"; a.appendChild(icon("external")); return a;
     }
-    const s = el("span", "mute", "No link"); s.title = sig ? "invalid signature, no link" : "no transaction recorded"; return s;
+    const s = el("span", "mute", big ? "No link" : "\u2013"); s.title = sig ? "invalid signature, no link" : "no transaction recorded"; return s;
   }
   const PILLS = { reproduced: ["ok", "Reproduced", "check"], not_reproduced: ["forf", "Not reproduced", "x"], inconclusive: ["inc", "Inconclusive", "dash"], error: ["err", "Error", "alert"], busy: ["err", "Error: busy", "alert"], rate_limited: ["err", "Error: rate limited", "alert"], payment_failed: ["err", "Error: payment failed", "alert"] };
   function pill(kind, text, ic) { const p = el("span", "pill p-" + kind); if (ic) p.appendChild(icon(ic)); p.appendChild(document.createTextNode(text)); return p; }
@@ -234,26 +240,26 @@
       mp = ["ok", "Real", "shield"]; mtext = "Real mode";
       mnote = ["Real verifier. The log re-verification passed (" + V.verified + " of " + V.records + " entries). That covers the log, not whether the verdicts are right: a human triages reproduced reports.", "UNVERIFIED viewer: the real-mode view has only been tested against fixtures until a real run is rendered and compared with RESULTS.md."];
     } else { mp = ["neutral", "Real, unchecked", "alert"]; mtext = "Real mode, log not checked"; mnote = ["The signed log could not be checked (" + (logErr || "not loaded yet") + "). Not labeled as verified real results."]; }
-    const mb = el("button", "pillbtn"); mb.type = "button"; mb.setAttribute("aria-label", "Run mode: " + mtext); mb.appendChild(pill(mp[0], mp[1], mp[2]));
+    const mb = el("button", "pillbtn"); mb.type = "button"; mb.setAttribute("aria-label", "Run mode: " + mtext); const mpill = pill(mp[0], mp[1], mp[2]); mpill.classList.add("tp"); mb.appendChild(mpill);
     tr.appendChild(popover(mb, mnote));
     // wallet pill
     const wAddr = typeof cfg.wallet.buyerAddress === "string" ? cfg.wallet.buyerAddress : null, wPay = typeof cfg.wallet.payTo === "string" ? cfg.wallet.payTo : null;
     const wb = el("button", "pillbtn"); wb.type = "button"; wb.setAttribute("aria-label", "Demo wallet " + (wAddr || "not configured"));
-    const wp = el("span", "pill p-neutral mono"); wp.appendChild(icon("wallet")); wp.appendChild(document.createTextNode(wAddr ? short(wAddr) : "No wallet")); wb.appendChild(wp);
+    const wp = el("span", "pill p-neutral mono tp"); wp.appendChild(icon("wallet")); wp.appendChild(el("span", "wfull", wAddr ? short(wAddr) : "No wallet")); wp.appendChild(el("span", "wshort", wAddr ? wAddr.slice(0, 4) : "None")); wb.appendChild(wp);
     tr.appendChild(popover(wb, ["Demo wallet pays on your behalf. This is not a third-party sender.", add(el("p", "mono sm"), el("span", "", "payer " + (wAddr || "not configured"))), add(el("p", "mono sm"), el("span", "", "receiver " + (wPay || "not configured")))]));
     // budget meter
     const b = el("div", "budget"); b.title = "Session budget: " + usd(cfg.session.spentAtomic) + " spent, " + usd(cfg.session.reservedAtomic) + " reserved, " + usd(cfg.session.remainingAtomic) + " left of " + usd(cfg.session.budgetAtomic);
-    b.appendChild(meter(cfg.session, true)); b.appendChild(el("span", "num", usd(cfg.session.remainingAtomic) + " left")); tr.appendChild(b);
+    b.appendChild(meter(cfg.session, true)); b.appendChild(el("span", "num", usd(cfg.session.remainingAtomic))); b.appendChild(el("span", "bl", "left")); tr.appendChild(b);
     // bars
-    if (cfg.mode === "stub") { const s = el("div", "bar-msg stub banner stub"); s.setAttribute("role", "alert"); s.appendChild(icon("alert")); s.appendChild(el("span", "", "STUB MODE: not a real sandbox run")); w.appendChild(s); }
+    if (cfg.mode === "stub") { const s = el("div", "bar-msg stub banner stub"); s.setAttribute("role", "alert"); s.appendChild(icon("alert", "sm")); s.appendChild(el("span", "", "STUB MODE: not a real sandbox run")); w.appendChild(s); }
     if (cfg.mode !== "stub" && cfg.mode !== "real") w.appendChild(el("div", "bar-msg fail")).appendChild(errorBox("UNKNOWN RUN MODE (" + cfg.mode + "): do not treat anything here as evidence."));
     if (logData && !verifyOk) {
-      const bar = el("div", "bar-msg fail"); bar.setAttribute("role", "alert"); bar.appendChild(icon("alert"));
-      const t = el("div", "grow"); t.appendChild(el("div", "", "CHECKS FAILED: signed log did not verify (" + (V.verified ?? "?") + " of " + (V.records ?? "?") + " entries)"));
-      const ul = el("ul", "list"); (V.problems || []).forEach(p => ul.appendChild(el("li", "", "log line " + p.line + ": " + p.message))); if (ul.childNodes.length) t.appendChild(ul);
-      bar.appendChild(t); w.appendChild(bar);
+      // Compact bar; the broken line names live in the drawer behind "View".
+      const bar = el("div", "bar-msg fail"); bar.setAttribute("role", "alert"); bar.appendChild(icon("alert", "sm"));
+      bar.appendChild(el("span", "grow", "CHECKS FAILED: signed log did not verify (" + (V.verified ?? "?") + " of " + (V.records ?? "?") + " entries)"));
+      const vb = el("button", "barlink", "View"); vb.type = "button"; vb.setAttribute("aria-haspopup", "dialog"); vb.addEventListener("click", () => openTrust()); bar.appendChild(vb); w.appendChild(bar);
     } else if (cfg.mode === "real" && !logData) {
-      const bar = el("div", "bar-msg fail"); bar.setAttribute("role", "alert"); bar.appendChild(icon("alert")); bar.appendChild(el("span", "", "Real mode, log not checked (" + (logErr || "no log") + ")")); w.appendChild(bar);
+      const bar = el("div", "bar-msg fail"); bar.setAttribute("role", "alert"); bar.appendChild(icon("alert", "sm")); bar.appendChild(el("span", "", "Real mode, log not checked (" + (logErr || "no log") + ")")); w.appendChild(bar);
     }
   }
 
@@ -261,7 +267,7 @@
   function quoteInfo() {
     const t = cfg.target, L = cfg.limits, out = [];
     const ul = el("ul", "p");
-    ["Bond: $0.25 (USDC, Solana devnet), refundable, posted by the demo agent.", "Reproduced or inconclusive: bond returned ($0 settled).", "Not reproduced: bond forfeited ($0.25 settled).", "Any error, crash or timeout also settles $0."].forEach(s => ul.appendChild(el("li", "", s)));
+    ["Bond: " + usdNum(cfg.policy.perReportCapUsd) + " (USDC, Solana devnet), refundable, posted by the demo agent.", "Reproduced or inconclusive: bond returned ($0 settled).", "Not reproduced: bond forfeited (" + usdNum(cfg.policy.perReportCapUsd) + " settled).", "Any error, crash or timeout also settles $0."].forEach(s => ul.appendChild(el("li", "", s)));
     out.push(ul);
     if (cfg.mode === "stub" || !t.caseId) out.push("Target: none in stub mode (no library is run, no commit is pinned). The verdict is chosen by the file name: a name starting with real is reproduced, flaky is inconclusive, any other name is not reproduced.");
     else {
@@ -316,7 +322,7 @@
       col.appendChild(chips);
     }
     // quote line + submit
-    const q = el("div", "quote"); q.appendChild(el("span", "", "$0.25 bond, refunded if it reproduces")); q.appendChild(info("Quote, limits and caveats", ...quoteInfo()));
+    const q = el("div", "quote"); q.appendChild(el("span", "", usdNum(cfg.policy.perReportCapUsd) + " bond")); q.appendChild(info("Quote, limits and caveats", ...quoteInfo()));
     col.appendChild(q);
     const act = el("div", "actions"); const btn = el("button", "btn primary lg", "Submit"); btn.type = "button"; btn.id = "submit-btn"; btn.addEventListener("click", openConfirm); act.appendChild(btn);
     if (cfg.busy) { const b = pill("inc", "Busy: one job at a time", "dash"); b.setAttribute("role", "status"); act.appendChild(b); }
@@ -326,7 +332,7 @@
     function sync() {
       if (chips) chips.querySelectorAll(".chip").forEach(l => { const on = !!(sel.demo && sel.demo.id === l._id); l.classList.toggle("on", on); l.querySelector("input").checked = on; });
       zone.classList.toggle("has", !!sel.file);
-      zMain.textContent = sel.file ? sel.file.name : "Drop a proof file, or click";
+      zMain.textContent = sel.file ? sel.file.name : "Drop a proof file";
       zSub.textContent = sel.file ? (sel.file.size < 1024 ? sel.file.size + " B" : (sel.file.size / 1024).toFixed(1) + " KB") : "";
       zErr.textContent = sel.fileErr || "";
       btn.disabled = !(sel.demo || sel.file) || cfg.busy;
@@ -336,6 +342,7 @@
     sync();
   }
   function openConfirm() {
+    $("confirm-amt").textContent = usdNum(cfg.policy.perReportCapUsd);
     const what = sel.demo ? (sel.demo.handMade ? "HAND-MADE: " : "") + chipName(sel.demo) : sel.file.name + " (" + sel.file.size + " bytes)";
     $("confirm-what").textContent = what;
     const wa = typeof cfg.wallet.buyerAddress === "string" ? cfg.wallet.buyerAddress : null; $("confirm-wallet").textContent = wa ? short(wa) : "not configured"; $("confirm-wallet").title = wa || "";
@@ -421,56 +428,64 @@
     const ol = el("ol", "stepper"); ol.setAttribute("aria-label", "Progress");
     const live = !run.done && !run.lost; let prev = true, prevDone = false;
     const lab = { pending: "waiting", active: "in progress", done: "done", fail: "failed", err: "error", skip: "skipped" };
-    const ic = { pending: "ring", active: "spin", done: "check", fail: "x", err: "alert", skip: "dash" };
+    const ic = { pending: "ring", active: "spin", done: "check", fail: "x", err: "alert", skip: null };
     STEPS.forEach(([k, name], i) => {
       const s = run.steps[k]; let st = s.st;
       if (k === "settled" && run.chain === "active" && st !== "done") st = "active";
       else if (st === "pending" && live && prev) st = "active";
-      const li = el("li", "st st-" + st + (i && prevDone ? " link" : "")); li.setAttribute("aria-label", name + ", " + lab[st]); if (st === "active") li.setAttribute("aria-current", "step"); if (s.text) li.title = s.text;
-      li.appendChild(add(el("span", "node"), icon(ic[st], st === "active" ? "spin" : ""))); li.appendChild(el("span", "nm", name)); ol.appendChild(li);
+      const li = el("li", "st st-" + st + (i && prevDone ? " link" : "")); li.setAttribute("aria-label", name + ", " + lab[st]); if (st === "active") li.setAttribute("aria-current", "step"); if (s.text) li.title = money(s.text);
+      li.appendChild(add(el("span", "node"), ic[st] ? icon(ic[st], st === "active" ? "spin" : "") : null)); li.appendChild(el("span", "nm", name)); ol.appendChild(li);
       prevDone = s.st === "done"; if (s.st !== "done") prev = false;
     });
     return ol;
   }
-  function amountRow(atomic, label) { const d = el("div", "amt"); d.appendChild(el("span", "num", atomic === null || atomic === undefined ? "unknown" : usd(atomic))); d.appendChild(el("span", "mute", label || "settled")); return d; }
+  // Hero amount: a big number plus a short caption. For a returned bond the number is what came back (cap minus settled).
+  function amountRow(num, caption) { const d = el("div", "amt"); d.appendChild(el("span", "num", num)); d.appendChild(el("span", "mute", caption)); return d; }
+  function settledHero(atomic) { return amountRow(atomic === null || atomic === undefined ? "unknown" : usd(atomic), "settled"); }
+  function returnedHero(atomic) { const b = backAtomic(atomic); return b === null ? settledHero(atomic) : amountRow(usd(b), "back to your wallet"); }
+  const reasonFor = v => v === "reproduced" ? "Bug reproduced" : v === "not_reproduced" ? "Not reproduced" : v === "inconclusive" ? "Could not decide" : null;
+  function refusalTitle(m) { m = String(m || ""); if (/allowlist|endpoint|URL/i.test(m)) return "Not allowed"; if (/per-report cap|above .*cap/i.test(m)) return "Over limit"; if (/budget/i.test(m)) return "Budget used up"; return "Refused"; }
   function outcomeCard() {
     const r = run, card = el("div", "ocard"); card.setAttribute("aria-live", "polite");
-    const head = (kind, ic, title, spinner) => { const h = el("div", "oh"); h.appendChild(add(el("span", "oi"), icon(spinner ? "spin" : ic, spinner ? "spin" : ""))); h.appendChild(el("h2", "ot", title)); card.className = "ocard o-" + kind; card.appendChild(h); };
+    const head = (kind, ic, title, spinner, sub, extra) => {
+      const h = el("div", "oh"); h.appendChild(add(el("span", "oi"), icon(spinner ? "spin" : ic, spinner ? "spin" : "")));
+      const t = el("div", "ohb"); t.appendChild(el("h2", "ot", title)); if (sub) t.appendChild(el("p", "os", sub)); h.appendChild(t); if (extra) h.appendChild(extra);
+      card.className = "ocard o-" + kind; card.appendChild(h);
+    };
     const note = t => card.appendChild(el("p", "os", t));
     const acts = el("div", "actions");
     const again = () => { if (r.done) { const b = el("button", "btn", "Submit another"); b.type = "button"; b.addEventListener("click", () => selectTab("submit", true)); acts.appendChild(b); } };
     if (r.refused || r.error) {
-      head("err", "alert", r.refused ? "Refused by policy" : "Error");
-      if (r.refused) note("No payment was made.");
+      if (r.refused) { head("err", "ban", refusalTitle(r.steps.policy.text || (r.error && r.error.message)), false, "No payment was made."); }
       else {
-        card.appendChild(amountRow(r.error && r.error.atomic !== null && r.error.atomic !== undefined ? r.error.atomic : r.outcome ? r.outcome.atomic : null));
-        if (r.steps.verdict.st === "err") note(r.steps.verdict.text);
+        head("err", "alert", "Error");
+        const ea = r.error && r.error.atomic !== null && r.error.atomic !== undefined ? r.error.atomic : r.outcome ? r.outcome.atomic : null;
+        card.appendChild(ea === "0" ? returnedHero(ea) : settledHero(ea));
+        if (r.steps.verdict.st === "err") note(money(r.steps.verdict.text));
         else if (r.error.atomic === null || r.error.atomic === undefined) note("Outcome unknown, check the log.");
         else if (r.error.atomic === "0") note("The error path settles $0, bond returned.");
       }
-      if (r.refused && r.error) card.appendChild(el("p", "mono sm msg", r.error.message));
       if (r.outcome && r.outcome.tx) acts.appendChild(txBtn(r.outcome.tx, true));
       again(); card.appendChild(acts); return card;
     }
     if (r.outcome) {
       const o = r.outcome;
       if (r.verdict === "error") {
-        head("err", "alert", "Error"); card.appendChild(amountRow(o.atomic)); note(r.steps.verdict.text);
+        head("err", "alert", "Error"); card.appendChild(o.atomic === "0" ? returnedHero(o.atomic) : settledHero(o.atomic)); note(money(r.steps.verdict.text));
       } else {
-        const inc = r.verdict === "inconclusive";
-        if (o.kind === "returned") head(inc ? "inc" : "ok", inc ? "dash" : "check", inc ? "Inconclusive, bond returned" : "Bond returned");
-        else if (o.kind === "forfeited") head("forf", "x", "Bond forfeited");
-        else head("inc", "alert", "Bond outcome unknown");
-        card.appendChild(amountRow(o.atomic));
-        if (o.kind === "unknown") note("Check the chain before assuming either way.");
+        const inc = r.verdict === "inconclusive", why = reasonFor(r.verdict);
+        if (o.kind === "returned") { head(inc ? "inc" : "ok", inc ? "dash" : "check", "Bond returned", false, why); card.appendChild(returnedHero(o.atomic)); }
+        else if (o.kind === "forfeited") { head("forf", "x", "Bond forfeited", false, why); card.appendChild(amountRow(usd(o.atomic), "paid out")); }
+        else { head("inc", "alert", "Bond outcome unknown", false, why); card.appendChild(settledHero(o.atomic)); note("Check the chain before assuming either way."); }
       }
-      if (r.recovered) note("Outcome read back from the signed verdict log.");
-      const inf = info("About this outcome", o.kind === "returned" ? "The sandbox did not settle any money; the escrowed $0.25 deposit goes back to the demo wallet." : o.kind === "forfeited" ? usd(o.atomic) + " was settled to the receiver wallet (a transfer between our own demo wallets)." : "Settled amount reported: " + usd(o.atomic) + ". Do not assume either way until the chain confirms.", "One Explorer link only: the log records the settle tx, not the deposit tx.");
-      acts.appendChild(txBtn(o.tx, true)); again(); acts.appendChild(inf); card.appendChild(acts); return card;
+      acts.appendChild(txBtn(o.tx, true)); again(); card.appendChild(acts); return card;
     }
     if (r.lost) {
-      head("inc", "alert", "Lost the live connection"); card.setAttribute("role", "alert"); note("Outcome UNKNOWN.");
-      if (r.checking) { const c = el("p", "os chk"); c.appendChild(icon("spin", "spin")); c.appendChild(document.createTextNode("Checking the chain")); card.appendChild(c); }
+      // One line: spinner while checking, "Lost the live connection" + "Checking the chain". The explanation is in the popover.
+      const why = info("About the lost connection", "The live connection dropped. A payment may already have been signed, so the signed record for this report hash decides the outcome. Nothing is assumed either way until it is found.");
+      const u = pill("inc", "UNKNOWN", null); u.classList.add("unk");
+      head("inc", "alert", r.checking ? "Lost the live connection \u00b7 Checking the chain" : "Lost the live connection", !!r.checking, null, add(el("span", "ohx"), u, why));
+      card.setAttribute("role", "alert");
       if (r.gaveUp) note("No signed record yet. Still UNKNOWN: see the Ledger.");
       return card;
     }
@@ -478,20 +493,30 @@
     if (r.done) { head("inc", "alert", "No settlement seen"); note("Check the Ledger."); again(); card.appendChild(acts); return card; }
     card.className = "ocard o-wait"; card.appendChild(skeleton(3, "Waiting for events")); return card;
   }
+  function evLine(e) {
+    const d = e.d || {};
+    if (e.t === "decision") return "decision " + d.action + ": " + money(d.detail);
+    if (e.t === "verdict") return "verdict " + d.verdict + (d.detail ? ": " + money(d.detail) : "");
+    if (e.t === "settled") return "settled " + usd(d.settledAtomic) + (d.bondOutcome ? " (" + d.bondOutcome + ")" : "");
+    if (e.t === "error") return "error: " + money(d.message);
+    return e.t;
+  }
   function renderRun() {
     const p = $("panel-run"); p.replaceChildren();
     const col = el("div", "col");
-    if (!run) col.appendChild(emptyState("activity", "No active run.", "Submit a proof", () => selectTab("submit", true)));
+    if (!run) col.appendChild(emptyState("activity", "No active run", "Submit a proof", () => selectTab("submit", true)));
     else {
       col.appendChild(stepper()); col.appendChild(outcomeCard());
       const d = el("details", "disc"); d.appendChild(el("summary", "", "Details"));
       const dl = el("dl", "kv"); const kv = (k, v, mono) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", mono ? "mono" : "", v)); };
-      kv("Job", run.jobId, true); if (run.error) kv("Message", run.error.message); kv("Report hash", run.reportHash || "not yet known", true);
-      STEPS.forEach(([k, n]) => { if (run.steps[k].text) kv(n, run.steps[k].text); });
-      run.notes.forEach(n => kv("Note", n));
+      kv("Job", run.jobId, true); if (run.error) kv("Message", money(run.error.message)); kv("Report hash", run.reportHash || "not yet known", true);
+      STEPS.forEach(([k, n]) => { if (run.steps[k].text) kv(n, money(run.steps[k].text)); });
+      if (run.outcome && run.verdict !== "error") kv("Outcome", run.outcome.kind === "returned" ? "The sandbox settled no money; the escrowed bond goes back to the demo wallet." : run.outcome.kind === "forfeited" ? usd(run.outcome.atomic) + " was settled to the receiver wallet (a transfer between our own demo wallets)." : "Settled amount reported: " + usd(run.outcome.atomic) + ". Do not assume either way until the chain confirms.");
+      if (run.outcome) kv("Explorer", "One link only: the log records the settle tx, not the deposit tx.");
+      if (run.recovered) kv("Source", "Outcome read back from the signed verdict log.");
+      run.notes.forEach(n => kv("Note", money(n)));
       d.appendChild(dl);
-      const ev = el("div", "evs"); run.events.forEach(e => ev.appendChild(el("div", "mono sm", e.t + " " + JSON.stringify(e.d)))); d.appendChild(ev);
-      if (run.lost && !run.recovered) d.appendChild(el("p", "mute sm", "A payment may already have been signed. The signed record for this report hash decides the outcome."));
+      const ev = el("div", "evs"); run.events.forEach(e => ev.appendChild(el("div", "mono sm", evLine(e)))); d.appendChild(ev);
       col.appendChild(d);
     }
     if (logData && logData.records.length) {
@@ -529,7 +554,7 @@
     kv("Verified", V.records ? V.verified + " of " + V.records + " log entries" : "No entries to verify yet");
     kv("Signer key (pinned)", L.signer, true);
     kv("Log head", L.head ? "seq " + L.head.seq + ", sha256(last line) " + L.head.hash : "none (empty log)", true);
-    kv("Mode", L.mode); kv("Network", "Solana devnet; cap $0.25 per report");
+    kv("Mode", L.mode); kv("Network", "Solana devnet; cap " + (cfg ? usdNum(cfg.policy.perReportCapUsd) : "unknown") + " per report");
     body.appendChild(dl);
     const ul = el("ul", "p");
     ["Tail truncation is undetectable from the log alone: dropping the last N records leaves a valid chain. Publish the head hash and seq elsewhere to make it detectable.",
@@ -537,6 +562,7 @@
       "Both wallets belong to the demo operator; a forfeit here is a transfer between our own wallets.",
       "The log stores one transaction signature per report, the settle tx. The deposit (escrow open) tx is not recorded, so each report has at most one link.",
       "The sandbox is a filter, not a judge. Not reproduced only means this pinned build ran the input clean.",
+      "REAL and HAND-MADE labels are assigned by hand in demo/manifest.json by proof hash. They are not measured by the system and are not in the signed log. Entries with no label were submitted outside the demo set.",
       "This does not prove that spam is stopped. The demo set is small and hand-picked."].forEach(s => ul.appendChild(el("li", "", s)));
     ["flaky_or_timeout", "crash_on_both"].forEach(k => ul.appendChild(el("li", "", k + ": NOT demonstrated. The backtest found no genuine example and we do not fake one.")));
     ul.appendChild(el("li", "", "libucl/ARVO caveat: the fixed image is a later libucl version, not the per-bug fix commit; reproduced means the input triggers the expected ASan error on the pinned vulnerable build and the crash is gone in a later libucl."));
@@ -556,39 +582,43 @@
       else if (r.verdict === "inconclusive") c.inconclusive++; else { c.errors++; errRows.push(r); }
     });
     const col = el("div", "col");
-    const top = el("div", "ltop"); top.appendChild(el("h2", "sec", "Ledger")); top.appendChild(trustBadge(V)); col.appendChild(top);
+    const top = el("div", "ltop"); top.appendChild(trustBadge(V)); col.appendChild(top);
     const g = el("div", "tiles");
-    const tile = (n, l, kind, extra) => { const d = el("div", "tile t-" + kind); const h = el("div", "tl"); h.appendChild(el("span", "dotk")); h.appendChild(el("span", "l", l)); if (extra) h.appendChild(extra); d.appendChild(h); d.appendChild(el("div", "n num", n)); g.appendChild(d); };
+    const tile = (n, l, kind, extra, title) => { const d = el("div", "tile t-" + kind); const h = el("div", "tl"); h.appendChild(el("span", "dotk")); h.appendChild(el("span", "l", l)); if (extra) h.appendChild(extra); d.appendChild(h); d.appendChild(el("div", "n num" + (n === 0 ? " zero" : ""), n)); if (title) d.title = title; g.appendChild(d); };
     tile(c.reproduced, "Reproduced", "ok");
     const wrongNote = L.mode === "stub"
       ? ["Wrongly forfeited: n/a, not meaningful in stub mode: stub verdicts follow the filename."]
       : ["Wrongly forfeited: " + c.wrong + ". Hand-labeled real bugs that were forfeited.", "\"Real bug\" and \"hand-made fake\" labels, and so this count, are assigned by hand in demo/manifest.json by proof hash. The system does not measure them and they are not in the signed log. Entries with no label were submitted outside the demo set."];
     tile(c.forfeited, "Not reproduced", "forf", info("Wrongly forfeited", ...wrongNote));
     tile(c.inconclusive, "Inconclusive", "inc");
-    tile(c.errors, "Error", "err", errRows.length ? info("Error settlements", "Settled: " + errRows.map(r => usd(r.settledAtomic)).join(", ") + " (expected $0).") : null);
+    tile(c.errors, "Error", "err", null, errRows.length ? "Error settlements: " + errRows.map(r => usd(r.settledAtomic)).join(", ") + " (expected $0)" : "");
     col.appendChild(g);
     if (!recs.length) { col.appendChild(emptyState("ledger", "No reports yet.", "Submit a proof", () => selectTab("submit", true))); p.appendChild(col); return; }
+    const narrow = window.matchMedia("(max-width:640px)").matches;
     const wrap = el("div", "tablewrap"); const tb = el("table", "tbl");
-    const hr = el("tr"); const th = (t, cls, x) => { const h = el("th", cls || "", t); if (x) h.appendChild(x); hr.appendChild(h); };
-    th("Label", "", info("About labels", "REAL and HAND-MADE labels are assigned by hand in demo/manifest.json by proof hash. They are not measured by the system and are not in the signed log. Entries with no label were submitted outside the demo set."));
-    th("Status"); th("Settled", "r"); th("Tx", "", info("About the tx link", "The log stores one transaction signature per report, the settle tx. The deposit (escrow open) tx is not recorded in the log, so each report has at most one link.")); th("#", "r seqc");
+    const hr = el("tr"); const th = (t, cls, lab) => { const h = el("th", cls || "", t); if (lab) h.setAttribute("aria-label", lab); hr.appendChild(h); };
+    th("Label"); th("Status"); th("Paid", "r"); if (!narrow) th("", "txc", "Transaction");
     const hd = el("thead"); hd.appendChild(hr); tb.appendChild(hd);
     const body = el("tbody");
+    const LABEL_NOTE = "Label assigned by hand in demo/manifest.json by proof hash; not measured by the system.";
     recs.forEach(r => {
       const bad = r.sigOk !== true;
       const tr = el("tr", bad ? "broken" : "");
       const c1 = el("td", "lab"); const eb = el("button", "exp"); eb.type = "button"; eb.setAttribute("aria-expanded", "false"); eb.title = r.label || "Unlabeled submission";
       eb.appendChild(icon("chevron", "sm")); eb.appendChild(el("span", "ln", rowName(r)));
-      if (r.category === "hand_made_fake") eb.appendChild(el("span", "tag", "HAND-MADE")); else if (r.category === "real_bug") eb.appendChild(el("span", "tag real", "REAL"));
+      let tg = null; if (r.category === "hand_made_fake") tg = el("span", "tag", "HAND-MADE"); else if (r.category === "real_bug") tg = el("span", "tag", "REAL");
+      if (tg) { tg.title = LABEL_NOTE; eb.appendChild(tg); }
       c1.appendChild(eb); tr.appendChild(c1);
       const c2 = el("td"); c2.appendChild(bad ? pill("err", "Not verified", "alert") : verdictPill(r.verdict)); if (r.settlementStatus === "pending") c2.appendChild(el("span", "mute sm", " Checking the chain")); tr.appendChild(c2);
       tr.appendChild(el("td", "r num", r.settledAtomic === null ? "none" : usd(r.settledAtomic)));
-      const c4 = el("td"); c4.appendChild(txBtn(r.txSignature, false)); tr.appendChild(c4);
-      tr.appendChild(el("td", "r seqc num", r.seq));
+      const tx = txBtn(r.txSignature, false);
+      if (!narrow) { const c4 = el("td", "txc"); c4.appendChild(tx); tr.appendChild(c4); }
       body.appendChild(tr);
-      const dr = el("tr", "drow"); dr.hidden = true; const dc = el("td"); dc.colSpan = 5;
+      const dr = el("tr", "drow"); dr.hidden = true; const dc = el("td"); dc.colSpan = narrow ? 3 : 4;
       const dl = el("dl", "kv"); const kv = (k, v) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "mono", v)); };
-      kv("Detail", r.detail ?? "-"); kv("Report hash", r.reportHash); kv("Time", r.timestamp); kv("Status", r.settlementStatus === "pending" ? "checking the chain" : String(r.settlementStatus)); kv("Log record", "seq " + r.seq + (bad ? " (NOT VERIFIED)" : " (signature ok)"));
+      kv("Detail", r.detail ?? "-"); kv("Report hash", r.reportHash); kv("Time", when(r.timestamp)); kv("Status", r.settlementStatus === "pending" ? "checking the chain" : String(r.settlementStatus)); kv("Log record", "seq " + r.seq + (bad ? " (NOT VERIFIED)" : " (signature ok)"));
+      if (tg) kv("Label", (r.category === "hand_made_fake" ? "HAND-MADE. " : "REAL. ") + LABEL_NOTE);
+      if (narrow) { dl.appendChild(el("dt", "", "Transaction")); const dd = el("dd"); dd.appendChild(tx); dl.appendChild(dd); }
       if (bad) dc.appendChild(errorBox("This record's signature did not verify. Do not trust it."));
       dc.appendChild(dl); dr.appendChild(dc); body.appendChild(dr);
       eb.addEventListener("click", () => { const o = dr.hidden; dr.hidden = !o; eb.setAttribute("aria-expanded", String(o)); tr.classList.toggle("open", o); });
@@ -596,7 +626,17 @@
     tb.appendChild(body); wrap.appendChild(tb); col.appendChild(wrap); p.appendChild(col);
   }
 
+  window.matchMedia("(max-width:640px)").addEventListener("change", () => { if (logData) renderResults(); });
   // ---------- Inbox ----------
+  // Click-to-copy. textContent only; the clipboard API may be missing or blocked, so fall back to a hidden textarea and never throw.
+  async function copyText(text, btn) {
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (_) {
+      try { const t = document.createElement("textarea"); t.value = text; t.setAttribute("readonly", ""); t.className = "vh"; document.body.appendChild(t); t.select(); ok = document.execCommand("copy"); t.remove(); } catch (_2) { ok = false; }
+    }
+    const old = btn.dataset.t || btn.textContent; btn.dataset.t = old; btn.textContent = ok ? "Copied" : "Copy failed";
+    setTimeout(() => { btn.textContent = old; }, 1200);
+  }
   function renderInbox() {
     const p = $("panel-inbox"); p.replaceChildren();
     if (inboxErr) { p.appendChild(errorBox("Could not load the inbox: " + inboxErr, loadInbox)); return; }
@@ -604,16 +644,15 @@
     const items = inboxData.items;
     if (!items.length) { p.appendChild(emptyState("inbox", "Nothing to triage.", "Submit a proof", () => selectTab("submit", true))); return; }
     const col = el("div", "col");
-    const top = el("div", "ltop"); top.appendChild(el("h2", "sec", "Inbox")); top.appendChild(add(el("span", "tt"), el("span", "mute sm", "Triage note"), info("About triage notes", "Notes only, no payout. Nothing here moves money: the verdict already decided the settlement. These controls write local triage notes only."))); col.appendChild(top);
     const NOTE = { valid: "Valid", not_a_bug: "Not a bug", misuse: "Misuse" };
     items.forEach(it => {
       const card = el("article", "item");
       const r1 = el("div", "i1"); r1.appendChild(verdictPill(it.verdict));
-      r1.appendChild(el("h3", "ih", it.errorType ? it.errorType + (it.topFrame ? " at " + it.topFrame : "") : it.topFrame ? "Top frame: " + it.topFrame : "No error type in the log detail")); card.appendChild(r1);
-      const r2 = el("div", "i2"); const hs = el("span", "mono sm", short(it.reportHash, 8, 4)); hs.title = it.reportHash; r2.appendChild(hs);
+      r1.appendChild(el("h3", "ih", it.errorType ? it.errorType + (it.topFrame ? " at " + it.topFrame : "") : it.topFrame ? "Top frame: " + it.topFrame : "Needs a look")); card.appendChild(r1);
+      const r2 = el("div", "i2"); const hs = el("button", "hashbtn mono sm", short(it.reportHash, 8, 4)); hs.type = "button"; hs.title = "Copy proof hash"; hs.setAttribute("aria-label", "Copy proof hash " + it.reportHash);
+      hs.addEventListener("click", () => copyText(it.reportHash, hs)); r2.appendChild(hs);
       const cur = it.note && NOTE[it.note.decision] ? it.note.decision : null;
-      r2.appendChild(cur ? pill("ok", NOTE[cur], "check") : pill("neutral", "Untriaged", "dot"));
-      const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Triage note"); seg.title = "Notes only, no payout";
+      const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Triage note, no payout"); seg.title = "Notes only, no payout";
       const ta = document.createElement("input"); ta.type = "text"; ta.className = "note-in"; ta.maxLength = 500; ta.placeholder = "Optional note"; ta.setAttribute("aria-label", "Triage note text"); ta.value = it.note && it.note.text ? it.note.text : "";
       const msg = el("span", "sm err-t", "");
       Object.entries(NOTE).forEach(([d, l]) => {
@@ -625,11 +664,11 @@
         });
         seg.appendChild(b);
       });
-      const sw = el("div", "segwrap"); sw.appendChild(seg); r2.appendChild(sw); card.appendChild(r2);
+      const sw = el("div", "segwrap"); const tn = el("span", "tt mute"); tn.tabIndex = 0; tn.title = "Triage notes only, no payout. Nothing here moves money: the verdict already decided the settlement."; tn.setAttribute("aria-label", tn.title); tn.appendChild(icon("file")); sw.appendChild(tn); sw.appendChild(seg); r2.appendChild(sw); card.appendChild(r2);
       const d = el("details", "disc"); d.appendChild(el("summary", "", "Details"));
       const dl = el("dl", "kv"); const kv = (k, v) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "mono", v)); };
-      kv("Proof hash", it.reportHash); kv("Case", (it.caseId || "-") + " / " + (it.targetCommit || "-")); kv("Time", it.timestamp); kv("Log detail", it.detail);
-      if (it.note) kv("Note", NOTE[it.note.decision] + (it.note.text ? " - " + it.note.text : "") + " (" + it.note.ts + ")");
+      kv("Proof hash", it.reportHash); kv("Case", (it.caseId || "-") + " / " + (it.targetCommit || "-")); kv("Time", when(it.timestamp)); kv("Log detail", it.detail);
+      if (it.note) kv("Note", NOTE[it.note.decision] + (it.note.text ? " - " + it.note.text : "") + " (" + when(it.note.ts) + ")");
       d.appendChild(dl); const nr = el("div", "noterow"); nr.appendChild(ta); nr.appendChild(msg); d.appendChild(nr); card.appendChild(d);
       col.appendChild(card);
     });
@@ -644,23 +683,26 @@
     const po = cfg.policy, s = cfg.session;
     const grid = el("div", "grid2");
     const card = (title, x) => { const c = el("section", "acard"); const h = el("div", "ach"); h.appendChild(el("h2", "sec", title)); if (x) h.appendChild(x); c.appendChild(h); grid.appendChild(c); return c; };
-    const lim = card("Limits", info("About limits", "Enforced in agent code. Human approval above " + usdNum(po.approvalThresholdUsd) + ": the confirm dialog is that approval."));
-    const dl = el("dl", "kv"); const kv = (k, v) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "num", v)); };
-    kv("Per report", usdNum(po.perReportCapUsd)); kv("Session", usdNum(po.sessionBudgetUsd)); kv("Approval above", usdNum(po.approvalThresholdUsd)); kv("Retries", String(po.retryBudget)); lim.appendChild(dl);
+    const lim = card("Limits");
+    const dl = el("dl", "kv"); const kv = (k, v, tip) => { const dt = el("dt", "", k); if (tip) dt.title = tip; dl.appendChild(dt); const dd = el("dd", "num"); if (v instanceof Node) dd.appendChild(v); else dd.textContent = v; dl.appendChild(dd); };
+    kv("Per report", usdNum(po.perReportCapUsd)); kv("Session", usdNum(po.sessionBudgetUsd));
+    kv("Ask me above", usdNum(po.approvalThresholdUsd), "Enforced in agent code. Human approval above " + usdNum(po.approvalThresholdUsd) + ": the confirm dialog is that approval.");
+    let host = null; try { host = new URL(po.allowedUrl).host; } catch (_) { host = null; }
+    const chip = el("span", "hostchip mono", host || String(po.allowedUrl)); chip.title = String(po.allowedUrl); chip.tabIndex = 0;
+    kv("Allowed", chip, "Allowlisted endpoint: " + po.allowedUrl);
+    lim.appendChild(dl);
     const bud = card("Budget"); bud.appendChild(meter(s));
     const lg = el("div", "legend");
     [["sp", "Spent", s.spentAtomic], ["rs", "Reserved", s.reservedAtomic], ["rm", "Left", s.remainingAtomic]].forEach(([c, l, a]) => { const i = el("span", "lg"); i.appendChild(el("span", "sw " + c)); i.appendChild(document.createTextNode(l + " ")); i.appendChild(el("span", "num", usd(a))); lg.appendChild(i); });
     bud.appendChild(lg);
-    const al = card("Allowlist"); al.appendChild(el("p", "mono sm", po.allowedUrl));
-    const ds = card("Decisions", info("About decisions", "Decisions seen in this browser session only (the backend has no history endpoint). They appear here as runs happen."));
-    ds.classList.add("wide");
-    if (!decisions.length) ds.appendChild(el("p", "mute", "No decisions yet."));
-    else {
-      const ol = el("ol", "tl-list");
-      decisions.slice().reverse().forEach(x => { const li = el("li", "ev ev-" + x.action); li.appendChild(el("span", "mono sm t", clock(x.ts))); li.appendChild(el("span", "act", x.action)); li.appendChild(el("span", "dt2", x.detail)); ol.appendChild(li); });
-      ds.appendChild(ol);
-    }
     p.appendChild(grid);
+    if (!decisions.length) { const e = el("p", "mute dec-empty", "No decisions yet"); e.title = "Decisions seen in this browser session only (the backend has no history endpoint)."; p.appendChild(e); }
+    else {
+      const ds = el("section", "acard wide"); const h = el("div", "ach"); const ht = el("h2", "sec", "Decisions"); ht.title = "Decisions seen in this browser session only (the backend has no history endpoint)."; h.appendChild(ht); h.appendChild(el("span", "mute sm", "this session")); ds.appendChild(h);
+      const ol = el("ol", "tl-list");
+      decisions.slice().reverse().forEach(x => { const li = el("li", "ev ev-" + x.action); li.appendChild(el("span", "mono sm t", when(x.ts))); li.appendChild(el("span", "act", x.action)); li.appendChild(el("span", "dt2", money(x.detail))); ol.appendChild(li); });
+      ds.appendChild(ol); const w = el("div", "agrid1"); w.appendChild(ds); p.appendChild(w);
+    }
   }
 
   // ---------- tabs ----------
@@ -693,7 +735,7 @@
   async function loadAll() { renderBanners(); await loadConfig(); renderBanners(); renderSubmit(); renderPolicy(); await Promise.all([loadLog(), loadInbox()]); }
 
   // dialogs
-  $("confirm-info").appendChild(info("Settlement rules", "The demo agent will pay up to $0.25 from the demo wallet. If the report is reproduced or inconclusive the bond is returned ($0 settled). If it is not reproduced the bond is forfeited ($0.25 settled). Your click here is the approval."));
+  $("confirm-info").textContent = "Returned if reproduced or inconclusive. Forfeited if not.";
   $("confirm-cancel").addEventListener("click", () => $("confirm").close());
   $("confirm-ok").addEventListener("click", () => { $("confirm").close(); doSubmit(); });
   $("confirm").addEventListener("click", e => { if (e.target === $("confirm")) $("confirm").close(); });
