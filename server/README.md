@@ -13,6 +13,9 @@ Run (facilitator must already be up on 4022, started with PORT=4022 explicitly):
     node test/unit.ts                           # pure decision tests
 Env needed: SVM_ADDRESS, SVM_RECEIVER_AUTHORIZER_PRIVATE_KEY, SVM_RPC_URL (dedicated; public devnet RPC refused), FACILITATOR_URL, optional SERVER_PORT, MAX_INPUT_BYTES, VERIFIER_TIMEOUT_SECONDS (capped at 60), VERIFIER_PATH, ALLOW_STUB_VERIFIER.
 With ALLOW_STUB_VERIFIER=1 the header `x-test-filename` picks the temp filename (the stub routes on filename). TEST ONLY.
-Not done here: rate limit, concurrency cap, verdict log, settlement_pending polling, agent.
+settlement_pending: `src/settlement.ts` is an onSettleFailure hook that polls the dedicated RPC (getSignatureStatuses, bounded by SETTLEMENT_POLL_SECONDS, default 45, max 120) for the pending signature; confirmed => treated as settled, otherwise the failure is reported (HTTP 402) and the facilitator's abandon-close returns the escrow ~7-10 min later.
+Test-only (need ALLOW_STUB_VERIFIER=1): header `x-test-fault: throw|escape|overcap`; `test/fake_verifier.py` (sleepN.bin sleeps N s); `test/pending_proxy.ts <fac-url> <port> real|bogus` simulates settlement_pending.
+Limits (src/limits.ts, D-009): VERIFIER_MAX_CONCURRENT (default 2, max 2) over-cap => 200 verdict `busy`, $0; RATE_LIMIT_SECONDS (default 10) per payer wallet: best-effort 429 before payment, authoritative post-payment `rate_limited`, $0. In memory.
+Verdict log: server/src/verdictlog.ts (see AGENTS/VERDICT_LOG.md). Agent: agent/. Demo: scripts/demo.sh.
 
 Ports (per human update): SERVER_PORT=4021 (this server), FACILITATOR_PORT=4022. `server/scripts/start-facilitator.sh` sets PORT=$FACILITATOR_PORT inline for the facilitator process only. FACILITATOR_URL stays http://localhost:4022. This server never reads PORT.

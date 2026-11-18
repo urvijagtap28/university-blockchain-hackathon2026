@@ -14,11 +14,16 @@ const url = `http://localhost:${process.env.SERVER_PORT || 4021}/report`;
 const client = new x402Client();
 client.setSpendControls({ maxAmountPerPayment: "$0.25" });
 client.register("solana:*", new UptoSvmScheme(await createKeyPairSignerFromBytes(base58.decode(key))));
-const pay = wrapFetchWithPayment(fetch, client);
+// TEST ONLY: CLIENT_ABORT_MS drops the connection that many ms after start (injected into every underlying fetch).
+const t0abort = Date.now();
+const baseFetch: typeof fetch = process.env.CLIENT_ABORT_MS
+  ? (i, init) => fetch(i, { ...init, signal: AbortSignal.timeout(Math.max(1, Number(process.env.CLIENT_ABORT_MS) - (Date.now() - t0abort))) })
+  : fetch;
+const pay = wrapFetchWithPayment(baseFetch, client);
 const t0 = performance.now();
 const res = await pay(url, {
   method: "POST",
-  headers: { "content-type": "application/octet-stream", ...(testName ? { "x-test-filename": testName } : {}) },
+  headers: { "content-type": "application/octet-stream", ...(testName ? { "x-test-filename": testName } : {}), ...(process.env.TEST_FAULT ? { "x-test-fault": process.env.TEST_FAULT } : {}) },
   body: readFileSync(file),
 });
 const result = await new x402HTTPClient(client).processResponse(res);

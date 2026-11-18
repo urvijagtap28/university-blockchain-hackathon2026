@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<title>Prove-It Bond demo results</title>
+<style>
+:root{--bg:#0e1013;--panel:#161a1f;--line:#2a3039;--fg:#d9dee5;--mute:#8b95a3;--ok:#5fd18b;--bad:#ff6b6b;--warn:#f2b84b;--info:#6aa9ff;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:20px 0 4px}h2{font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:32px 0 10px}
+.mono,code{font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere;word-break:break-all}
+.sub{color:var(--mute);margin:0 0 8px}
+.banner{border:2px solid;padding:12px 16px;margin:12px 0;font-weight:600}
+.banner .list{font-weight:400;font-family:var(--mono);font-size:12.5px;margin:8px 0 0;padding-left:18px}
+.banner.stub{border-color:var(--warn);background:#2a2110;color:var(--warn);font-size:17px}
+.banner.fail{border-color:var(--bad);background:#2b1214;color:var(--bad)}
+.banner.real{border-color:var(--ok);background:#10231a;color:var(--ok)}
+.banner.note{border-color:var(--info);background:#10192a;color:var(--info);font-weight:400}
+.stubbar{position:sticky;top:0;z-index:5}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.counts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.count{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px}
+.count .n{font-size:30px;font-weight:700;font-family:var(--mono)}
+.count .l{color:var(--mute);font-size:13px}
+.count .x{color:var(--mute);font-size:12px;margin-top:4px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.card h3{font-size:14px;margin:6px 0;font-weight:600}
+.row{display:flex;justify-content:space-between;gap:8px;margin:4px 0;font-size:13px}
+.row span:first-child{color:var(--mute)}
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:700;font-family:var(--mono);border:1px solid}
+.b-repro{color:var(--ok);border-color:var(--ok)}.b-forf{color:var(--bad);border-color:var(--bad)}.b-inc{color:var(--warn);border-color:var(--warn)}.b-err{color:var(--bad);border-color:var(--bad);background:#2b1214}
+.tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:.04em;margin-right:6px;background:#2d2a14;color:var(--warn)}
+.tag.real{background:#14233a;color:var(--info)}
+a{color:var(--info)}
+svg{width:100%;min-width:640px;height:auto;max-width:1060px;display:block}.dia{overflow-x:auto}
+svg text{fill:var(--fg);font:13px system-ui,sans-serif}svg .m{fill:var(--mute);font-size:11px}
+svg rect{fill:var(--panel);stroke:var(--line)}svg line,svg path{stroke:var(--mute);fill:none}
+dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:4px 14px}dt{color:var(--mute)}dd{margin:0}
+ul.p{margin:6px 0;padding-left:20px}ul.p li{margin:3px 0}
+.fn{color:var(--mute);font-size:12.5px}
+footer{margin:40px 0 24px}
+@media (max-width:560px){dl{grid-template-columns:1fr}.count .n{font-size:24px}main{padding:10px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main id="app"><noscript><p class="banner fail">This page needs JavaScript to render its data. No data is shown without it.</p></noscript></main>
+<script>
+"use strict";
+const DATA = /*__DATA__*/null;
+(function () {
+  const app = document.getElementById("app");
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = String(text); return e; };
+  const add = (p, ...kids) => { kids.forEach(k => k && p.appendChild(k)); return p; };
+  const SIG = /^[1-9A-HJ-NP-Za-km-z]{64,90}$/;
+  const AMT = /^[0-9]{1,12}$/;
+  const usd = a => AMT.test(String(a)) ? "$" + (Number(a) / 1e6).toFixed(2) : "invalid";
+  const short = s => (typeof s === "string" && s.length > 20) ? s.slice(0, 10) + "..." + s.slice(-8) : String(s);
+  const R = DATA.results, V = DATA.verify, rows = R.rows, mode = R.mode;
+  const isStub = mode === "stub", isReal = mode === "real";
+  const failures = DATA.failures || [];
+
+  function banners() {
+    const wrap = el("div");
+    if (isStub) {
+      const b = el("div", "banner stub stubbar"); b.setAttribute("role", "alert");
+      b.textContent = "STUB VERIFIER: not a real sandbox run. Not evidence. These verdicts come from a filename-routed stub; they say nothing about whether any input reproduces any bug. Only payment, settlement and signed-log plumbing was exercised.";
+      wrap.appendChild(b);
+    } else if (!isReal) {
+      add(wrap, el("div", "banner fail", "UNKNOWN RUN MODE (" + mode + "): do not treat this page as evidence."));
+    }
+    if (failures.length) {
+      const b = el("div", "banner fail"); b.setAttribute("role", "alert");
+      b.appendChild(el("div", "", "CHECKS FAILED: " + failures.length + " problem(s). Do not trust this run."));
+      const ul = el("ul", "list"); failures.forEach(f => ul.appendChild(el("li", "", f))); b.appendChild(ul);
+      wrap.appendChild(b);
+    } else if (isReal) {
+      add(wrap, el("div", "banner real", "REAL verifier run: the run's own checks and the log re-verification passed."));
+    } else {
+      add(wrap, el("div", "banner note", "The run's own checks and the log re-verification passed. That covers payments and the log, not the verdicts."));
+    }
+    if (isReal) add(wrap, el("div", "banner note", "UNVERIFIED viewer: this page was built and tested only against a stub run. Treat the real-mode view as unchecked until a real run directory has been rendered and compared with RESULTS.md."));
+    return wrap;
+  }
+
+  function diagram() {
+    const s = "http://www.w3.org/2000/svg", ns = (t, a) => { const e = document.createElementNS(s, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+    const svg = ns("svg", { viewBox: "0 0 1060 190", role: "img", "aria-label": "Flow: agent posts to /report, receives 402, escrows 0.25 USDC, sandbox decides, settle 0 (returned) or 0.25 (forfeited)" });
+    const box = (x, y, w, t1, t2) => { svg.appendChild(ns("rect", { x, y, width: w, height: 56, rx: 6 })); const a = ns("text", { x: x + w / 2, y: y + 24, "text-anchor": "middle" }); a.textContent = t1; svg.appendChild(a); if (t2) { const b = ns("text", { x: x + w / 2, y: y + 43, "text-anchor": "middle", class: "m" }); b.textContent = t2; svg.appendChild(b); } };
+    const arrow = (x1, y1, x2, y2) => { svg.appendChild(ns("line", { x1, y1, x2, y2 })); svg.appendChild(ns("path", { d: `M${x2 - 7} ${y2 - 4} L${x2} ${y2} L${x2 - 7} ${y2 + 4}` })); };
+    box(10, 20, 150, "agent", "budget, allowlist");
+    box(215, 20, 150, "POST /report", "proof input file");
+    box(420, 20, 150, "402 + $0.25 escrow", "x402 upto deposit");
+    box(625, 20, 150, "sandbox verdict", "ASan, vuln + fixed");
+    arrow(160, 48, 215, 48); arrow(365, 48, 420, 48); arrow(570, 48, 625, 48);
+    box(840, 0, 210, "reproduced / inconclusive", "settle $0: bond returned");
+    box(840, 80, 210, "not reproduced", "settle $0.25: bond forfeited");
+    svg.appendChild(ns("path", { d: "M775 48 L805 48 L805 28 L838 28" })); svg.appendChild(ns("path", { d: "M775 48 L805 48 L805 108 L838 108" }));
+    const n = ns("text", { x: 10, y: 150, class: "m" }); n.textContent = "Any error, crash or timeout also settles $0. The sandbox is a filter, not a judge: a human triages reproduced reports."; svg.appendChild(n);
+    const n2 = ns("text", { x: 10, y: 172, class: "m" }); n2.textContent = "Static diagram of the designed flow; it is not drawn from this run's data."; svg.appendChild(n2);
+    return svg;
+  }
+
+  function counts() {
+    const c = R.counts;
+    const errRows = rows.filter(r => !["reproduced", "not_reproduced", "inconclusive"].includes(r.verdict));
+    const errAmt = errRows.length ? errRows.map(r => r.settledAtomic === null ? "no log record" : usd(r.settledAtomic)).join(", ") : "none";
+    const g = el("div", "counts");
+    const box = (n, l, x) => { const d = el("div", "count"); add(d, el("div", "n", n), el("div", "l", l)); if (x) d.appendChild(el("div", "x", x)); g.appendChild(d); return d; };
+    box(c.reproduced, "Reproduced", "bond returned ($0 settled)");
+    box(c.forfeited, "Not reproduced", "bond forfeited ($0.25 settled)");
+    box(c.inconclusive, "Inconclusive", "bond returned ($0 settled)");
+    box(c.errors, "Errors", "settled amounts of these rows: " + errAmt + " (expected $0)");
+    box(c.wrongForfeit, "Wrongly forfeited *", "real bugs that were forfeited");
+    const f = el("p", "fn", "* \"Real bug\" versus \"hand-made fake\" labels, and therefore this count, are assigned by hand in demo/manifest.json. They are not measured by the system and are not stored in the signed log.");
+    const d = el("div"); add(d, g, f); return d;
+  }
+
+  function badge(v) {
+    const m = { reproduced: ["b-repro", "REPRODUCED"], not_reproduced: ["b-forf", "NOT REPRODUCED"], inconclusive: ["b-inc", "INCONCLUSIVE"] };
+    const [cls, t] = m[v] || ["b-err", v ? "UNKNOWN VERDICT" : "NO RECORD"];
+    return el("span", "badge " + cls, t);
+  }
+
+  function card(r) {
+    const c = el("div", "card");
+    const top = el("div");
+    top.appendChild(r.category === "hand_made_fake" ? el("span", "tag", "HAND-MADE") : el("span", "tag real", "REAL BUG (hand-assigned)"));
+    top.appendChild(badge(r.verdict)); c.appendChild(top);
+    add(c, el("h3", "", r.label), el("div", "mono sub", r.file));
+    const line = (k, vNode) => { const d = el("div", "row"); d.appendChild(el("span", "", k)); d.appendChild(vNode); c.appendChild(d); };
+    line("settled", el("span", "mono", r.settledAtomic === null ? "no record" : usd(r.settledAtomic) + " (" + (AMT.test(String(r.settledAtomic)) ? r.settledAtomic : "?") + " atomic)"));
+    const tx = el("span", "mono");
+    if (typeof r.txSignature === "string" && SIG.test(r.txSignature)) {
+      const a = el("a", "mono", short(r.txSignature)); a.href = "https://explorer.solana.com/tx/" + r.txSignature + "?cluster=devnet"; a.target = "_blank"; a.rel = "noopener noreferrer"; tx.appendChild(a);
+    } else tx.textContent = r.txSignature ? "invalid signature, no link" : "none";
+    line("settle tx", tx);
+    line("on-chain check", el("span", "mono", r.chain || "-"));
+    line("log record", el("span", "mono", r.seq === null ? "missing" : "seq " + r.seq + (r.recordVerified ? " (verified)" : " (NOT VERIFIED)")));
+    c.appendChild(el("div", "fn", "detail: " + (r.detail ?? "-")));
+    return c;
+  }
+
+  function trust() {
+    const p = el("div", "panel");
+    const ok = V.verifiedCount === V.records && !failures.length;
+    const h = el("div", "", V.verifiedCount + " of " + V.records + " log entries verified");
+    h.style.cssText = "font-weight:700;font-size:18px;color:var(--" + (V.verifiedCount === V.records ? "ok" : "bad") + ")"; p.appendChild(h);
+    p.appendChild(el("p", "fn", "Counted by: " + V.method));
+    const bl = Object.keys(V.brokenLines); if (bl.length) { const ul = el("ul", "p"); bl.forEach(k => ul.appendChild(el("li", "", "BROKEN log line " + k + ": " + V.brokenLines[k].join("; ")))); p.appendChild(ul); }
+    V.generalProblems.forEach(g => p.appendChild(el("p", "", "PROBLEM: " + g)));
+    const dl = el("dl");
+    const kv = (k, v, mono) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", mono ? "mono" : "", v)); };
+    kv("Signer public key (pinned)", V.pinned, true);
+    const hd = R.log.head; kv("Log head", hd ? "seq " + hd.seq + ", sha256(last line) " + hd.hash : "none", true);
+    kv("Run checks (RESULTS.md twin)", (R.problems && R.problems.length) ? "FAILED (" + R.problems.length + ")" : "all passed");
+    kv("Run time (UTC)", (R.meta.finishedAt || "-"), true);
+    kv("Network", "Solana devnet; cap 0.25 USDC per report");
+    p.appendChild(dl);
+    p.appendChild(el("p", "fn", "The log stores one transaction signature per report: the settle tx. The deposit (escrow open) tx is NOT recorded in the log, so only one link per report is shown."));
+    p.appendChild(el("p", "fn", "Tail truncation is undetectable from the log alone: dropping the last N records leaves a valid chain. Publish the head hash and seq elsewhere to make it detectable. Records are signed by the server, so they are not independent proof that the server told the truth."));
+    p.appendChild(el("p", "fn", "Both wallets belong to the demo operator; a forfeit here is a transfer between our own wallets."));
+    return p;
+  }
+
+  function limits() {
+    const p = el("div", "panel"); const ul = el("ul", "p");
+    (R.notDemonstrated || []).forEach(c => ul.appendChild(el("li", "", c + ": NOT demonstrated. The backtest found no genuine example and we do not fake one.")));
+    ul.appendChild(el("li", "", "libucl/ARVO caveat: the \"fixed\" image is a later libucl version, not the per-bug fix commit. So \"reproduced\" means the input triggers the expected ASan error in libucl on the pinned vulnerable build and the crash is gone in a later libucl."));
+    ul.appendChild(el("li", "", "The sandbox is a filter, not a judge. A human triages reproduced reports; not reproduced only means this pinned build ran the input clean."));
+    ul.appendChild(el("li", "", "This does not prove that spam is stopped. It is a small, hand-picked batch."));
+    const nReal = rows.filter(r => r.category === "real_bug").length, nFake = rows.filter(r => r.category === "hand_made_fake").length;
+    ul.appendChild(el("li", "", "Demo set: " + nReal + " real bugs and " + nFake + " hand-made fakes (" + rows.length + " reports), hand-picked. The proof is an input file only; the fakes are our own inputs, not LLM-written reports, and are not representative of real-world spam."));
+    if (isStub) ul.appendChild(el("li", "", "Everything about the real verifier, Docker and ASan is UNEXERCISED in this run."));
+    p.appendChild(ul); return p;
+  }
+
+  add(app, el("h1", "", "Prove-It Bond: demo results"), el("p", "sub", "Rendered after the fact from a finished run directory and its signed verdict log. Text below comes from that run; nothing is live."));
+  add(app, banners());
+  const dia = el("div", "dia"); dia.appendChild(diagram()); add(app, el("h2", "", "The loop"), dia);
+  add(app, el("h2", "", "Counts"), counts());
+  const cards = el("div", "cards"); rows.forEach(r => cards.appendChild(card(r)));
+  add(app, el("h2", "", "Reports (" + rows.length + ")"), cards);
+  add(app, el("h2", "", "Trust"), trust());
+  add(app, el("h2", "", "Not demonstrated, and caveats"), limits());
+  const foot = el("footer");
+  if (isStub) { const b = el("div", "banner stub", "STUB VERIFIER: not a real sandbox run. Not evidence."); foot.appendChild(b); }
+  foot.appendChild(el("p", "fn", "Generated by demo/web/build.mjs. Static page, no external requests."));
+  app.appendChild(foot);
+})();
+</script>
+</body>
+</html>

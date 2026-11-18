@@ -1,5 +1,5 @@
-// Calls the verifier (python3 verifier/verify.py <file>) and turns its output into a settle decision.
-// Contract: see AGENTS/INTERFACES.md. EVERY failure maps to verdict "error" with settle amount 0.
+// Calls the verifier (<VERIFIER_PYTHON> verifier/verify.py <file> --case <VERIFIER_CASE>) and turns its output into a settle decision.
+// Contract: see docs/INTERFACES.md. EVERY failure maps to verdict "error" with settle amount 0.
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -24,7 +24,12 @@ export function clamp(amount: bigint): bigint {
   return amount > CAP_ATOMIC ? CAP_ATOMIC : amount;
 }
 
-const errorDecision = (detail: string): Decision => ({ verdict: "error", detail, settleAtomic: 0n });
+/** The amount actually sent as the settle override: errors -> 0, everything else clamped to [0, CAP]. */
+export function finalSettle(d: { verdict: string; settleAtomic: bigint }): bigint {
+  return clamp(VALID.has(d.verdict) ? d.settleAtomic : 0n); // error, busy, rate_limited, anything unknown -> 0
+}
+
+const errorDecision =(detail: string): Decision => ({ verdict: "error", detail, settleAtomic: 0n });
 
 /** Pure: stdout text -> decision. Never throws. */
 export function decideFromOutput(stdout: string, allowStub: boolean): Decision {
@@ -42,18 +47,51 @@ export function decideFromOutput(stdout: string, allowStub: boolean): Decision {
   }
 }
 
-const VERIFY_PY =
+export const VERIFY_PY =
   process.env.VERIFIER_PATH ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../verifier/verify.py");
+
+const CASE_RE = /^[0-9]{1,12}$/;
+// Only these variables reach the verifier process, so server secrets (keys, RPC URL) never do.
+const CHILD_ENV_ALLOW = [
+  "PATH", "HOME", "USERPROFILE", "SystemRoot", "TMPDIR", "TEMP", "TMP", "VERIFY_TMPDIR",
+  "DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_CONFIG", "LANG",
+];
+
+export interface Invocation { cmd: string; args: string[]; env: Record<string, string>; secs: number }
+
+/** Pure: builds the verifier command line, or returns an error decision. Never throws. */
+export function buildInvocation(
+  inputFile: string, allowStub: boolean, env: NodeJS.ProcessEnv = process.env, arch: string = process.arch,
+): Invocation | Decision {
+  // The real verifier runs linux/amd64-only ASan images; under emulation (e.g. Apple Silicon) the harness is killed.
+  if (!allowStub && arch !== "x64" && env.VERIFIER_ALLOW_NON_AMD64 !== "1") {
+    return errorDecision(`real verifier needs an amd64 host (this host is ${arch}); images are linux/amd64 and ASan fails under emulation`);
+  }
+  const secs = Math.min(Number(env.VERIFIER_TIMEOUT_SECONDS) || VERIFIER_HARD_CAP_SECONDS, VERIFIER_HARD_CAP_SECONDS);
+  const args = [VERIFY_PY, inputFile];
+  const caseId = env.VERIFIER_CASE; // chosen by server config only, never by the sender
+  if (caseId !== undefined && caseId !== "") {
+    if (!CASE_RE.test(caseId)) return errorDecision("VERIFIER_CASE is not a 1-12 digit case id");
+    args.push("--case", caseId);
+  }
+  const childEnv: Record<string, string> = {};
+  for (const k of CHILD_ENV_ALLOW) if (env[k] !== undefined) childEnv[k] = env[k] as string;
+  // verify.py kills its container on its own cap; keep that cap below ours so it can finish the kill first.
+  childEnv.VERIFY_CAP_SECONDS = String(Math.max(1, secs - 5));
+  return { cmd: env.VERIFIER_PYTHON || "python3", args, env: childEnv, secs };
+}
 
 /** Runs the verifier with a hard wall-clock cap. Never throws; errors/timeouts -> settle 0. */
 export function runVerifier(inputFile: string, allowStub: boolean): Promise<Decision> {
-  const secs = Math.min(Number(process.env.VERIFIER_TIMEOUT_SECONDS) || VERIFIER_HARD_CAP_SECONDS, VERIFIER_HARD_CAP_SECONDS);
+  const inv = buildInvocation(inputFile, allowStub);
+  if ("verdict" in inv) return Promise.resolve(inv);
+  const { secs } = inv;
   return new Promise(resolve => {
     try {
       execFile(
-        "python3",
-        [VERIFY_PY, inputFile],
-        { timeout: secs * 1000, killSignal: "SIGKILL", maxBuffer: 64 * 1024, encoding: "utf8" },
+        inv.cmd,
+        inv.args,
+        { timeout: secs * 1000, killSignal: "SIGKILL", maxBuffer: 64 * 1024, encoding: "utf8", env: inv.env },
         (err, stdout) => {
           if (err) {
             const killed = (err as NodeJS.ErrnoException & { killed?: boolean }).killed;

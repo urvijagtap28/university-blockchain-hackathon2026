@@ -1,6 +1,6 @@
 # Status (update after every milestone)
 
-Last updated: Mon Nov 16 night (orchestrator: server skeleton merged, gate unverified on Mac).
+Last updated: Tue Nov 17 evening (first REAL-verifier demo run passed on Person B's amd64 laptop; Mac-side work verified against the stub only).
 Last updated: Mon Nov 16 night (F-001 VERIFY_TMPDIR, --self-test, merged orchestrator-setup on sandbox).
 
 ## Checklist
@@ -12,12 +12,14 @@ Last updated: Mon Nov 16 night (F-001 VERIFY_TMPDIR, --self-test, merged orchest
 - [x] Stub verifier written and tested (verifier/verify.py, inputs in test-inputs/): fixed one-line JSON contract; ran it on 3 filenames -> not_reproduced / inconclusive / reproduced, plus bad verdict and missing file -> inconclusive. It routes on filename and emits "stub": true. NOT the real verifier: no Docker, ASan or control run.
 - [x] Dedicated RPC configured (QuickNode devnet, $0 settle passed on it 2026-11-16 19:33 ET, tx 2geKqEpp...bqeU8; key rotated by user 2026-11-16, check-env OK); devnet SOL and USDC funded (buyer 19.36 USDC, 2.5 SOL)
 - [x] Target library chosen: libucl via ARVO prebuilt images (n132/arvo:42482847-vul/-fix pulled, not built). See docs/DECISIONS.md.
-- [ ] GATE: REPORTED passed by Person B on a Windows x86_64 box, NOT independently verified. QE on the Mac (arm64, Colima 8 GiB) could not reproduce: ASan harness exits 137 under amd64 emulation, test_verify 6/18, no trace or timing (BUILD_LOG.md). Needs a rerun on an x86_64 machine. Person B's report: ARVO 42482847 vul image gives heap-buffer-overflow in src/ucl_parser.c:1036 on a host-mounted input under no-network/read-only/non-root; fix image clean; harmless input clean on both.
-- [ ] verify.py returns all three verdicts with control run: written by Person B (18/18 tests reported on their box); 6/18 on the Mac, unverified here. Stub is verifier/verify_stub.py. Stub moved to verifier/verify_stub.py.
-- [ ] /report skeleton (server/) settled $0 and 0.25 on devnet against the stub incl. 3 error paths (BUILD_LOG.md); real verifier, handler-exception, concurrency, settlement_pending polling NOT done. /report endpoint settles $0 or full correctly, including error paths
-- [ ] Agent script with budget, allowlist, approval limits
-- [ ] Signed verdict log
+- [x] GATE: verified by builder only (Person B, x86_64 Windows, native amd64): vul 3/3 heap-buffer-overflow at ucl_lex_json_string ucl_parser.c:1036 (frames in libucl), fix clean, ~4 s per verdict. NOT reproduced by us: QE on the Mac (arm64, QEMU emulation) gets exit 137, no trace. Cause is emulation. See BUILD_LOG.md.
+- [x] verify.py returns all three verdicts with control run: verified by builder only (Person B, 34/34 tests, backtest 6/6 real reproduced, 7/7 hand-made fakes forfeited, on x86_64). Not run by us (Mac cannot). Server treats it as amd64-only.
+- [x] /report endpoint against the stub/fake verifiers (BUILD_LOG.md): $0 settle on handler exception (incl. escaped throw), verifier timeout at the 60 s cap, bad output; settle clamped to cap; settlement_pending polling (45 s) verified only via a proxy simulating the pending status; concurrency cap 2 (3rd concurrent request got busy, settled $0); per-wallet rate limit 1/10 s (limited paid request settled $0); 64 KB cap (413). NOT done: real Docker verifier through the server, real settlement_pending from the facilitator, gate release after timeout on devnet. Unconfirmed settle returns 402 settle_failed and the bond only returns via facilitator abandon_close (~10 min).
+- [x] Agent script (agent/): per-report cap, session budget, allowlist, approval prompt, 429/busy backoff, JSON-lines decision log; `node test/unit.ts` prints agent unit ok; devnet (stub): reproduced refund, not_reproduced forfeit, refusals before signing, approval n/y. NOT verified: prompt on a real interactive terminal, busy retry live, redirects against a real server, any non-localhost endpoint.
+- [x] Signed verdict log (Option A decided 2026-11-17: read verifier/cases.json; separate devnet-only signing key): server/src/verdictlog.ts, verify-log.ts; `node test/verdictlog.test.ts` -> verdictlog ok, `node test/recorder.test.ts` -> recorder ok, `node demo/run.mjs --analyze demo/run` -> ALL CHECKS PASSED (re-run 2026-11-17). Verified against STUB verdicts only; not run with the real verifier. Not checked: that every Option A field in docs/INTERFACES.md is written.
+- [ ] OPTIONAL, only after real verifier, verdict log, demo runner and clean-machine test all pass: tiny static results page rendering RESULTS.md with explorer links to tx signatures (user wants it on the list; first on the cut list)
 - [x] Backtest run, backtest/RESULTS.md generated (2026-11-16, f2af4bf): real bugs 6/6 reproduced, 0 wrongly forfeited; 7 hand-made fakes 7/7 forfeited; 30 cross-case real inputs 17 reproduced / 8 forfeited / 5 inconclusive; 0 failures. No genuine crash-on-both or flaky result found (not faked).
+- [x] First real-verifier run (Person B, WSL2 Ubuntu x86_64, Docker linux/amd64, `bash scripts/demo.sh --real`, exit 0, 2026-11-17 19:14-19:16 ET, branch at 4262375): 2 real bugs reproduced (bond returned), 3 hand-made fakes not_reproduced (forfeited), 0 wrongly forfeited, 0 inconclusive, 0 errors; log verified against signer ASYuieG7nRUN7ecnLVGGUtoeLSER8KEwCq5qYmt1C3Cx; log head seq 4 sha256 302a6a41f75b6cc926bd00a78f51acb77cf38e56c3c1c8b9f0005d55740277d3. Run by B, not reproduced by us. WE checked the 5 settle txs on-chain from the Mac via RPC getTransaction (no tx error; reproduced txs: buyer +0.25 USDC; forfeited txs: payTo +0.25 USDC). Deposit txs were not recorded by the demo (settle txs only). Still unverified: hanging input at the 60 s cap with real Docker, concurrency with the real verifier, sandbox security probes, real settlement_pending.
 - [ ] One-command demo passes on a clean machine
 - [ ] README complete
 - [ ] Demo video (under 3:00)
@@ -28,16 +30,19 @@ Last updated: Mon Nov 16 night (F-001 VERIFY_TMPDIR, --self-test, merged orchest
 
 ## Open items
 - Person A to choose: how the verdict log gets case ID + digests (docs/INTERFACES.md, Option A recommended: read verifier/cases.json; Option B: --meta-out).
-- Person B: 6/6 libucl ARVO cases in ucl_parser.c/ucl_util.c/ucl_hash.c confirmed (3/3 vul, fix clean; docs/DECISIONS.md). verify.py done. Caveat: ARVO fix images are a later libucl version, not the per-bug fix commit (5 of 6 share 45997ad), so the control run means 'gone in a later libucl' (docs/DECISIONS.md). Backtest done (backtest/RESULTS.md). Not yet run: bundled-header cases, a real hanging input.
-- Open human items: H-006 where the real verifier runs (arm64 Mac cannot run the amd64 ASan images), `.env.example` port edit, repo `.env` keys (spike keys copied to keys/ by user).
+- Person B: 6/6 libucl ARVO cases in ucl_parser.c/ucl_util.c/ucl_hash.c confirmed (3/3 vul, fix clean; docs/DECISIONS.md). verify.py done. Caveat: ARVO fix images are a later libucl version, not the per-bug fix commit (5 of 6 share 45997ad), so the control run means 'gone in a later libucl' (docs/DECISIONS.md). Next: backtest design. Not yet run: bundled-header cases, a real hanging input.
+- Open human items: H-005 (Person B setting up WSL Ubuntu + Docker, has not yet run scripts/rerun_gate.sh). Resolved 2026-11-17: H-006 (B's laptop hosts the real verifier and the recorded run, with new devnet-only keys; untrusted proofs run on the same machine as those keys, README must say so), H-007 (libucl via ARVO approved, fix-image caveat accepted), H-003, H-004. Verdict log signer public key on the Mac (stub runs only): 6vYi5vh11HPCtFDiY7uCdwFt7shT3maXXPTen8PAFNGY; the demo host needs its own LOG_SIGNING_KEY. Demo set (2 real bugs + 3 hand-made fakes, demo/manifest.json) approved by user 2026-11-17; hand-made wording: random-bytes fake is a robustness check, not a model of LLM slop; RESULTS.md must disclose the 0-byte, 6 KB and 40 KB fakes were dropped from the demo (still in backtest). H-005 PASSED (B, WSL clean clone, f38958e: vul 3/3 heap-buffer-overflow ucl_parser.c:1036, fix clean, verify.py reproduced). B wallets funded (buyer 20 USDC + 0.5 SOL, seller 20 USDC, facilitator 1 SOL; mint 4zMMC9sr...DncDU checked in explorer).
 - Spike used self-hosted facilitator; CDP-hosted facilitator untested (see docs/SPIKE_NOTES.md).
 - Devnet tx signatures for README: stub-verifier runs only (server skeleton, BUILD_LOG.md); none yet from the real verifier, so no README-grade returned/forfeited pair.
-- curl primary-source numbers: not fetched.
-- Prior-art check: not done.
+- curl primary-source numbers: fetched 2026-11-17 (docs/verified-facts.md); a person should re-open the links.
+- Prior-art check: done 2026-11-17 (docs/verified-facts.md); strong overlap on refundable bug-report deposits (Cantina, Decred, Cohen proposal), so no novelty claim.
+- NOT demonstrated: realistic LLM-generated slop. The demo and backtest fakes are hand-made and labeled that way.
 
 ## Guardrails to implement
 - DONE in server/ (stub refused unless ALLOW_STUB_VERIFIER=1, settled $0 on devnet, BUILD_LOG.md); still to re-test with the real verifier. /report must fail closed: if verifier output has `"stub": true` outside test mode, settle $0 and return an error. (verifier/verify_stub.py is the filename-routed stub; verifier/verify.py is real and never emits stub.)
 
 ## Next action
-1. Decide H-006 (run real verifier on an x86_64 box vs try Rosetta on the Mac); rerun the gate there and record the ASan trace and timing against the 60 s cap.
-2. Person B: push docs/SANDBOX_HANDOFF.md, add VERIFY_TMPDIR, cases.json. Person A: wire server/ to the real verifier with server-config --case, then agent/ with budget, allowlist, approval limits.
+1. Get B's real RESULTS.md, run log and signer key into the repo as evidence (do not commit the Mac's stub RESULTS.md as the results); decide where (e.g. docs/evidence/).
+2. Real README signatures block: use the real settle txs above (one returned, one forfeited), labeled as settle txs.
+3. Still to do on the amd64 host: hanging-input 60 s cap with real Docker, sandbox security probes, clean-machine test from a fresh clone.
+4. Fix .env.example duplicate SVM_RECEIVER_AUTHORIZER_PRIVATE_KEY (B still sees it), then README TODOs, video, Devpost.

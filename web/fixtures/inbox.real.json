@@ -1,0 +1,44 @@
+{
+  "items": [
+    {
+      "seq": 5,
+      "reportHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "verdict": "inconclusive",
+      "errorType": null,
+      "topFrame": null,
+      "detail": "sandbox error: timeout after 60 s",
+      "caseId": "42482847",
+      "targetCommit": "875c25115a36f59a333de79f88235bdfb537c539",
+      "timestamp": "2026-11-17T18:45:20.000Z",
+      "note": null
+    },
+    {
+      "seq": 1,
+      "reportHash": "345ed91c5404ab059efb58fea1fb91df8e19503744930c866432b428b8c4ca83",
+      "verdict": "reproduced",
+      "errorType": "heap-buffer-overflow",
+      "topFrame": "ucl_parser_add_chunk src/ucl_parser.c",
+      "detail": "heap-buffer-overflow: vulnerable 3/3 runs, frame ucl_parser_add_chunk src/ucl_parser.c; fixed build clean",
+      "caseId": "42482847",
+      "targetCommit": "875c25115a36f59a333de79f88235bdfb537c539",
+      "timestamp": "2026-11-17T18:43:52.980Z",
+      "note": null
+    },
+    {
+      "seq": 0,
+      "reportHash": "386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f",
+      "verdict": "reproduced",
+      "errorType": "heap-buffer-overflow",
+      "topFrame": "ucl_lex_json_string src/ucl_parser.c:1036:8",
+      "detail": "heap-buffer-overflow: vulnerable 3/3 runs, frame ucl_lex_json_string src/ucl_parser.c:1036:8; fixed build clean",
+      "caseId": "42482847",
+      "targetCommit": "875c25115a36f59a333de79f88235bdfb537c539",
+      "timestamp": "2026-11-17T18:43:39.400Z",
+      "note": {
+        "decision": "valid",
+        "text": "matches the known ARVO report",
+        "ts": "2026-11-17T19:00:00.000Z"
+      }
+    }
+  ]
+}
