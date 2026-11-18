@@ -473,3 +473,51 @@ Bugs found and fixed (web/public/app.js):
 Checked and fine: numeric policy fields arrive as numbers and render; stub runs take ~3 s on devnet so the SSE 'checking' step is skipped (shown "no waiting needed"), the pending-chain UI was NOT exercised live (fixture only).
 Also ran: 'node --check web/public/app.js' ok; 'node --test web/test/web.test.mjs' tests 25 pass 25; 'node web/test/fixtures.test.mjs' -> '26 fixtures, 1221 checks, 0 failures'.
 UNVERIFIED: real mode through the web app; headed browser / human click; keyboard use; Firefox/Safari; settlement_pending and error SSE paths in the UI live; UI-rendered 409 message live; policy decision history after reload; 'N of N' on a log with 0 records.
+
+## QE_SANDBOX_SECURITY: container flag review, probe suite, induced cap test (2026-11-17)
+QE_SANDBOX_SECURITY report, 2026-11-17 (Mac run 2026-11-18T00:3x Z). Scope: configured container limits only. The sandbox is NOT claimed to be escape-proof; these probes are not an escape test.
+
+Flag review (verifier/verify.py docker_run(), read from code; line numbers are from this commit):
+- 143 `--rm`, `--name verify-<uuid16>` (fresh container per run, 142 uuid), `--pull never`: present.
+- 144 `--network none`, `--read-only`, `--tmpfs /tmp:rw,size=16m`: present (scratch = 16 MB /tmp).
+- 145 `--user 1000:1000`, `--cpus 1`, `--memory 1g`, `--memory-swap 1g` (swap disabled): present.
+- 146 `--pids-limit 64`, `--cap-drop ALL`, `--security-opt no-new-privileges`: present.
+- 147 only env passed is `-e ASAN_OPTIONS=...`; the host environment is not forwarded (docker run has no --env-file / -e NAME). The image's own ENV (build vars, no secrets, see probe d) is inherited.
+- 148 input: `--mount type=bind,src=<private staged copy>,dst=/in/input,readonly`; staged at verify.py:225-233 in a fresh mkdtemp copy after the 64 KB check. No other mounts, no -v, no docker.sock, no --privileged.
+- 151,154 wall clock: host-side `subprocess.run(timeout=budget)` where budget = deadline - 5 s (139); on timeout `docker kill <name>` with a 5 s timeout (154-156). Total cap 60 s (54, lowered only by VERIFY_CAP_SECONDS, main()).
+Missing or weaker than the spec/maximal hardening (none is a spec violation; spec flags are all present):
+1. No in-container timeout: if `docker kill` itself fails or times out (154-156 swallows TimeoutExpired; any other exception propagates to main() -> inconclusive) the container can outlive the call. --rm removes it only on exit. [P2]
+2. No `--ulimit` (fsize, nofile, core, nproc is covered by pids). Writes are bounded by the 16 MB tmpfs and memory limit, so low impact. [P3]
+3. `/dev/shm` stays docker's default writable 64 MB tmpfs even with --read-only (probe b WARN). Not in spec. Bounded; add `--shm-size 1m` or `--ipc none` if wanted. [P3]
+4. Default seccomp/AppArmor profile only (Seccomp=2 inside). Fine, but README should say "docker default profile". [P3]
+5. /tmp is mounted `rw,nosuid,nodev,noexec` (docker tmpfs defaults, shown by probe c): stronger than the code states.
+6. Image build ENV (CC, CFLAGS, OUT, SRC, WORK, GOPATH ...) is visible to the harness. No secret-looking names. [P3]
+7. Runs only on the same host as keys per H-006 (B's laptop): isolation between untrusted input and host keys is exactly these container limits plus docker daemon trust. Documented in STATUS; README must repeat it. [P2 doc]
+8. Mount source staging: VERIFY_TMPDIR note. On macOS VM-backed docker, bind-mounting a path that was removed and re-created at the same path gave "Can't open /in/input" in my cap test (stale file share). verify.py uses a fresh mkdtemp per call so it is not affected; noted only because it cost debugging time.
+
+Scripts (QE-owned, no builder code edited):
+- scripts/sandbox_probes.sh: derives the flags by importing verify.py with `python3 -I` and capturing the argv docker_run() would pass (docker() monkeypatched; no container started by that step), replaces only --name and the entrypoint. Audits flags, then probes (a) network, (b) writes outside scratch, (c) scratch write + 16 MB fill cap, (d) env names and host-path visibility, (e) uid/CapEff/CapBnd/NoNewPrivs, (f) bounded fork probe (100 attempts), (g) memory (allocates in 16 MiB steps, hard ceiling 1.5x limit), (h) read-only input (+ host sha256 unchanged), (j) cgroup values, (i) no leftover containers. A precheck aborts if the hardened container cannot start (so no false PASS).
+- scripts/sandbox_cap_test.sh [--full]: A0 control, A INDUCED hang, B real verify.py with VERIFY_CAP_SECONDS=5.2, C (--full) INDUCED hang against the real 60 s cap. Each stage ends with a no-leftover-container check.
+- No real hanging libucl input exists in the repo (backtest/RESULTS.md line 98; docs/DECISIONS.md 120). All hangs are INDUCED (/bin/sh running `sleep 300` through the real docker_run()). Proves: verify.py's timeout + `docker kill` path stops a non-exiting container inside the deadline and leaves nothing behind. Does not prove: libucl has a hanging input; the server's own 60 s cap (not tested here); anything about escapes.
+
+Mac results (arm64 host, docker 29.5.2 aarch64, amd64 image under QEMU emulation; EMULATED, NOT AUTHORITATIVE; VERIFY_TMPDIR=$HOME/.qe-probe-tmp because /private/var/folders is not shared with the VM):
+sandbox_probes.sh: FAIL=0 NOT-POSSIBLE=0 WARN=2. Flag audit 13/13 PASS. (a) PASS: `bash: connect: Network is unreachable` for 1.1.1.1:53, getent example.com failed, interfaces: lo only. Positive control (same command, default network, one attempt): connect-ok, so the probe is not vacuous. (b) WARN: root FS `ro`, no write to /, /etc, /out, /usr, /root, /in, /src; /dev/shm writable. (c) PASS: /tmp 16384 KiB, fill stopped at 16384 KiB. (d) WARN only for image-owned env names (ARCHITECTURE CC CCC CFLAGS ... WORK, listed in output); no secret-looking names; ASAN_OPTIONS set; no /Users, /host_mnt, docker.sock; mount destinations list has no host paths; /in holds only `input`. (e) PASS uid 1000, CapEff=CapBnd=0, NoNewPrivs=1, Seccomp=2. (f) PASS started 30 of 100, then `[Errno 11] Resource temporarily unavailable`, cgroup pids.max=64. (g) PASS killed after ~992 MiB, docker exit 137 (limit 1024 MiB, ceiling 1536 MiB). (h) PASS append/truncate/delete/move/create refused, mount `ro`, host sha256 unchanged. (j) PASS cpu.max=100000 100000, memory.max=1073741824, memory.swap.max=0, pids.max=64. (i) PASS 10 probe containers, none left.
+sandbox_cap_test.sh --full: FAIL=0. A0 control exit 0 ("ran"); A induced hang: returncode=None elapsed=3.06 s (deadline 8 s) "run exceeded 3 s, container killed"; B real verify.py: one JSON line `inconclusive ... run exceeded 0 s, container killed; no time left...` in 0.27 s; C: elapsed=55.12 s (deadline 60 s), killed; no verify-* container after any stage.
+`bash -n`: both scripts OK. shellcheck: not installed (UNVERIFIED). Both scripts LF-only.
+Caveat on (g)/(f)/(j): under emulation the numbers (30 forks, 992 MiB) are not meaningful for amd64; only the pattern (limit enforced) is.
+
+Findings by severity:
+- P0: none found.
+- P1: none found.
+- P2: (1) no in-container timeout; leak possible if `docker kill` fails (verify.py 154-156). Suggested change for Person B (not made by QE): after the kill attempt, run `docker rm -f <name>` best-effort and log a leaked-container warning. (2) Keys and untrusted proofs share B's laptop (H-006): README must say so; limits above are the only barrier.
+- P3: /dev/shm writable; no --ulimit; default seccomp only; image env vars visible; shellcheck not run; probe (f)/(g) numbers are emulation-skewed on the Mac.
+UNVERIFIED: everything on amd64 hardware; behaviour of the probes on WSL2 (Windows host Docker Desktop; paths: run from a WSL shell inside the repo); real hanging input; server-side 60 s cap and settle-$0 on kill; concurrent runs (2) interference; docker daemon crash mid-run; any escape attempt (not attempted, out of scope).
+
+How Person B runs this on the amd64 host (WSL2 Ubuntu shell, repo root, images already pulled, no keys needed, nothing is sent to the network except one TCP SYN to 1.1.1.1:53 and one DNS query attempt that are expected to fail):
+  git pull   # branch orchestrator-setup
+  bash scripts/sandbox_probes.sh 2>&1 | tee sandbox_probes_amd64.txt
+  bash scripts/sandbox_cap_test.sh --full 2>&1 | tee sandbox_cap_amd64.txt     # takes about 70 s
+  docker ps -a | tee sandbox_ps_after.txt                                      # expect no probe-* or verify-* rows
+  uname -m; docker version --format '{{.Server.Os}}/{{.Server.Arch}} {{.Server.Version}}'
+Send back the three .txt files plus the uname/docker version line. Expected on amd64: summary FAIL=0; NOT-POSSIBLE=0; WARN probably 2 (the /dev/shm and the image env names); the first line of sandbox_probes.sh output must show docker arch x86_64/amd64 and no "NOT authoritative" note. If the precheck ABORTs, set VERIFY_TMPDIR to an existing directory under $HOME and retry. Do not run these on a machine in the middle of the paid demo (they use up to ~1.5 GiB RAM briefly and ~70 s of one CPU).
+Remaining hole to close on amd64: re-run once with the facilitator/server stopped if you want zero interference; and send a result for probe (g) and (f) because those are the numbers that were emulation-skewed here.
