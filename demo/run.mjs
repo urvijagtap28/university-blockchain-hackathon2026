@@ -160,6 +160,9 @@ async function preflight(manifest) {
     console.log("  STUB mode: verifier/verify_stub.py, ALLOW_STUB_VERIFIER=1, no VERIFIER_CASE. Verdicts are routed on filename and mean nothing about bugs.");
   }
   if (MODE) {
+    const facDir = process.env.FACILITATOR_DIR?.trim() || path.join(process.env.HOME ?? "", "upto-spike", "scratch", "x402", "examples", "typescript", "facilitator", "upto");
+    console.log(`  facilitator directory: ${facDir}${process.env.FACILITATOR_DIR?.trim() ? "" : " (default; set FACILITATOR_DIR to use another clone)"}`);
+    if (!existsSync(path.join(facDir, "index.ts"))) fail(`facilitator directory has no index.ts: ${facDir}. export FACILITATOR_DIR=<x402 clone>/examples/typescript/facilitator/upto (README section 10)`);
     for (const [name, port] of [["server", SERVER_PORT], ["facilitator", FAC_PORT]]) {
       if (!(await portFree(port))) fail(`port ${port} (${name}) is already in use; stop whatever holds it (not killing by pattern)`);
     }
