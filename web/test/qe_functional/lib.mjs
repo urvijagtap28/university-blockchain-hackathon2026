@@ -1,4 +1,5 @@
-// QE_FUNCTIONAL helpers (key-free: reads .env only to get SVM_RPC_URL and to DERIVE public addresses; never prints or sends key material).
+// QE_FUNCTIONAL round 2 helpers (new DOM: tabs overview/submit/run=Activity/results=Ledger/inbox/policy=Agent; file chooser via label .drop)
+// (round 1 helpers) (key-free: reads .env only to get SVM_RPC_URL and to DERIVE public addresses; never prints or sends key material).
 // Headless Chrome over the DevTools Protocol (node global WebSocket), RPC reads, balance snapshots.
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
@@ -8,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-export const SCRATCH = process.env.QE_SCRATCH || "/private/tmp/claude-501/-Users-liezeil-university-blockchain-hackathon2026/e452d3df-a6f8-484f-b1ba-ed7167e32680/scratchpad/qe_functional";
+export const SCRATCH = process.env.QE_SCRATCH || "/private/tmp/claude-501/-Users-liezeil-university-blockchain-hackathon2026/e452d3df-a6f8-484f-b1ba-ed7167e32680/scratchpad/qe2";
 mkdirSync(path.join(SCRATCH, "shots"), { recursive: true });
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
 export const sha256 = b => createHash("sha256").update(b).digest("hex");
@@ -43,13 +44,13 @@ export class Cdp {
   on(h) { this.handlers.push(h); }
 }
 export class Browser {
-  static async launch(port = 9333, w = 1100, h = 900) {
+  static async launch(port = 9333, w = 1280, h = 900) {
     const b = new Browser(); b.port = port;
     b.proc = spawn("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${path.join(SCRATCH, "chrome-profile-" + port)}`, `--window-size=${w},${h}`, "--no-first-run", "--disable-gpu", "--allow-file-access-from-files", "about:blank"], { stdio: "ignore" });
     for (let i = 0; i < 60; i++) { try { await fetch(`http://127.0.0.1:${port}/json/version`); break; } catch { await sleep(250); } }
     return b;
   }
-  async newPage(url, w = 1100, h = 900) {
+  async newPage(url, w = 1280, h = 900) {
     const t = await (await fetch(`http://127.0.0.1:${this.port}/json/new?about:blank`, { method: "PUT" })).json();
     const ws = new WebSocket(t.webSocketDebuggerUrl); await new Promise((r, j) => { ws.onopen = r; ws.onerror = j; });
     const p = new Page(new Cdp(ws), t.id); await p.init(w, h); if (url) await p.goto(url); return p;
@@ -73,7 +74,7 @@ export class Page {
   async click(sel) { const r = await this.rect(sel); if (!r) throw new Error("no element " + sel); await this.clickXY(r.x, r.y); }
   /** click the first element matching css whose text includes `text` */
   async clickText(css, text) { const i = await this.eval(`(()=>{const l=[...document.querySelectorAll(${JSON.stringify(css)})];const e=l.find(x=>x.textContent.includes(${JSON.stringify(text)}));if(!e)return null;e.setAttribute('data-qe','1');return 1})()`); if (!i) throw new Error(`no ${css} with text ${text}`); await this.click("[data-qe='1']"); await this.eval(`document.querySelector("[data-qe='1']")?.removeAttribute('data-qe')`); }
-  async pickFile(filePath) { this.chooser = null; await this.click("#file-input"); await this.waitFor("true", 100); for (let i = 0; i < 40 && !this.chooser; i++) await sleep(100); if (!this.chooser) throw new Error("file chooser did not open"); await this.c.send("DOM.setFileInputFiles", { files: [filePath], backendNodeId: this.chooser.backendNodeId }); await sleep(400); }
+  async pickFile(filePath) { this.chooser = null; await this.click(".drop"); for (let i = 0; i < 40 && !this.chooser; i++) await sleep(100); if (!this.chooser) throw new Error("file chooser did not open"); await this.c.send("DOM.setFileInputFiles", { files: [filePath], backendNodeId: this.chooser.backendNodeId }); await sleep(400); }
   async shot(name) { const r = await this.c.send("Page.captureScreenshot", { format: "png" }); const f = path.join(SCRATCH, "shots", name + ".png"); writeFileSync(f, Buffer.from(r.data, "base64")); return f; }
   async tab(name) { await this.click("#tab-" + name); await sleep(700); }
   text(sel) { return this.eval(`document.querySelector(${JSON.stringify(sel)})?.innerText ?? null`); }
