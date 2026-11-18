@@ -17,7 +17,7 @@ const TX = "49hbmUddNRyJ4RAfSrM66fEx1WYkHWeShiMH1kNpDYRVCG7jB9WvAvXywXBWTsV8SdSc
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const results = [];
 const rec = (id, ok, note) => { results.push({ id, ok, note }); console.log(`${ok ? "PASS" : "FAIL"} ${id}: ${note}`); };
-let nextPort = 4034;
+let nextPort = 4060;
 
 function logKey() {
   const { privateKey, publicKey } = generateKeyPairSync("ed25519");
@@ -211,7 +211,8 @@ const allText = [];   // everything served, for the secrets sweep
   const ws = await Promise.all(Array.from({ length: 1500 }, (_, i) => note({ reportHash: hash, decision: "unreviewed", text: "c" + i + "y".repeat(480) }))); const ok = ws.filter(w => w.status === 200).length;
   const ls = readFileSync(t.notesFile, "utf8").split("\n").filter(Boolean); let good = 0; for (const l of ls) { try { JSON.parse(l); good++; } catch {} }
   rec("notes.concurrent-1500", good === ls.length, `${ok}/1500 accepted; ${good}/${ls.length} lines valid JSON`);
-  rec("notes.growth-cap", false, `NO CAP: file grew ${(statSync(t.notesFile).size - sz0)} bytes from 1500 accepted notes (${ok} accepted, none rejected); each POST needs token+origin but nothing bounds count/size`);
+  { const rej = ws.filter(w => w.status === 413 && w.json?.error === "notes_full").length; // round 2: intended cap is 500 notes / 262144 bytes (server.mjs MAX_NOTES, MAX_NOTES_BYTES)
+    rec("notes.growth-cap", ok <= 500 && rej === 1500 - ok && statSync(t.notesFile).size < 262144 + 4096 && ls.length <= 500, `${ok}/1500 accepted, ${rej} rejected 413 notes_full; file ${statSync(t.notesFile).size} bytes (cap 500 notes / 262144 B), lines ${ls.length}`); }
   await t.app.close();
 }
 
