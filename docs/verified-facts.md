@@ -3,7 +3,7 @@
 Rule: only quote what is here. Anything marked UNVERIFIED must not appear in submission text.
 
 ## curl bug bounty
-Checked 2026-11-17 by reading curl's maintainer's own blog posts (fetched through a web-fetch agent that returns quotes of 125 characters or fewer). A person should re-open the links and confirm the quotes before the final README.
+Checked 2026-11-17 by reading curl's maintainer's own blog posts (fetched through a web-fetch agent that returns quotes of 125 characters or fewer). A person should re-open the links and confirm the quotes before the final README. RE-CHECKED by the user on 2026-11-17 (reported to the assistant in chat; they confirmed the end date, the "below 5%" line and the 87 vulnerabilities against the first post).
 
 Primary source 1: https://daniel.haxx.se/blog/2026/01/26/the-end-of-the-curl-bug-bounty/ (dated January 26, 2026, by Daniel Stenberg)
 - End date, verbatim: "There is no longer a curl bug-bounty program. It officially stops on January 31, 2026."
