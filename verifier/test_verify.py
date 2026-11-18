@@ -179,6 +179,32 @@ def fake_docker_tests(scratch):
     run_rc["value"] = 0
     ok_, d = mod.self_test(mod.Deadline(60))
     record("--self-test with clean runs -> pass", ok_, f"ok={ok_}: {d}")
+    # 4b. Timeout path: `docker rm -f <name>` is ALWAYS attempted after `docker kill`, even when the kill
+    #     fails (returns an error, or itself times out). Same container name; kill 3 s + rm 2 s = 5 s reserve.
+    for mode in ("kill returns error", "kill times out"):
+        calls = []
+        def fake_to(args, timeout, mode=mode):
+            calls.append((list(args), timeout))
+            if args[0] == "run":
+                raise subprocess.TimeoutExpired(args, timeout)
+            if args[0] == "kill":
+                if mode == "kill times out":
+                    raise subprocess.TimeoutExpired(args, timeout)
+                return types.SimpleNamespace(returncode=1, stdout="", stderr="Error response from daemon")
+            return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+        mod.docker = fake_to
+        rc, info = mod.docker_run("n132/arvo@sha256:" + "0" * 64, "/out/h", poc, mod.Deadline(60))
+        name = calls[0][0][calls[0][0].index("--name") + 1]
+        kinds = [c[0][0] for c in calls]
+        rm = [c for c in calls if c[0][:2] == ["rm", "-f"]]
+        good = (rc is None and info.endswith("container killed") and kinds == ["run", "kill", "rm"]
+                and rm and rm[0][0] == ["rm", "-f", name] and rm[0][1] == 2
+                and [c for c in calls if c[0][0] == "kill"][0][1] == mod.KILL_RESERVE_SECONDS - 2)
+        record(f"timeout path: {mode} -> docker rm -f still called", good,
+               f"calls={[(c[0][0], c[0][-1] if c[0][0] != 'run' else '...', c[1] if c[0][0] != 'run' else 'budget') for c in calls]}; "
+               f"returned rc={rc!r}, info={info!r}")
+    mod.docker = fake
+
     # 5. Digest-only audit: every image docker was asked about or ran, every cases.json image, and
     #    verify.py's source contain no tag-style reference.
     doc = json.load(open(os.path.join(HERE, "cases.json"), encoding="utf-8"))

@@ -151,7 +151,11 @@ def docker_run(image, harness, input_path, deadline):
         p = docker(cmd, timeout=budget)
     except subprocess.TimeoutExpired:
         try:
-            docker(["kill", name], timeout=KILL_RESERVE_SECONDS)
+            docker(["kill", name], timeout=KILL_RESERVE_SECONDS - 2)
+        except subprocess.TimeoutExpired:
+            pass
+        try:  # best effort, errors ignored: --rm only removes a container that has stopped
+            docker(["rm", "-f", name], timeout=2)
         except subprocess.TimeoutExpired:
             pass
         return None, f"run exceeded {budget:.0f} s, container killed"
