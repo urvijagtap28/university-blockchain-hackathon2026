@@ -1,6 +1,7 @@
 # Status (update after every milestone)
 
 Last updated: Tue Nov 17 evening (first REAL-verifier demo run passed on Person B's amd64 laptop; Mac-side work verified against the stub only).
+Last updated: Mon Nov 16 night (F-001 VERIFY_TMPDIR, --self-test, merged orchestrator-setup on sandbox).
 
 ## Checklist
 - [x] Environment check: macOS 26.6 arm64, node v26.10.0, npm 11.19.1, python3 3.14.7. docker 29.10.0 and pnpm 11.1.1 now present (checked 2026-11-16); gh not checked

@@ -196,6 +196,12 @@ Part 2 (server/, node --disable-warning=ExperimentalWarning src/index.ts, native
 - Post-merge `python -I verifier/test_verify.py` -> no-docker 13/13, fake-docker 6/6, end-to-end 34/34, exit 0.
 - Backtest rerun on merge 282056d (verify.py sha256 8022c685...): same counts A 6/0/0/0, B 0/7/0/0, C 17/8/5/0, 0 failures.
 
+## 2026-11-16 Person B: second merge of origin/orchestrator-setup (684c1d5) into sandbox
+- New commits: de80d32, 8bd51d7 (Merge main), f9a7ec7, 684c1d5. Since merge-base 7943364 they change STATUS.md only.
+- Dry run `git merge-tree` -> CONFLICT (content) in STATUS.md. Reported before resolving. Two blocks: (1) "Last updated" line (both rewrote it); (2) Open items (Person B added "Person A to choose..." and updated "Person B: 6/6..."; Person A deleted "Install Docker Desktop..." and added "Open human items: H-006...").
+- Resolution: (1) kept both "Last updated" lines verbatim (Person A's first). (2) kept Person B's two lines, Person A's H-006 line verbatim, and honoured her deletion of "Install Docker Desktop". Everything else auto-merged.
+- Check: Person A's 12 added or changed STATUS lines present verbatim, 0 missing; Person B's 4 present verbatim, 0 missing; 0 conflict markers. Merge changes STATUS.md only; server/ untouched (0 files).
+- Post-merge: no-docker tests 13/13 PASS and fake-docker tests 6/6 PASS (exit 0); `python verifier/verify.py --self-test` -> {"self_test": "pass", "detail": "host Windows AMD64: case 42482847 harmless input: vul clean, fix clean; harness runs here"}, exit 0, 2.05 s.
 ## 2026-11-17 ~11:00 ET X402_PAYMENTS Phase 2 (payment half): settlement_pending polling, 402 body, handler-exception, clamp, 60 s cap (devnet, dedicated RPC, FAKE/stub verifier only)
 Setup: facilitator = spike code, started once with PORT=4022 (inline), never restarted during the run; RPC host solana-devnet.quiknode.pro on facilitator and server (checked via ps, key not printed). Server keys from spike servers/upto/.env, buyer key from spike clients/fetch/.env, only SVM_RPC_URL/ports from repo .env (repo .env keys still not filled). All env values checked ASCII. Server: `ALLOW_STUB_VERIFIER=1 VERIFIER_PATH=server/test/fake_verifier.py` (fake sleeps N s when the filename is sleepN.bin, prints a stub-flagged not_reproduced). Faults are injected by header `x-test-fault`, honored only when ALLOW_STUB_VERIFIER=1. Tx check = RPC getTransaction (token balance deltas).
 
