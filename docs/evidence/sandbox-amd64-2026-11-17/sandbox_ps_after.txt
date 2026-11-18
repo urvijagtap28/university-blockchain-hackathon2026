@@ -1,0 +1,3 @@
+CONTAINER ID   IMAGE         COMMAND    CREATED        STATUS                    PORTS     NAMES
+3b28565bfe02   hello-world   "/hello"   7 hours ago    Exited (0) 7 hours ago              bold_murdock
+1fed9ff2a26a   hello-world   "/hello"   25 hours ago   Exited (0) 25 hours ago             laughing_raman
