@@ -38,3 +38,7 @@ server/*.jsonl
 # demo run artifacts (logs, pids, copies of the verdict log; no secrets)
 demo/run/
 demo/web/out/
+
+# web app run data and triage notes (local only; no secrets)
+web/run/
+web/data/
