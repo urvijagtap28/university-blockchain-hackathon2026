@@ -1,0 +1,59 @@
+$ bash scripts/demo.sh --real    (started 2026-11-17T20:49:56-05:00; FACILITATOR_DIR exported to the clean x402 clone)
+== Preflight (mode: real) ==
+  SVM_RPC_URL: set (length 94)
+  SVM_ADDRESS: set (length 44)
+  SVM_RECEIVER_AUTHORIZER_PRIVATE_KEY: set (length 87)
+  AGENT_SVM_PRIVATE_KEY: set (length 87)
+  SVM_PRIVATE_KEY: set (length 88)
+  LOG_SIGNING_KEY: set (length 88)
+  FACILITATOR_URL: set (length 21)
+  OK: host=quiknode.pro getSlot=523469909
+  facilitator wallet 5aBT3jXXPQnRsDLDCHQMSnePECF8tsX5vsFrs3HEunfH: 0.9902 SOL (need >= 0.05)
+  buyer wallet       GzpcigyYikijmw5wH2GmXva9xd61XNL4QrxtBnoDgLAS: 19.250000 USDC (need >= 1.250000 for 5 reports)
+  payTo wallet       8e9hfn9kUxar3wmXBY7HvWcX344zPq88AADNAmqvgrvu: 20.750000 USDC
+  log signer public key: ASYuieG7nRUN7ecnLVGGUtoeLSER8KEwCq5qYmt1C3Cx
+  docker x86_64, images for case 42482847 present, python ok
+  ports 4021 and 4022 are free
+  preflight OK
+
+== Starting services (facilitator once; never restarted) ==
+  facilitator pid 18263 ready on 4022
+  server pid 18308 ready on 4021 (unpaid probe got 402)
+
+== Batch: 5 reports through the submitter agent (mode real) ==
+  [1/5] arvo_42482847.poc (real_bug) ... done reproduced settled=0
+  [2/5] arvo_42482848.poc (real_bug) ... done reproduced settled=0
+  [3/5] hand_made_fake_near_miss.ucl (hand_made_fake) ... done not_reproduced settled=250000
+  [4/5] hand_made_fake_random.bin (hand_made_fake) ... done not_reproduced settled=250000
+  [5/5] hand_made_fake_asan_claim.txt (hand_made_fake) ... done not_reproduced settled=250000
+  server stopped; port 4021 free
+  facilitator stopped; port 4022 free
+  balances after: facilitator 0.9803 SOL, buyer 18.500000 USDC, payTo 21.500000 USDC
+
+== Signed log verification (pinned public key) ==
+OK: 5 records, signer(s): ASYuieG7nRUN7ecnLVGGUtoeLSER8KEwCq5qYmt1C3Cx (pinned)
+
+== Verdicts (from the signed log) ==
+#  input                              category        verdict        settled   chain
+1  arvo_42482847.poc                  real_bug        reproduced     0.000000  confirmed
+   tx 24RCWjKpgWDjGXFUMpduLy1Syw8uiheezu8BuiRRAF2hWPN85F9jGxQSmA2MFXQ5icQFjgy2GiFW6MY8F7KZw4Bm
+   https://explorer.solana.com/tx/24RCWjKpgWDjGXFUMpduLy1Syw8uiheezu8BuiRRAF2hWPN85F9jGxQSmA2MFXQ5icQFjgy2GiFW6MY8F7KZw4Bm?cluster=devnet
+2  arvo_42482848.poc                  real_bug        reproduced     0.000000  confirmed
+   tx 56qVSojh4Csyy8DVVzirAW9yBu3VucATDdUiMWANzWxRAoAwXV1X7NWhQHYLy69Mg2Nqy4CTz8T6S8rjr1Bzk47x
+   https://explorer.solana.com/tx/56qVSojh4Csyy8DVVzirAW9yBu3VucATDdUiMWANzWxRAoAwXV1X7NWhQHYLy69Mg2Nqy4CTz8T6S8rjr1Bzk47x?cluster=devnet
+3  hand_made_fake_near_miss.ucl       hand_made_fake  not_reproduced 0.250000  confirmed
+   tx 436MsnJZoYy6DNwRKdKiNFwEnuhBjLENdzMqme6X4EcwMaaLHTFWpWqQu19v8BsREosfvjnptmymSx9GhttwTdkf
+   https://explorer.solana.com/tx/436MsnJZoYy6DNwRKdKiNFwEnuhBjLENdzMqme6X4EcwMaaLHTFWpWqQu19v8BsREosfvjnptmymSx9GhttwTdkf?cluster=devnet
+4  hand_made_fake_random.bin          hand_made_fake  not_reproduced 0.250000  confirmed
+   tx 5Q7yXhBfrDrDnauph8WJBGmh7uygsMyEPZMrLmcZ8EXaXTX2FtkfMjWgYa4WpkRRJp5cSpAhG9ufeUnv3E4wwCRM
+   https://explorer.solana.com/tx/5Q7yXhBfrDrDnauph8WJBGmh7uygsMyEPZMrLmcZ8EXaXTX2FtkfMjWgYa4WpkRRJp5cSpAhG9ufeUnv3E4wwCRM?cluster=devnet
+5  hand_made_fake_asan_claim.txt      hand_made_fake  not_reproduced 0.250000  confirmed
+   tx 55E93tcrdotXEGHLFgaofGVEdMDVsLvwhToqpGpA37WTWo1MxtKU7pp1w5U53Vj94de1LZF4irrTkd2PwuHw3jLV
+   https://explorer.solana.com/tx/55E93tcrdotXEGHLFgaofGVEdMDVsLvwhToqpGpA37WTWo1MxtKU7pp1w5U53Vj94de1LZF4irrTkd2PwuHw3jLV?cluster=devnet
+
+wrote /home/urvij/clean-test/university-blockchain-hackathon2026/RESULTS.md   (mode: REAL)
+counts: reproduced 2, forfeited 3, wrongly forfeited real bugs 0, inconclusive 0, errors 0
+log head: seq 4 sha256(last line) 7606cb75fb21edef17948c5d812d3b2dbd1a030620dde33e6c596cf30aca85a2
+
+ALL CHECKS PASSED
+demo.sh exit=0  (finished 2026-11-17T20:51:20-05:00)
