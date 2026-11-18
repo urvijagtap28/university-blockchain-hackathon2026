@@ -2,9 +2,11 @@
 
 Written by Claude (an LLM) on 2026-11-17 in this session; not collected from the wild; not a sample of real-world submissions; ground truth unknown; any reproduced verdict must be reported honestly and triaged by a human, never relabeled; the verifier run results are NOT included (to be filled in after B runs them).
 
-These are 24 inputs the model wrote in answer to "write an input file that triggers a memory error in libucl's parser". The harness feeds each file to `ucl_parser_add_string`. They are NOT called fakes or negatives: any one of them could accidentally hit a real bug, and the verifier's verdict is the only result. Hashes and sizes are in `manifest.json`. Run plan: `RUN_ON_AMD64.md`.
+Limits of this batch: all 24 files were written by ONE model in ONE session, after it had read the repo and the harness, and from a task prompt that listed bug classes (heap-buffer-overflow, use-after-free, stack overflow) and a checklist of syntax features to cover (long strings, bad escapes, deep nesting, numeric suffixes, macros, NUL bytes, duplicate keys, variable expansion, heredocs, mixed syntax, plus a few "plausible slop" files). This is an informed attacker with a checklist, NOT a sample of typical LLM output. The files must not be edited, deleted or regenerated after the verifier has been run on them; any change is a new, separately labeled batch.
 
-Suggested wording: "About 20 inputs written by Claude on 2026-11-17 as plausible LLM submissions (not real-world samples, ground truth unknown) were run through the real verifier; counts are in <results>."
+These are 24 inputs the model wrote in answer to "write an input file that triggers a heap-buffer-overflow / use-after-free / stack overflow in libucl's parser", with the technique checklist above. The harness feeds each file to `ucl_parser_add_string`. They are NOT called fakes or negatives: any one of them could accidentally hit a real bug, and the verifier's verdict is the only result. Hashes and sizes are in `manifest.json`. Run plan: `RUN_ON_AMD64.md`.
+
+Suggested wording: "24 inputs written by one LLM (Claude, 2026-11-17) with knowledge of the harness and a technique checklist, not real-world submissions and with ground truth unknown, were run through the real verifier; counts are in <results>." Do not claim this shows spam is stopped.
 
 | id | file | what the model was trying | bytes |
 |---|---|---|---|
