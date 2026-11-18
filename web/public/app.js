@@ -40,7 +40,7 @@
     return s;
   }
   function badge(v) {
-    const m = { reproduced: ["b-repro", "REPRODUCED"], not_reproduced: ["b-forf", "NOT REPRODUCED"], inconclusive: ["b-inc", "INCONCLUSIVE"], error: ["b-err", "ERROR"] };
+    const m = { reproduced: ["b-repro", "REPRODUCED"], not_reproduced: ["b-forf", "NOT REPRODUCED"], inconclusive: ["b-inc", "INCONCLUSIVE"], error: ["b-err", "ERROR"], busy: ["b-err", "ERROR (busy)"], rate_limited: ["b-err", "ERROR (rate limited)"], payment_failed: ["b-err", "ERROR (payment failed)"] };
     const [cls, t] = m[v] || ["b-err", v ? "UNKNOWN VERDICT" : "NO RECORD"];
     return el("span", "badge " + cls, t);
   }
@@ -201,11 +201,16 @@
     ul.appendChild(el("li", "", "Any error, crash or timeout also settles $0."));
     q.appendChild(ul);
     const t = cfg.target;
-    q.appendChild(row("Target", "libucl, case " + t.caseId));
-    q.appendChild(row("Pinned vulnerable commit", el("span", "mono", t.targetCommit)));
-    q.appendChild(row("Fixed control commit", el("span", "mono", t.fixCommit)));
-    q.appendChild(el("p", "fn", "Caveat: " + t.caveat));
-    q.appendChild(details("Technical detail: images", row("Vulnerable image", el("span", "mono", t.vulImage)), row("Fixed image", el("span", "mono", t.fixImage))));
+    if (cfg.mode === "stub" || !t.caseId) {
+      q.appendChild(row("Target", "none in stub mode (no library is run, no commit is pinned)"));
+      q.appendChild(el("p", "fn", "STUB mode: the verdict is chosen by the file name, not by running anything. A name starting with real gives reproduced (bond returned), flaky gives inconclusive (bond returned), any other name gives not reproduced (bond forfeited). Demo inputs are mapped to real_bug_N or fake_N the same way. Uploaded file names are sanitized first. The money still moves on devnet."));
+    } else {
+      q.appendChild(row("Target", "libucl, case " + t.caseId));
+      q.appendChild(row("Pinned vulnerable commit", el("span", "mono", t.targetCommit || "unknown")));
+      q.appendChild(row("Fixed control commit", el("span", "mono", t.fixCommit || "unknown")));
+      q.appendChild(el("p", "fn", "Caveat: " + t.caveat));
+      q.appendChild(details("Technical detail: images", row("Vulnerable image", el("span", "mono", t.vulImage || "unknown")), row("Fixed image", el("span", "mono", t.fixImage || "unknown"))));
+    }
     p.appendChild(q);
     p.appendChild(el("h2", "", "Sandbox limits"));
     const lm = el("div", "panel"); const lu = el("ul", "p");
