@@ -11,7 +11,7 @@
 <header class="top">
   <div class="top-in">
     <h1 class="brand" id="brand">Prove-It Bond</h1>
-    <nav role="tablist" aria-label="Screens" id="tabs" class="tabs"></nav>
+    <nav aria-label="Drawers" id="tabs" class="tabs"></nav>
     <div class="top-r" id="topr"></div>
   </div>
   <div id="banners" aria-live="polite"></div>
@@ -19,12 +19,12 @@
 </header>
 <main>
   <noscript><p class="bar-msg fail">This app needs JavaScript.</p></noscript>
-  <section role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabindex="-1"></section>
-  <section role="tabpanel" id="panel-submit" aria-labelledby="tab-submit" tabindex="-1" hidden></section>
-  <section role="tabpanel" id="panel-run" aria-labelledby="tab-run" tabindex="-1" hidden></section>
-  <section role="tabpanel" id="panel-results" aria-labelledby="tab-results" tabindex="-1" hidden></section>
-  <section role="tabpanel" id="panel-inbox" aria-labelledby="tab-inbox" tabindex="-1" hidden></section>
-  <section role="tabpanel" id="panel-policy" aria-labelledby="tab-policy" tabindex="-1" hidden></section>
+  <div class="headline" id="headline"></div>
+  <div class="board">
+    <section class="pane" id="panel-submit" aria-label="Reports" tabindex="-1"></section>
+    <section class="pane" id="panel-run" aria-label="Console" tabindex="-1"></section>
+    <section class="pane" id="panel-overview" aria-label="For a maintainer" tabindex="-1"></section>
+  </div>
 </main>
 <dialog id="confirm" aria-labelledby="confirm-title" class="modal">
   <h2 id="confirm-title">Approve payment</h2>
@@ -37,6 +37,14 @@
     <button id="confirm-cancel" type="button" class="btn" autofocus>Cancel</button>
     <button id="confirm-ok" type="button" class="btn primary">Approve</button>
   </div>
+</dialog>
+<dialog id="ledger" aria-labelledby="ledger-title" class="drawer wide">
+  <div class="drawer-h"><h2 id="ledger-title">Ledger</h2><button id="ledger-close" type="button" class="btn icon-btn" aria-label="Close"></button></div>
+  <div class="drawer-b"><section id="panel-results" aria-labelledby="ledger-title"></section></div>
+</dialog>
+<dialog id="agent" aria-labelledby="agent-title" class="drawer wide">
+  <div class="drawer-h"><h2 id="agent-title">Agent</h2><button id="agent-close" type="button" class="btn icon-btn" aria-label="Close"></button></div>
+  <div class="drawer-b"><section id="panel-policy" aria-labelledby="agent-title"></section></div>
 </dialog>
 <dialog id="trust" aria-labelledby="trust-title" class="drawer">
   <div class="drawer-h"><h2 id="trust-title">Log verification</h2><button id="trust-close" type="button" class="btn icon-btn" aria-label="Close"></button></div>

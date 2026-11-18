@@ -231,7 +231,7 @@
   }
 
   // ---------- state ----------
-  let cfg = null, cfgErr = null, logData = null, logErr = null, inboxData = null, inboxErr = null;
+  let cfg = null, cfgErr = null, logData = null, logErr = null;
   let sel = { demo: null, file: null, fileErr: null };
   let submitMsg = null; // {kind, text}
   let decisions = [];
@@ -299,70 +299,62 @@
     out.push("Demo input labels are assigned by hand in demo/manifest.json. They are not measured by the system.");
     return out;
   }
+  const logRecFor = d => logData ? logData.records.filter(r => r.label === d.label && r.sigOk === true).sort((a, b) => b.seq - a.seq)[0] || null : null;
+  const paneHead = (title, ...kids) => { const h = el("div", "pane-h"); h.appendChild(el("h2", "sec", title)); kids.forEach(k => k && h.appendChild(k)); return h; };
   function renderSubmit() {
     const p = $("panel-submit"); p.replaceChildren();
     if (cfgErr) { p.appendChild(emptyState("alert", "Config not loaded.")); return; }
     if (!cfg) { p.appendChild(skeleton(4)); return; }
-    const col = el("div", "col narrow");
-    const names = [];
-    // drop zone
-    const zone = el("label", "drop"); const fi = document.createElement("input"); fi.type = "file"; fi.id = "file-input"; fi.className = "vh"; fi.setAttribute("aria-label", "Choose a proof file");
-    const zIcon = icon("upload"); const zMain = el("span", "drop-main"); const zSub = el("span", "drop-sub");
-    add(zone, fi, zIcon, zMain, zSub);
-    const zErr = el("p", "field-err"); zErr.setAttribute("role", "alert");
+    const busy = cfg.busy || !!(run && !run.done && !run.lost) || !!queue;
+    const all = el("button", "btn primary sm", queue ? "Running…" : "Run all " + cfg.demoInputs.length); all.type = "button"; all.id = "run-all"; all.disabled = busy || !cfg.demoInputs.length;
+    all.addEventListener("click", () => { sel = { demo: null, file: null, fileErr: null }; pendingQueue = cfg.demoInputs.slice(); openConfirm(); });
+    p.appendChild(paneHead("Reports", info("Quote, limits and caveats", ...quoteInfo()), all));
+    const list = el("ul", "reps"); list.setAttribute("aria-label", "Demo inputs");
+    const row = (name, tag, stateNode, onRun, live) => {
+      const li = el("li", "rep" + (live ? " live" : "")); const t = el("div", "rep-t"); t.appendChild(el("span", "rep-n", name)); if (tag) t.appendChild(tag); li.appendChild(t);
+      li.appendChild(stateNode);
+      const b = el("button", "btn sm", "Run"); b.type = "button"; b.disabled = busy; b.setAttribute("aria-label", "Run " + name); b.addEventListener("click", onRun); li.appendChild(b); list.appendChild(li);
+    };
+    cfg.demoInputs.forEach(d => {
+      const rec = logRecFor(d), live = !!(run && run.demoId === d.id && !run.done);
+      const st = el("div", "rep-s");
+      if (live) st.appendChild(pill("chk", "Running", "spin")); else if (rec) { st.appendChild(verdictPill(rec.verdict)); st.appendChild(el("span", "num mute", rec.settledAtomic === null ? "" : String(rec.settledAtomic) === "0" ? "bond back" : "-" + usd(rec.settledAtomic))); } else st.appendChild(el("span", "mute", "not run yet"));
+      if (live) st.firstChild.querySelector(".ic").classList.add("spin");
+      row(chipName(d), d.handMade ? el("span", "tag", "HAND-MADE") : el("span", "tag real", "REAL"), st, () => { sel = { demo: d, file: null, fileErr: null }; pendingQueue = null; openConfirm(); }, live);
+    });
+    if (sel.file) row(sel.file.name, el("span", "tag", "YOURS"), el("div", "rep-s mute", sel.file.size < 1024 ? sel.file.size + " B" : (sel.file.size / 1024).toFixed(1) + " KB"), () => { pendingQueue = null; openConfirm(); }, false);
+    p.appendChild(list);
+    const zone = el("label", "drop sm"); const fi = document.createElement("input"); fi.type = "file"; fi.id = "file-input"; fi.className = "vh"; fi.setAttribute("aria-label", "Choose a proof file");
+    const zMain = el("span", "drop-main", "Drop your own proof file"); add(zone, fi, icon("upload"), zMain);
+    const zErr = el("p", "field-err"); zErr.setAttribute("role", "alert"); zErr.textContent = sel.fileErr || "";
     const takeFile = f => {
       if (!f) return;
       if (f.size > cfg.limits.maxInputBytes) sel = { demo: null, file: null, fileErr: "File is " + f.size + " bytes; the limit is " + cfg.limits.maxInputBytes + "." };
       else if (f.size === 0) sel = { demo: null, file: null, fileErr: "File is empty; the server rejects empty bodies." };
       else sel = { demo: null, file: f, fileErr: null };
-      submitMsg = null; sync();
+      submitMsg = null; renderSubmit();
     };
     fi.addEventListener("change", () => takeFile(fi.files[0]));
     ["dragenter", "dragover"].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add("over"); }));
     ["dragleave", "drop"].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove("over"); }));
     zone.addEventListener("drop", e => takeFile(e.dataTransfer && e.dataTransfer.files[0]));
-    col.appendChild(zone); col.appendChild(zErr);
-    // demo chips
-    let chips = null;
-    if (cfg.demoInputs.length) {
-      col.appendChild(el("div", "or", "or"));
-      chips = el("div", "chips"); chips.setAttribute("role", "radiogroup"); chips.setAttribute("aria-label", "Demo inputs");
-      cfg.demoInputs.forEach(d => {
-        const lab = el("label", "chip"); lab.title = d.label;
-        const inp = document.createElement("input"); inp.type = "radio"; inp.name = "demo"; inp.value = d.id; inp.setAttribute("aria-label", (d.handMade ? "Hand-made: " : "Real bug: ") + d.label);
-        inp.addEventListener("change", () => { sel = { demo: d, file: null, fileErr: null }; submitMsg = null; sync(); });
-        lab.appendChild(inp); lab.appendChild(el("span", "chip-n", chipName(d)));
-        lab.appendChild(d.handMade ? el("span", "tag", "HAND-MADE") : el("span", "tag real", "REAL"));
-        lab._id = d.id; chips.appendChild(lab);
-      });
-      col.appendChild(chips);
-    }
-    // quote line + submit
-    const q = el("div", "quote"); q.appendChild(el("span", "", usdNum(cfg.policy.perReportCapUsd) + " bond")); q.appendChild(info("Quote, limits and caveats", ...quoteInfo()));
-    col.appendChild(q);
-    const act = el("div", "actions"); const btn = el("button", "btn primary lg", "Submit"); btn.type = "button"; btn.id = "submit-btn"; btn.addEventListener("click", openConfirm); act.appendChild(btn);
-    if (cfg.busy) { const b = pill("inc", "Busy: one job at a time", "dash"); b.setAttribute("role", "status"); act.appendChild(b); }
-    col.appendChild(act);
-    const msg = el("div", "msgslot"); col.appendChild(msg);
-    p.appendChild(col);
-    function sync() {
-      if (chips) chips.querySelectorAll(".chip").forEach(l => { const on = !!(sel.demo && sel.demo.id === l._id); l.classList.toggle("on", on); l.querySelector("input").checked = on; });
-      zone.classList.toggle("has", !!sel.file);
-      zMain.textContent = sel.file ? sel.file.name : "Drop a proof file";
-      zSub.textContent = sel.file ? (sel.file.size < 1024 ? sel.file.size + " B" : (sel.file.size / 1024).toFixed(1) + " KB") : "";
-      zErr.textContent = sel.fileErr || "";
-      btn.disabled = !(sel.demo || sel.file) || cfg.busy;
-      msg.replaceChildren();
-      if (submitMsg) { const m = errorBox(submitMsg.text); if (submitMsg.kind === "busy") m.classList.add("calm"); msg.appendChild(m); }
-    }
-    sync();
+    const foot = el("div", "pane-f"); foot.appendChild(zone); foot.appendChild(zErr);
+    if (submitMsg) { const m = errorBox(submitMsg.text); if (submitMsg.kind === "busy") m.classList.add("calm"); foot.appendChild(m); }
+    p.appendChild(foot);
   }
   function openConfirm() {
-    $("confirm-amt").textContent = usdNum(cfg.policy.perReportCapUsd);
-    const what = sel.demo ? (sel.demo.handMade ? "HAND-MADE: " : "") + chipName(sel.demo) : sel.file.name + " (" + sel.file.size + " bytes)";
+    const cap = usdNum(cfg.policy.perReportCapUsd);
+    $("confirm-amt").textContent = cap + (pendingQueue ? " each" : "");
+    const what = pendingQueue ? pendingQueue.length + " demo inputs, one after another (REAL and HAND-MADE)" : sel.demo ? (sel.demo.handMade ? "HAND-MADE: " : "") + chipName(sel.demo) : sel.file.name + " (" + sel.file.size + " bytes)";
     $("confirm-what").textContent = what;
     const wa = typeof cfg.wallet.buyerAddress === "string" ? cfg.wallet.buyerAddress : null; $("confirm-wallet").textContent = wa ? short(wa) : "not configured"; $("confirm-wallet").title = wa || "";
     const dlg = $("confirm"); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+  }
+  // "Run all": the same single-submit path, one input at a time. Every run keeps the per-report cap, session budget and rate limit; any refusal or error stops the queue.
+  let pendingQueue = null, queue = null;
+  function nextInQueue() {
+    if (!queue || !queue.length) { queue = null; renderSubmit(); return; }
+    sel = { demo: queue.shift(), file: null, fileErr: null }; doSubmit();
   }
   async function doSubmit() {
     submitMsg = null;
@@ -370,12 +362,14 @@
     // QE-W2-002: the "record is new" baseline comes from a fresh log read made now, before the POST (never from the page-load copy)
     let freshBase = null; const submitMs = Date.now();
     try { const L0 = await api("/api/log"); if (L0 && Array.isArray(L0.records)) freshBase = L0.records.reduce((m, x) => Math.max(m, Number(x.seq) + 1 || 0), 0); } catch (_) { freshBase = null; }
-    try { r = await postSubmit(sel); } catch (e) { submitMsg = { kind: "err", text: "Submit failed: " + e.message + ". Nothing was paid (the request did not complete)." }; renderSubmit(); return; }
+    try { r = await postSubmit(sel); } catch (e) { queue = null; submitMsg = { kind: "err", text: "Submit failed: " + e.message + ". Nothing was paid (the request did not complete)." }; renderSubmit(); return; }
     if (r.status === 202 && r.body && r.body.jobId) {
       const sb = r.body.baselineSeq; // optional additive field: the server's log length at submit time
       startRun(r.body.jobId, Number.isSafeInteger(sb) && sb >= 0 ? Math.max(sb, freshBase || 0) : freshBase, submitMs); return;
     }
     const b = r.body || {}; const msg = typeof b.message === "string" ? b.message : "no message";
+    if (r.status === 429 && queue) { queue.unshift(sel.demo); const w = (Number(b.retryAfterSeconds) || 11) + 1; setTimeout(nextInQueue, w * 1000); renderSubmit(); return; }
+    queue = null;
     const m = { 409: "Busy (409): ", 422: "Refused (422, session budget): ", 429: "Rate limited (429): ", 413: "Too large (413): ", 403: "Blocked (403): ", 400: "Bad input (400): " }[r.status] || ("Error (HTTP " + r.status + "): ");
     submitMsg = { kind: r.status === 409 ? "busy" : "err", text: m + msg + (r.status === 429 && b.retryAfterSeconds ? " Retry in " + b.retryAfterSeconds + " s." : "") + " No payment was made." };
     refreshConfig(); renderSubmit();
@@ -386,10 +380,11 @@
   function newRun(jobId) { const steps = {}; STEPS.forEach(([k]) => steps[k] = { st: "pending", text: "" }); return { jobId, reportHash: null, steps, notes: [], outcome: null, error: null, lost: false, done: false, events: [], chain: null, verdict: null, verdictDetail: null, facts: {} }; }
   function startRun(jobId, baseSeq, submitMs) {
     run = newRun(jobId); runDone = false;
+    run.demoId = sel.demo ? sel.demo.id : null; run.name = sel.demo ? chipName(sel.demo) + (sel.demo.handMade ? " (hand-made)" : "") : sel.file ? sel.file.name : "proof";
     run.baseSeq = baseSeq === undefined ? null : baseSeq; run.submitMs = submitMs || 0; // only a record with seq >= baseSeq, the same hash and a timestamp not before submit can belong to this run (null: never adopt)
-    renderRun(); selectTab("run"); $("panel-run").focus({ preventScroll: true });
+    renderRun(); renderSubmit(); $("panel-run").focus({ preventScroll: true });
     const mine = run;
-    openStream(jobId, onEvent, () => { if (!runDone && run === mine && !mine.lost) { mine.lost = true; renderRun(); recover(mine); } });
+    openStream(jobId, onEvent, () => { if (!runDone && run === mine && !mine.lost) { mine.lost = true; queue = null; renderRun(); recover(mine); } });
   }
   // After a dropped stream: look for the signed record of THIS proof hash (bounded retries). Never invents an outcome.
   async function recover(r) {
@@ -445,7 +440,7 @@
       run.outcome = { kind: d.bondOutcome, atomic: d.settledAtomic, tx: d.txSignature };
       if (run.verdictEv && run.verdictEv.verdict === "error") setVerdictStep("error", run.verdictEv.detail, d.settledAtomic);
     } else if (t === "error") { run.error = { message: d.message, atomic: d.settledAtomic }; if (run.verdictEv && run.verdictEv.verdict === "error") setVerdictStep("error", run.verdictEv.detail, d.settledAtomic); }
-    else if (t === "done") { run.done = true; runDone = true; if (stream) stream.close(); refreshConfig(); refreshLog(); inboxData = null; }
+    else if (t === "done") { run.done = true; runDone = true; if (stream) stream.close(); refreshConfig(); refreshLog(); if (queue) setTimeout(nextInQueue, 1500); }
     if (t === "done") STEPS.forEach(([k]) => { if (run.steps[k].st === "pending" || run.steps[k].st === "active") run.steps[k] = { st: "skip", text: "not reached" }; });
     renderRun();
   }
@@ -484,7 +479,7 @@
     };
     const note = t => card.appendChild(el("p", "os", t));
     const acts = el("div", "actions");
-    const again = () => { if (r.done) { const b = el("button", "btn", "Submit another"); b.type = "button"; b.addEventListener("click", () => selectTab("submit", true)); acts.appendChild(b); } };
+    const again = () => {};
     if (r.refused || r.error) {
       if (r.refused) { head("err", "ban", refusalTitle(r.steps.policy.text || (r.error && r.error.message)), false, "No payment was made."); }
       else {
@@ -534,10 +529,16 @@
   }
   function renderRun() {
     const p = $("panel-run"); p.replaceChildren();
-    const col = el("div", "col");
-    if (!run) col.appendChild(emptyState("activity", "No active run", "Submit a proof", () => selectTab("submit", true)));
-    else {
-      col.appendChild(stepper()); col.appendChild(outcomeCard());
+    const cap = cfg && cfg.policy ? usdNum(cfg.policy.perReportCapUsd) : "$0.25";
+    p.appendChild(paneHead("Console", run && !run.done && !run.lost ? pill("chk", "Live", "spin") : null));
+    const term = el("div", "term");
+    const ps = el("div", "ps"); ps.appendChild(el("span", "prompt", "$")); ps.appendChild(el("span", "ps-t", run ? run.name : "waiting for a report")); if (!run) ps.appendChild(el("span", "cursor")); term.appendChild(ps);
+    if (!run) {
+      const h = el("ul", "hints");
+      ["Lock a " + cap + " bond", "Sandbox replays the proof", "Crash: bond back. No crash: bond forfeited."].forEach(t => { const li = el("li"); li.appendChild(icon("ring", "sm")); li.appendChild(el("span", "", t)); h.appendChild(li); });
+      term.appendChild(h);
+    } else {
+      term.appendChild(stepper()); term.appendChild(outcomeCard());
       const d = el("details", "disc"); d.appendChild(el("summary", "", "Details"));
       const dl = el("dl", "kv"); const kv = (k, v, mono) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", mono ? "mono" : "", v)); };
       kv("Job", run.jobId, true); if (run.error) kv("Message", money(run.error.message)); kv("Report hash", run.reportHash || "not yet known", true);
@@ -548,18 +549,9 @@
       run.notes.forEach(n => kv("Note", money(n)));
       d.appendChild(dl);
       const ev = el("div", "evs"); run.events.forEach(e => ev.appendChild(el("div", "mono sm", evLine(e)))); d.appendChild(ev);
-      col.appendChild(d);
+      term.appendChild(d);
     }
-    if (logData && logData.records.length) {
-      const rec = logData.records.slice().sort((a, b) => b.seq - a.seq).slice(0, 3);
-      const sec = el("section", "recent"); sec.appendChild(el("h2", "sec", "Recent"));
-      rec.forEach(r => {
-        const b = el("button", "rrow"); b.type = "button"; b.title = r.label || "Unlabeled submission"; b.addEventListener("click", () => selectTab("results", true));
-        b.appendChild(el("span", "rn", rowName(r))); b.appendChild(verdictPill(r.verdict)); b.appendChild(el("span", "num", r.settledAtomic === null ? "none" : usd(r.settledAtomic))); sec.appendChild(b);
-      });
-      col.appendChild(sec);
-    }
-    p.appendChild(col);
+    p.appendChild(term);
   }
 
   // Counters shared by Overview and Ledger. The stub n/a rule for "wrongly forfeited" lives in the Not reproduced info popover.
@@ -588,38 +580,30 @@
     if (tg) tg.title = LABEL_NOTE; return tg;
   }
 
-  // ---------- Overview ----------
+  // ---------- Headline + maintainer pane ----------
   const newest = list => list.slice().sort((a, b) => b.seq - a.seq)[0] || null;
-  function ovCard(r, kind) {
-    const cap = capAtomic(), returned = kind === "returned";
-    const card = el("article", "ocard ovc " + (!returned ? "o-forf" : r.verdict === "inconclusive" ? "o-inc" : "o-ok")); card.setAttribute("data-kind", kind);
-    const h = el("div", "ovh"); const nm = el("span", "ovl", rowName(r)); nm.title = r.label || "Unlabeled submission"; h.appendChild(nm);
-    const tg = labelTag(r); if (tg) h.appendChild(tg); h.appendChild(verdictPill(r.verdict)); card.appendChild(h);
-    const amt = returned ? backAtomic(r.settledAtomic) : r.settledAtomic;
-    card.appendChild(el("div", "num ovamt", amt === null || amt === undefined ? "unknown" : usd(amt)));
-    card.appendChild(el("p", "ovflow", (cap === null ? "Bond" : usd(cap)) + " locked \u2192 " + (returned ? "returned to you" : "paid out")));
-    card.appendChild(evidenceNode(r.verdict, r.detail, false));
-    const tx = txBtn(r.txSignature, true); tx.classList.remove("primary"); card.appendChild(tx);
-    return card;
-  }
   function renderOverview() {
-    const p = $("panel-overview"); p.replaceChildren();
+    const h = $("headline"), p = $("panel-overview"); h.replaceChildren(); p.replaceChildren();
+    h.appendChild(el("h2", "", "Only reports that crash the library reach a maintainer."));
+    p.appendChild(paneHead("For a maintainer", info("What this pane is", "Reproduced reports only: the sandbox saw the expected ASan error on the vulnerable build and a clean fixed build. The sandbox is a filter, not a judge; a human still triages these.")));
     if (logErr) { p.appendChild(errorBox("Could not load the log: " + logErr, loadLog)); return; }
     if (!logData) { p.appendChild(skeleton(3)); return; }
-    const L = logData, recs = L.records;
-    const col = el("div", "col");
-    if (!recs.length) {
-      const e = el("div", "ovempty"); const b = el("button", "btn primary lg", "Submit a proof"); b.type = "button"; b.addEventListener("click", () => selectTab("submit", true)); e.appendChild(b); col.appendChild(e); p.appendChild(col); return;
-    }
-    col.appendChild(el("p", "ovloop", "Submit, lock, verify, settle, record"));
-    const good = recs.filter(r => r.sigOk === true && r.settlementStatus === "settled" && AMT.test(String(r.settledAtomic)));
-    const ret = newest(good.filter(r => (r.verdict === "reproduced" || r.verdict === "inconclusive") && String(r.settledAtomic) === "0"));
-    const forf = newest(good.filter(r => r.verdict === "not_reproduced" && String(r.settledAtomic) !== "0"));
-    const none = t => { const d = el("div", "ocard ovc none", t); return d; };
-    const g = el("div", "ovg"); g.appendChild(ret ? ovCard(ret, "returned") : none("No returned run yet")); g.appendChild(forf ? ovCard(forf, "forfeited") : none("No forfeited run yet")); col.appendChild(g);
-    col.appendChild(tilesNode(recs, L));
-    const top = el("div", "ltop"); top.appendChild(trustBadge(L.verify)); col.appendChild(top);
-    p.appendChild(col);
+    const L = logData, recs = L.records, good = recs.filter(r => r.sigOk === true);
+    const rep = good.filter(r => r.verdict === "reproduced"), forf = good.filter(r => r.verdict === "not_reproduced" && r.settlementStatus === "settled" && AMT.test(String(r.settledAtomic)));
+    const inc = good.filter(r => r.verdict === "inconclusive").length, fSum = forf.reduce((a, r) => a + Number(r.settledAtomic), 0);
+    const sum = el("div", "sumline");
+    sum.appendChild(el("span", "num", recs.length + (recs.length === 1 ? " report" : " reports")));
+    sum.appendChild(el("span", "num", rep.length + " reproduced"));
+    sum.appendChild(el("span", "num", usd(fSum) + " forfeited"));
+    if (inc) sum.appendChild(el("span", "num", inc + " inconclusive"));
+    sum.appendChild(trustBadge(L.verify)); h.appendChild(sum);
+    const list = el("ul", "mnt");
+    if (!rep.length) list.appendChild(el("li", "mnt-empty", "Nothing yet. Reports that do not reproduce never show up here."));
+    rep.slice().sort((a, b) => b.seq - a.seq).forEach(r => {
+      const li = el("li", "mnt-i"); const t = el("div", "rep-t"); const nm = el("span", "rep-n", rowName(r)); nm.title = r.label || "Unlabeled submission"; t.appendChild(nm); const tg = labelTag(r); if (tg) t.appendChild(tg); li.appendChild(t);
+      li.appendChild(evidenceNode(r.verdict, r.detail, false)); li.appendChild(txBtn(r.txSignature, false)); list.appendChild(li);
+    });
+    p.appendChild(list);
   }
 
   // ---------- Ledger ----------
@@ -670,7 +654,7 @@
     const top = el("div", "ltop"); top.appendChild(trustBadge(V, "trust-btn")); col.appendChild(top);
     const g = tilesNode(recs, L);
     col.appendChild(g);
-    if (!recs.length) { col.appendChild(emptyState("ledger", "No reports yet.", "Submit a proof", () => selectTab("submit", true))); p.appendChild(col); return; }
+    if (!recs.length) { col.appendChild(emptyState("ledger", "No reports yet.")); p.appendChild(col); return; }
     const narrow = window.matchMedia("(max-width:640px)").matches;
     const wrap = el("div", "tablewrap"); const tb = el("table", "tbl");
     const hr = el("tr"); const th = (t, cls, lab) => { const h = el("th", cls || "", t); if (lab) h.setAttribute("aria-label", lab); hr.appendChild(h); };
@@ -703,60 +687,6 @@
   }
 
   window.matchMedia("(max-width:640px)").addEventListener("change", () => { if (logData) renderResults(); });
-  // ---------- Inbox ----------
-  // Click-to-copy. textContent only; the clipboard API may be missing or blocked, so fall back to a hidden textarea and never throw.
-  async function copyText(text, btn) {
-    let ok = false;
-    try { await navigator.clipboard.writeText(text); ok = true; } catch (_) {
-      try { const t = document.createElement("textarea"); t.value = text; t.setAttribute("readonly", ""); t.className = "vh"; document.body.appendChild(t); t.select(); ok = document.execCommand("copy"); t.remove(); } catch (_2) { ok = false; }
-    }
-    const old = btn.dataset.t || btn.textContent; btn.dataset.t = old; btn.textContent = ok ? "Copied" : "Copy failed";
-    setTimeout(() => { btn.textContent = old; }, 1200);
-  }
-  function renderInbox() {
-    const p = $("panel-inbox"); p.replaceChildren();
-    if (inboxErr) { p.appendChild(errorBox("Could not load the inbox: " + inboxErr, loadInbox)); return; }
-    if (!inboxData) { p.appendChild(skeleton(4)); return; }
-    const items = inboxData.items;
-    if (!items.length) { p.appendChild(emptyState("inbox", "Nothing to triage.", "Submit a proof", () => selectTab("submit", true))); return; }
-    const col = el("div", "col");
-    const NOTE = { valid: "Valid", not_a_bug: "Not a bug", misuse: "Misuse" };
-    items.forEach(it => {
-      // QE-W2-003/004: only a record whose signature verified AND whose hash is 64 lowercase hex may be copied or triaged
-      const trust = it.sigOk === true && it.hashOk !== false && typeof it.reportHash === "string" && HASH64.test(it.reportHash);
-      const card = el("article", "item" + (trust ? "" : " unverified"));
-      const r1 = el("div", "i1"); r1.appendChild(verdictPill(it.verdict));
-      if (!trust) { const up = pill("err", "Unverified record", "alert"); up.title = "This record failed signature or hash verification. It cannot be copied or triaged."; r1.appendChild(up); }
-      r1.appendChild(el("h3", "ih", it.errorType ? it.errorType + (it.topFrame ? " at " + it.topFrame : "") : it.topFrame ? "Top frame: " + it.topFrame : "Needs a look")); card.appendChild(r1);
-      if (trust && KNOWN.includes(it.verdict)) card.appendChild(evidenceNode(it.verdict, it.detail, true));
-      const r2 = el("div", "i2"); let hs;
-      if (trust) { hs = el("button", "hashbtn mono sm", short(it.reportHash, 8, 4)); hs.type = "button"; hs.title = "Copy proof hash"; hs.setAttribute("aria-label", "Copy proof hash " + it.reportHash); hs.addEventListener("click", () => copyText(it.reportHash, hs)); }
-      else { hs = el("span", "mono sm mute", short(it.reportHash, 8, 4)); hs.title = "Unverified record: not copyable"; }
-      r2.appendChild(hs);
-      const cur = it.note && NOTE[it.note.decision] ? it.note.decision : null;
-      const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Triage note, no payout"); seg.title = "Notes only, no payout";
-      const ta = document.createElement("input"); ta.type = "text"; ta.className = "note-in"; ta.maxLength = 500; ta.placeholder = "Optional note"; ta.setAttribute("aria-label", "Triage note text"); ta.value = it.note && it.note.text ? it.note.text : "";
-      const msg = el("span", "sm err-t", "");
-      Object.entries(NOTE).forEach(([d, l]) => {
-        const b = el("button", "segb" + (cur === d ? " on" : ""), l); b.type = "button"; b.setAttribute("aria-pressed", String(cur === d));
-        b.addEventListener("click", async () => {
-          const dec = cur === d ? "unreviewed" : d;
-          try { await postNote({ reportHash: it.reportHash, decision: dec, text: ta.value.slice(0, 500) }); it.note = dec === "unreviewed" ? null : { decision: d, text: ta.value.slice(0, 500), ts: new Date().toISOString() }; renderInbox(); }
-          catch (e) { msg.textContent = "Note not saved: " + e.message; }
-        });
-        seg.appendChild(b);
-      });
-      const sw = el("div", "segwrap"); const tn = el("span", "tt mute"); tn.tabIndex = 0; tn.title = "Triage notes only, no payout. Nothing here moves money: the verdict already decided the settlement."; tn.setAttribute("aria-label", tn.title); tn.appendChild(icon("file")); sw.appendChild(tn); sw.appendChild(seg); if (trust) r2.appendChild(sw); card.appendChild(r2);
-      const d = el("details", "disc"); d.appendChild(el("summary", "", "Details"));
-      const dl = el("dl", "kv"); const kv = (k, v) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "mono", v)); };
-      kv("Proof hash", it.reportHash); kv("Case", (it.caseId || "-") + " / " + (it.targetCommit || "-")); kv("Time", when(it.timestamp)); kv("Log detail", it.detail);
-      if (it.note) kv("Note", NOTE[it.note.decision] + (it.note.text ? " - " + it.note.text : "") + " (" + when(it.note.ts) + ")");
-      d.appendChild(dl); if (trust) { const nr = el("div", "noterow"); nr.appendChild(ta); nr.appendChild(msg); d.appendChild(nr); } card.appendChild(d);
-      col.appendChild(card);
-    });
-    p.appendChild(col);
-  }
-
   // ---------- Agent ----------
   function renderPolicy() {
     const p = $("panel-policy"); p.replaceChildren();
@@ -787,46 +717,30 @@
     }
   }
 
-  // ---------- tabs ----------
-  const TABS = ["overview", "submit", "run", "results", "inbox", "policy"];
-  const TABDEF = [["overview", "Overview", "home"], ["submit", "Submit", "upload"], ["run", "Activity", "activity"], ["results", "Ledger", "ledger"], ["inbox", "Inbox", "inbox"], ["policy", "Agent", "agent"]];
-  TABDEF.forEach(([id, label, ic], i) => {
-    const b = el("button", "tab"); b.type = "button"; b.id = "tab-" + id; b.setAttribute("role", "tab"); b.setAttribute("aria-controls", "panel-" + id); b.setAttribute("aria-selected", String(id === "overview")); b.tabIndex = id === "overview" ? 0 : -1;
-    b.appendChild(icon(ic)); b.appendChild(el("span", "", label)); $("tabs").appendChild(b);
+  // ---------- drawers (Ledger, Agent) ----------
+  function openDrawer(id) { const d = $(id); if (d.open) return; if (d.showModal) d.showModal(); else d.setAttribute("open", ""); }
+  [["results", "Ledger", "ledger", "ledger"], ["policy", "Agent", "agent", "agent"]].forEach(([id, label, ic, dlg]) => {
+    const b = el("button", "tab"); b.type = "button"; b.id = "tab-" + id; b.setAttribute("aria-haspopup", "dialog");
+    b.appendChild(icon(ic)); b.appendChild(el("span", "", label)); b.addEventListener("click", () => selectTab(id)); $("tabs").appendChild(b);
+    $(dlg + "-close").appendChild(icon("x")); $(dlg + "-close").addEventListener("click", () => $(dlg).close()); $(dlg).addEventListener("click", e => { if (e.target === $(dlg)) $(dlg).close(); });
   });
-  let userTabbed = false; // false until the person (or ?tab=) picks a tab; only then does the default stay put
-  function selectTab(name, focus, auto) {
-    closePop(); if (!auto) userTabbed = true;
-    TABS.forEach(t => { const on = t === name; const b = $("tab-" + t); b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; $("panel-" + t).hidden = !on; });
-    if (focus === true) $("tab-" + name).focus();
-    window.scrollTo(0, 0);
-    if (auto) return;
-    if (name === "results" || name === "overview") loadLog(); else if (name === "inbox") loadInbox(); else if (name === "policy") refreshConfig();
+  function selectTab(name) {
+    closePop();
+    if (name === "results") { loadLog(); openDrawer("ledger"); } else if (name === "policy") { refreshConfig(); openDrawer("agent"); }
   }
-  $("tabs").addEventListener("click", e => { const t = e.target.closest("[role=tab]"); if (t) selectTab(t.id.slice(4)); });
-  $("tabs").addEventListener("keydown", e => {
-    const i = TABS.findIndex(t => $("tab-" + t) === document.activeElement); if (i < 0) return;
-    let n = null; if (e.key === "ArrowRight") n = (i + 1) % TABS.length; else if (e.key === "ArrowLeft") n = (i + TABS.length - 1) % TABS.length; else if (e.key === "Home") n = 0; else if (e.key === "End") n = TABS.length - 1;
-    if (n !== null) { e.preventDefault(); selectTab(TABS[n], true); }
-  });
 
   // ---------- loading ----------
   async function loadConfig() { try { cfg = await api("/api/config"); cfgErr = null; } catch (e) { cfgErr = e.message; } }
   async function refreshConfig() { await loadConfig(); renderBanners(); renderSubmit(); renderPolicy(); renderOverview(); }
-  async function loadLog() { try { logData = await api("/api/log"); logErr = null; } catch (e) { logErr = e.message; logData = null; } renderBanners(); renderOverview(); renderResults(); renderRun(); }
+  async function loadLog() { try { logData = await api("/api/log"); logErr = null; } catch (e) { logErr = e.message; logData = null; } renderBanners(); renderOverview(); renderResults(); renderSubmit(); renderRun(); }
   async function refreshLog() { return loadLog(); }
-  async function loadInbox() { try { inboxData = await api("/api/inbox"); inboxErr = null; } catch (e) { inboxErr = e.message; } renderInbox(); }
-  async function loadAll() {
-    renderBanners(); await loadConfig(); renderBanners(); renderSubmit(); renderPolicy(); await Promise.all([loadLog(), loadInbox()]);
-    // Default screen: Overview when the log has at least one record, otherwise Submit. Never overrides a choice the person already made.
-    if (!userTabbed && !run) selectTab(logData && logData.records.length ? "overview" : "submit", false, true);
-  }
+  async function loadAll() { renderBanners(); await loadConfig(); renderBanners(); renderSubmit(); renderPolicy(); await loadLog(); }
 
   // dialogs
   $("confirm-info").textContent = "Returned if reproduced or inconclusive. Forfeited if not.";
-  $("confirm-cancel").addEventListener("click", () => $("confirm").close());
-  $("confirm-ok").addEventListener("click", () => { $("confirm").close(); doSubmit(); });
-  $("confirm").addEventListener("click", e => { if (e.target === $("confirm")) $("confirm").close(); });
+  $("confirm-cancel").addEventListener("click", () => { pendingQueue = null; $("confirm").close(); });
+  $("confirm-ok").addEventListener("click", () => { $("confirm").close(); if (pendingQueue) { queue = pendingQueue; pendingQueue = null; nextInQueue(); } else doSubmit(); });
+  $("confirm").addEventListener("click", e => { if (e.target === $("confirm")) { pendingQueue = null; $("confirm").close(); } });
   $("trust-close").appendChild(icon("x"));
   $("trust-close").addEventListener("click", () => $("trust").close());
   $("trust").addEventListener("click", e => { if (e.target === $("trust")) $("trust").close(); });
@@ -838,8 +752,8 @@
     d.appendChild(el("p", "mono sm", "mode=stub|real, log=ok|tampered|empty|xss|error, inbox=ok|empty|xss, xss=1, busy=1, scenario=success_returned|success_forfeited|refused|settlement_pending|error|xss|busy|budget_exhausted|rate_limited|too_large|dropped|dropped_norecord, delay=ms. Current: mode=" + FX.mode + ", scenario=" + FX.scenario + "."));
     fb.appendChild(d);
   }
-  renderOverview(); renderSubmit(); renderRun(); renderResults(); renderInbox(); renderPolicy();
-  const startTab = Q.get("tab"); if (TABS.includes(startTab)) selectTab(startTab);
-  loadAll().then(() => { if (FIX && Q.get("autorun") !== null && cfg) { const i = Number(Q.get("autorun") || 0); sel = { demo: cfg.demoInputs[i], file: null, fileErr: null }; renderSubmit(); doSubmit(); } });
-  window.__app = FIX ? { selectTab, getState: () => ({ cfg, logData, run }), pick(i) { sel = { demo: cfg.demoInputs[i], file: null, fileErr: null }; renderSubmit(); }, doSubmit } : undefined;
+  renderOverview(); renderSubmit(); renderRun(); renderResults(); renderPolicy();
+  const startTab = Q.get("tab"); if (startTab === "results" || startTab === "policy") selectTab(startTab);
+  loadAll().then(() => { if (FIX && Q.get("autorun") === "all" && cfg) { queue = cfg.demoInputs.slice(); nextInQueue(); } else if (FIX && Q.get("autorun") !== null && cfg) { const i = Number(Q.get("autorun") || 0); sel = { demo: cfg.demoInputs[i], file: null, fileErr: null }; renderSubmit(); doSubmit(); } });
+  window.__app = FIX ? { selectTab, getState: () => ({ cfg, logData, run }), pick(i) { sel = { demo: cfg.demoInputs[i], file: null, fileErr: null }; renderSubmit(); }, doSubmit, runAll() { pendingQueue = cfg.demoInputs.slice(); queue = pendingQueue; pendingQueue = null; nextInQueue(); } } : undefined;
 })();
