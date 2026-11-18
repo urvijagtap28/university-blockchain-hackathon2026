@@ -4,7 +4,8 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
 // tx signatures (public) are fine; payment headers and anything key-like are dropped.
-const FORBIDDEN = /key|secret|seed|private|authorization|^signature$|payment-?signature/i;
+const FORBIDDEN = /key|secret|seed|private|authorization|^signature$|payment-?signature|mnemonic|^pk$|token|password/i;
+const MAX_STR = 300; // QE-W2-006: log values stay short primitives; objects and arrays are dropped
 
 export type LogFn = (event: string, data?: Record<string, unknown>) => void;
 
@@ -12,7 +13,13 @@ export function makeLogger(file: string, echo = false): LogFn {
   mkdirSync(path.dirname(file), { recursive: true });
   return (event, data = {}) => {
     const clean: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(data)) if (!FORBIDDEN.test(k)) clean[k] = typeof v === "bigint" ? v.toString() : v;
+    for (const [k, v] of Object.entries(data)) {
+      if (FORBIDDEN.test(k)) continue;
+      if (typeof v === "bigint") clean[k] = v.toString();
+      else if (typeof v === "string") clean[k] = v.length > MAX_STR ? v.slice(0, MAX_STR) : v;
+      else if (v === null || typeof v === "number" || typeof v === "boolean") clean[k] = v;
+      // undefined, objects, arrays, functions, symbols: dropped
+    }
     const line = JSON.stringify({ ts: new Date().toISOString(), event, ...clean });
     appendFileSync(file, line + "\n");
     if (echo) console.error(line);

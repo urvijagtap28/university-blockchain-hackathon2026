@@ -3,6 +3,8 @@
     {
       "seq": 0,
       "reportHash": "386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f",
+      "hashOk": true,
+      "sigOk": true,
       "verdict": "reproduced",
       "errorType": "<img src=x onerror=alert(1)>",
       "topFrame": "<img src=x onerror=alert(1)>",

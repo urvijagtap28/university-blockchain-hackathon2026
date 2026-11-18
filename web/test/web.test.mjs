@@ -30,7 +30,7 @@ async function start(opts = {}) {
   const k = logKey();
   const logFile = path.join(dir, "verdicts.jsonl");
   const env = { PATH: process.env.PATH, AGENT_SVM_PRIVATE_KEY: SECRET_KEY, SVM_RPC_URL: SECRET_RPC, AGENT_SESSION_BUDGET_USD: opts.budget ?? "2", ...(opts.env ?? {}) };
-  const app = createApp({ mode: "stub", runDir: dir, logFile, notesFile: path.join(dir, "notes.jsonl"), env, signerPub: k.pub, buyerAddr: "BuyerPub", payTo: "PayToPub",
+  const app = createApp({ mode: "stub", runDir: dir, logFile, notesFile: path.join(dir, "notes.jsonl"), env, signerPub: k.pub, buyerAddr: "BuyerPub", payTo: opts.payTo === undefined ? "PayToPub" : opts.payTo,
     agentCmd: [process.execPath, FAKE], agentCwd: dir, spacingMs: opts.spacingMs ?? 0, timing: { waitDoneMs: 1500, waitSignedMs: 1500, pollMs: 50, agentTimeoutMs: 20000, ...(opts.timing ?? {}) },
     extraChildEnv: { FAKE_LOG_FILE: logFile, FAKE_LOG_KEY: k.kp, ...(opts.child ?? {}) }, demoInputs: opts.demo ?? [] });
   const port = await app.listen(0);
@@ -410,7 +410,12 @@ test("facts: present for reserve/approval/sign lines, only whitelisted fields, a
   assert.deepEqual(r, { action: "allow", detail: "budget reserved for the 402 ask", facts: { askAtomic: "250000", capAtomic: "250000", remainingAtomic: "1750000", scheme: "upto", network: NETID, maxTimeoutSeconds: 300 } });
   assert.deepEqual(mapDecision({ event: "approval_auto", askAtomic: "250000", thresholdAtomic: "100000", autoApproveAtomic: "250000" }).facts, { askAtomic: "250000", thresholdAtomic: "100000", autoApproveAtomic: "250000", route: "auto" });
   assert.equal(mapDecision({ event: "approval_granted", askAtomic: "250000", by: "human" }).facts.route, "human");
-  assert.deepEqual(mapDecision({ event: "payment_signed", askAtomic: "250000", payTo: PAYTO, network: NETID }).facts, { askAtomic: "250000", network: NETID, payTo: PAYTO });
+  assert.deepEqual(mapDecision({ event: "payment_signed", askAtomic: "250000", payTo: PAYTO, network: NETID }, { payTo: PAYTO }).facts, { askAtomic: "250000", network: NETID, payTo: PAYTO });
+  // QE-W2-006: payTo is only shown when it equals the demo's known payTo (else omitted); unknown or non-CAIP-2 networks are omitted
+  assert.deepEqual(mapDecision({ event: "payment_signed", askAtomic: "250000", payTo: PAYTO, network: NETID }).facts, { askAtomic: "250000", network: NETID });
+  assert.deepEqual(mapDecision({ event: "payment_signed", askAtomic: "250000", payTo: PAYTO, network: NETID }, { payTo: "7138577AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }).facts, { askAtomic: "250000", network: NETID });
+  assert.deepEqual(mapDecision({ event: "payment_signed", askAtomic: "250000", network: "solana:" + "B".repeat(32) }).facts, { askAtomic: "250000" });
+  assert.equal(sanitizeFacts("payment_signed", { network: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" }).network, "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp");
   assert.deepEqual(mapDecision({ event: "refuse_cap", reason: "402 asks 0.300000 USDC, above per-report cap 0.250000", askAtomic: "300000", capAtomic: "250000" }).facts, { askAtomic: "300000", capAtomic: "250000" });
   assert.deepEqual(mapDecision({ event: "refuse_budget", reason: "r", askAtomic: "250000", remainingAtomic: "0" }).facts, { askAtomic: "250000", remainingAtomic: "0" });
   assert.equal(sanitizeFacts("reserve", { askAtomic: 250000 }).askAtomic, "250000"); // a safe integer is accepted and stringified
@@ -434,7 +439,7 @@ test("facts: hostile values are dropped (HTML, very long, key-like, wrong types,
   assert.equal(sanitizeFacts("reserve", null), null);
 });
 test("facts over SSE: a realistic agent log replay carries facts; hostile log values never reach the stream; no secret text", async () => {
-  const t = await start({ child: { FAKE_REALISTIC: "1" } });
+  const t = await start({ child: { FAKE_REALISTIC: "1" }, payTo: PAYTO });
   try {
     const j = await runToEnd(t, "hello");
     const d = j.events.filter(e => e.type === "decision").map(e => e.data);
@@ -451,4 +456,74 @@ test("facts over SSE: a realistic agent log replay carries facts; hostile log va
     assert.deepEqual(d[2].facts, { askAtomic: "250000", route: "auto" }); assert.deepEqual(d[3].facts, { askAtomic: "250000" });
     for (const bad of ["<img", "onerror", "SECRETKEYTEXT", "AAAAAAAAAA", "5555555555"]) assert.ok(!j.raw.includes(bad), bad);
   } finally { await stop(h); }
+});
+
+// ---- QE-W2-001: non-object lines in the job decision log, and exceptions inside the tail callback
+import { runJob, Job, validTs } from "../lib/jobs.mjs";
+import { buildInbox, HASH64 } from "../lib/records.mjs";
+import { sweepRunDir } from "../server.mjs";
+const NONOBJ = { null: "null", number: "42", string: '"x"', array: "[1,2]", bool: "true" };
+for (const [kind, line] of Object.entries(NONOBJ)) {
+  test(`non-object decision log line (${kind}) is ignored: the process lives, the settled record decides the money`, async () => {
+    const t = await start({ child: { FAKE_LINES: line, FAKE_SLEEP_MS: "400" } });
+    try {
+      const j = await runToEnd(t, "hello-" + kind, { "x-filename": "real_a.bin" });
+      assert.ok(j.events.some(e => e.type === "settled"), kind);
+      assert.ok(!j.events.some(e => e.type === "error"), kind);
+      assert.equal(t.app.budget.snapshot().spentAtomic, "0", kind); // returned bond: nothing charged
+    } finally { await stop(t); }
+  });
+}
+test("an exception inside the tail callback keeps the process alive and charges the full cap", async () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "webtest-tail-")), logFile = path.join(dir, "v.jsonl"), jl = path.join(dir, "j.log");
+  const scratch = path.join(dir, "p.bin"); writeFileSync(scratch, "x"); writeFileSync(jl, JSON.stringify({ ts: new Date().toISOString(), event: "payment_signed" }) + "\n");
+  const job = new Job("id", "a".repeat(64)); const orig = job.emit.bind(job); job.emit = (ty, d) => { if (ty === "decision") throw new Error("boom"); return orig(ty, d); };
+  const r = await runJob(job, { scratchFile: scratch, logFile, jobLogPath: jl, env: { PATH: process.env.PATH }, agentCmd: [process.execPath, "-e", "setTimeout(()=>{},400)"], agentCwd: dir, cap: 250000n,
+    waitDoneMs: 100, waitSignedMs: 100, pollMs: 20, agentTimeoutMs: 5000, baseline: 0 });
+  assert.equal(r.charge, 250000n); // unknown outcome: the whole reservation counts as spent
+  assert.ok(true, "process alive");
+});
+test("decision ts: ISO-8601 up to 40 chars only; anything else is dropped", () => {
+  assert.ok(validTs("2026-11-17T18:43:52.980Z") && validTs("2026-11-17T18:43:52+05:30"));
+  for (const bad of ["x".repeat(100000), "2026-11-17", "<img src=x>", "2026-11-17T18:43:52.980Z" + "0".repeat(30), 5, null, undefined, {}]) assert.ok(!validTs(bad), String(bad).slice(0, 20));
+});
+test("QE-W2-005 over SSE: a 100 KB ts becomes server time", async () => {
+  const t = await start({ child: { FAKE_LINES: JSON.stringify({ ts: "Z".repeat(100000), event: "allow_url", url: "http://localhost:1/report" }) } });
+  try { const j = await runToEnd(t, "ts-hostile"); assert.ok(j.raw.length < 20000); for (const e of j.events.filter(e => e.type === "decision")) assert.ok(validTs(e.data.ts)); } finally { await stop(t); }
+});
+// ---- QE-W2-002: server returns baselineSeq (additive)
+test("202 carries baselineSeq equal to the verdict-log length at submit time", async () => {
+  const t = await start({});
+  try {
+    const a = await runToEnd(t, "bl-1"); assert.equal(a.json.baselineSeq, 0);
+    const b = await runToEnd(t, "bl-2"); assert.equal(b.json.baselineSeq, 1);
+  } finally { await stop(t); }
+});
+// ---- QE-W2-003/004: inbox items carry sigOk/hashOk; content-hash cache
+test("inbox: sigOk per item, hashOk validation, and no stale cache after a same-size same-mtime tamper", async () => {
+  const t = await start({});
+  try {
+    await runToEnd(t, "inbox-a", { "x-filename": "real_a.bin" });
+    let inbox = (await req(t, "GET", "/api/inbox")).json; assert.equal(inbox.items.length, 1); assert.equal(inbox.items[0].sigOk, true); assert.equal(inbox.items[0].hashOk, true);
+    const { statSync, utimesSync } = await import("node:fs");
+    const st = statSync(t.logFile), txt = readFileSync(t.logFile, "utf8");
+    writeFileSync(t.logFile, txt.replace("stub: test", "stub: TEST")); utimesSync(t.logFile, st.atime, st.mtime); // same size, same mtime
+    inbox = (await req(t, "GET", "/api/inbox")).json; assert.equal(inbox.items[0].sigOk, false); assert.match(inbox.items[0].detail, /TEST/);
+    const rec = JSON.parse(txt.split("\n")[0]); rec.reportHash = "$(touch /tmp/x)";
+    writeFileSync(t.logFile, JSON.stringify(rec) + "\n");
+    inbox = (await req(t, "GET", "/api/inbox")).json; assert.equal(inbox.items[0].hashOk, false); assert.equal(inbox.items[0].sigOk, false); assert.ok(!HASH64.test(inbox.items[0].reportHash));
+  } finally { await stop(t); }
+});
+// ---- QE2-F-004: sweep leftovers of a killed run
+test("sweepRunDir removes only old jobs/*.decisions.log and scratch/* files", async () => {
+  const { utimesSync, mkdirSync: mk } = await import("node:fs");
+  const d = mkdtempSync(path.join(os.tmpdir(), "sweep-")); mk(path.join(d, "jobs")); mk(path.join(d, "scratch")); mk(path.join(d, "other"));
+  const old = new Date(Date.now() - 3600e3), put = (f, t) => { writeFileSync(f, "x"); if (t) utimesSync(f, t, t); };
+  put(path.join(d, "jobs", "a.decisions.log"), old); put(path.join(d, "jobs", "b.txt"), old); put(path.join(d, "scratch", "h.bin"), old); put(path.join(d, "scratch", "new.bin"), null);
+  put(path.join(d, "verdicts.jsonl"), old); put(path.join(d, "other", "x"), old); put(path.join(d, "notes.jsonl"), old);
+  const n = sweepRunDir(d, Date.now() - 1000);
+  assert.equal(n, 2);
+  assert.ok(!existsSync(path.join(d, "jobs", "a.decisions.log")) && !existsSync(path.join(d, "scratch", "h.bin")));
+  for (const f of ["jobs/b.txt", "scratch/new.bin", "verdicts.jsonl", "other/x", "notes.jsonl"]) assert.ok(existsSync(path.join(d, f)), f);
+  assert.equal(sweepRunDir(path.join(d, "missing"), Date.now()), 0);
 });

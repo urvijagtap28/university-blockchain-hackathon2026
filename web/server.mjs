@@ -4,7 +4,7 @@
 // Start it with scripts/web.sh (which also starts the facilitator and the x402 server). Not meant to be run bare.
 import http from "node:http";
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync, rmSync, readdirSync, lstatSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { SessionBudget } from "./lib/budget.mjs";
@@ -19,6 +19,20 @@ const MIME = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8",
 const dollars = a => "$" + (Number(a) / 1e6).toFixed(2);
 const MAX_NOTES = 500, MAX_NOTES_BYTES = 262144; // QE-W-001: triage notes file cap
 const usdAtomic = s => BigInt(Math.round(Number(s) * 1e6));
+
+/** QE2-F-004: at start, remove leftovers of a killed run: <runDir>/jobs/*.decisions.log and <runDir>/scratch/* (plain files) last modified before this process started. Touches nothing else. Returns the removed count. */
+export function sweepRunDir(runDir, startMs) {
+  let n = 0;
+  for (const [sub, ok] of [["jobs", f => f.endsWith(".decisions.log")], ["scratch", () => true]]) {
+    const dir = path.join(path.resolve(runDir), sub);
+    let names = []; try { names = readdirSync(dir); } catch { continue; }
+    for (const f of names) {
+      if (!ok(f)) continue;
+      try { const fp = path.join(dir, f), st = lstatSync(fp); if (st.isFile() && st.mtimeMs < startMs) { rmSync(fp, { force: true }); n++; } } catch { /* leave it */ }
+    }
+  }
+  return n;
+}
 
 export function assertLoopback(host) {
   if (host !== "127.0.0.1") throw new Error(`refusing to bind to "${host}": this app is local-only and binds 127.0.0.1 only`);
@@ -146,14 +160,14 @@ export function createApp(o) {
     const base = countLines(logFile);
     const cenv = { ...childEnv(env, { allowedUrl, logPath: jobLogPath, testFilename: mode === "stub" ? stubName : null }), ...(o.extraChildEnv ?? {}) };
     (async () => {
-      const r = await runJob(job, { scratchFile, logFile, jobLogPath, env: cenv, agentCmd, agentCwd, cap, baseline: base, onChild: c => { st.child = c; }, ...wait });
+      const r = await runJob(job, { scratchFile, logFile, jobLogPath, env: cenv, agentCmd, agentCwd, cap, baseline: base, knownPayTo: wallet.payTo, onChild: c => { st.child = c; }, ...wait });
       budget.settle(r.charge);
       st.child = null; st.current = null; st.lastEndAt = Date.now(); job.done = true;
       job.emit("done", { recordSeq: r.recordSeq ?? null });
       for (const s of job.subs) s(null);
       try { rmSync(jobLogPath, { force: true }); } catch { /* ignore */ }
     })();
-    send(res, 202, { jobId: id });
+    send(res, 202, { jobId: id, baselineSeq: base }); // baselineSeq (optional, additive): verdict-log length at submit; a record for this run has seq >= it
   }
 
   function sse(req, res, id) {
@@ -207,7 +221,7 @@ export function createApp(o) {
       if (req.method === "GET" || req.method === "HEAD") {
         if (p === "/api/config") return send(res, 200, config());
         if (p === "/api/log") return send(res, 200, buildLogView({ file: logFile, signerPub, mode, labelFor: h => labelByHash.get(h) }));
-        if (p === "/api/inbox") return send(res, 200, buildInbox({ file: logFile, notesFile }));
+        if (p === "/api/inbox") return send(res, 200, buildInbox({ file: logFile, notesFile, signerPub }));
         const m = /^\/api\/jobs\/([0-9a-f-]{36})\/events$/.exec(p);
         if (m) return sse(req, res, m[1]);
         if (p.startsWith("/api/")) return err(res, 404, "not_found", "unknown API route");
@@ -236,7 +250,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const mode = env.WEB_MODE;
     if (mode !== "stub" && mode !== "real") throw new Error("WEB_MODE must be stub or real (use scripts/web.sh --stub|--real)");
     const port = Number(env.WEB_PORT || 4030);
-    const app = createApp({ mode, runDir: env.WEB_RUN_DIR || path.join(ROOT, "web", "run", mode), serverPort: Number(env.WEB_SERVER_PORT || 4021) });
+    const runDir = env.WEB_RUN_DIR || path.join(ROOT, "web", "run", mode);
+    const swept = sweepRunDir(runDir, Date.now()); if (swept) console.log(`removed ${swept} leftover job/scratch file(s) from a previous run`);
+    const app = createApp({ mode, runDir, serverPort: Number(env.WEB_SERVER_PORT || 4021) });
     const p = await app.listen(port);
     console.log(`web app (${mode} mode) listening on http://127.0.0.1:${p}`);
     // Kill the agent child on SIGINT/SIGTERM/normal exit. SIGKILL of this process cannot be handled: the child is then orphaned (QE-W-002, documented).

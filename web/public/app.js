@@ -24,6 +24,7 @@
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = String(text); return e; };
   const add = (p, ...kids) => { kids.forEach(k => k && p.appendChild(k)); return p; };
   const $ = id => document.getElementById(id);
+  const HASH64 = /^[0-9a-f]{64}$/;
   const SIG = /^[1-9A-HJ-NP-Za-km-z]{43,90}$/;
   const AMT = /^[0-9]{1,12}$/;
   const usd = a => AMT.test(String(a)) ? "$" + (Number(a) / 1e6).toFixed(2) : "unknown";
@@ -40,7 +41,13 @@
   const backAtomic = settled => { const c = capAtomic(); return (c !== null && AMT.test(String(settled)) && Number(settled) <= c) ? String(c - Number(settled)) : null; };
   // Compact display name for a demo input or ledger row. The full label stays in title/aria-label.
   const chipName = d => String(d.id || d.label || "").replace(/^fake_/, "").split("_").map((w, i) => w.toLowerCase() === "arvo" ? "ARVO" : w.toLowerCase() === "asan" ? "ASan" : i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(" ");
-  const rowName = r => r.label ? String(r.label).replace(/^HAND-MADE[^:]*:\s*/i, "").split(/\s*[(,]/)[0] : "Unlabeled";
+  // QE-W2-007: bounded, no quadratic regex: clip first, cut at the first "(" or "," with indexOf.
+  const rowName = r => {
+    if (!r.label) return "Unlabeled";
+    let t = String(r.label).slice(0, 300).replace(/^HAND-MADE[^:]*:\s*/i, "");
+    const a = t.indexOf("("), b = t.indexOf(","), i = a < 0 ? b : b < 0 ? a : Math.min(a, b);
+    return i >= 0 ? t.slice(0, i).trimEnd() : t;
+  };
 
   // Inline SVG icons, built with DOM nodes (no innerHTML, no external requests).
   const NS = "http://www.w3.org/2000/svg";
@@ -160,7 +167,7 @@
       const l = await fx(name); l.mode = FX.mode; return l;
     }
     if (path === "/api/inbox") {
-      if (!fxInbox) fxInbox = await fx(FX.inbox === "empty" ? "inbox.empty.json" : FX.inbox === "xss" || FX.xss ? "inbox.xss.json" : "inbox." + FX.mode + ".json");
+      if (!fxInbox) fxInbox = await fx(FX.inbox === "empty" ? "inbox.empty.json" : FX.inbox === "unverified" ? "inbox.unverified.json" : FX.inbox === "xss" || FX.xss ? "inbox.xss.json" : "inbox." + FX.mode + ".json");
       return fxInbox;
     }
     throw new Error("fixture: no route " + path);
@@ -360,8 +367,14 @@
   async function doSubmit() {
     submitMsg = null;
     let r;
+    // QE-W2-002: the "record is new" baseline comes from a fresh log read made now, before the POST (never from the page-load copy)
+    let freshBase = null; const submitMs = Date.now();
+    try { const L0 = await api("/api/log"); if (L0 && Array.isArray(L0.records)) freshBase = L0.records.reduce((m, x) => Math.max(m, Number(x.seq) + 1 || 0), 0); } catch (_) { freshBase = null; }
     try { r = await postSubmit(sel); } catch (e) { submitMsg = { kind: "err", text: "Submit failed: " + e.message + ". Nothing was paid (the request did not complete)." }; renderSubmit(); return; }
-    if (r.status === 202 && r.body && r.body.jobId) { startRun(r.body.jobId); return; }
+    if (r.status === 202 && r.body && r.body.jobId) {
+      const sb = r.body.baselineSeq; // optional additive field: the server's log length at submit time
+      startRun(r.body.jobId, Number.isSafeInteger(sb) && sb >= 0 ? Math.max(sb, freshBase || 0) : freshBase, submitMs); return;
+    }
     const b = r.body || {}; const msg = typeof b.message === "string" ? b.message : "no message";
     const m = { 409: "Busy (409): ", 422: "Refused (422, session budget): ", 429: "Rate limited (429): ", 413: "Too large (413): ", 403: "Blocked (403): ", 400: "Bad input (400): " }[r.status] || ("Error (HTTP " + r.status + "): ");
     submitMsg = { kind: r.status === 409 ? "busy" : "err", text: m + msg + (r.status === 429 && b.retryAfterSeconds ? " Retry in " + b.retryAfterSeconds + " s." : "") + " No payment was made." };
@@ -369,11 +382,11 @@
   }
 
   // ---------- Activity (live run + recent) ----------
-  const STEPS = [["policy", "Policy"], ["approved", "Approved"], ["signed", "Paid"], ["verdict", "Verdict"], ["settled", "Settled"]];
+  const STEPS = [["policy", "Policy"], ["approved", "Approved"], ["signed", "Signed"], ["verdict", "Verdict"], ["settled", "Settled"]];
   function newRun(jobId) { const steps = {}; STEPS.forEach(([k]) => steps[k] = { st: "pending", text: "" }); return { jobId, reportHash: null, steps, notes: [], outcome: null, error: null, lost: false, done: false, events: [], chain: null, verdict: null, verdictDetail: null, facts: {} }; }
-  function startRun(jobId) {
+  function startRun(jobId, baseSeq, submitMs) {
     run = newRun(jobId); runDone = false;
-    run.baseSeq = logData ? logData.records.reduce((m, r) => Math.max(m, r.seq + 1), 0) : null; // only a record newer than this can belong to this run
+    run.baseSeq = baseSeq === undefined ? null : baseSeq; run.submitMs = submitMs || 0; // only a record with seq >= baseSeq, the same hash and a timestamp not before submit can belong to this run (null: never adopt)
     renderRun(); selectTab("run"); $("panel-run").focus({ preventScroll: true });
     const mine = run;
     openStream(jobId, onEvent, () => { if (!runDone && run === mine && !mine.lost) { mine.lost = true; renderRun(); recover(mine); } });
@@ -386,7 +399,7 @@
       if (run !== r) return;
       try {
         const L = await api("/api/log");
-        const rec = r.reportHash && (FIX || r.baseSeq !== null) ? L.records.filter(x => x.reportHash === r.reportHash && (FIX || x.seq >= r.baseSeq)).sort((a, b) => b.seq - a.seq)[0] : null;
+        const rec = r.reportHash && (FIX || r.baseSeq !== null) ? L.records.filter(x => x.reportHash === r.reportHash && (FIX || (x.seq >= r.baseSeq && Date.parse(x.timestamp) >= r.submitMs - 2000))).sort((a, b) => b.seq - a.seq)[0] : null;
         if (rec) {
           const atom = AMT.test(String(rec.settledAtomic)) ? String(rec.settledAtomic) : null;
           const kind = atom === "0" ? "returned" : atom !== null ? "forfeited" : "unknown";
@@ -459,7 +472,9 @@
   function settledHero(atomic) { return amountRow(atomic === null || atomic === undefined ? "unknown" : usd(atomic), "settled"); }
   function returnedHero(atomic) { const b = backAtomic(atomic); return b === null ? settledHero(atomic) : amountRow(usd(b), "back to your wallet"); }
   const reasonFor = v => v === "reproduced" ? "Bug reproduced" : v === "not_reproduced" ? "Not reproduced" : v === "inconclusive" ? "Could not decide" : null;
-  function refusalTitle(m) { m = String(m || ""); if (/allowlist|endpoint|URL/i.test(m)) return "Not allowed"; if (/per-report cap|above .*cap/i.test(m)) return "Over limit"; if (/budget/i.test(m)) return "Budget used up"; return "Refused"; }
+  // QE-W2-007: replaces /above .*cap/ (quadratic): clip, then two indexOf calls.
+  function overCap(m) { m = String(m).slice(0, 400); if (/per-report cap/i.test(m)) return true; const i = m.toLowerCase().indexOf("above "); return i >= 0 && m.toLowerCase().indexOf("cap", i + 6) >= 0; }
+  function refusalTitle(m) { m = String(m || "").slice(0, 400); if (/allowlist|endpoint|URL/i.test(m)) return "Not allowed"; if (overCap(m)) return "Over limit"; if (/budget/i.test(m)) return "Budget used up"; return "Refused"; }
   function outcomeCard() {
     const r = run, card = el("div", "ocard"); card.setAttribute("aria-live", "polite");
     const head = (kind, ic, title, spinner, sub, extra) => {
@@ -568,6 +583,7 @@
   }
   const LABEL_NOTE = "Label assigned by hand in demo/manifest.json by proof hash; not measured by the system.";
   function labelTag(r) {
+    if (!cfg || cfg.mode !== "real") return null; // QE2-F-001: stub verdicts follow the filename, so REAL/HAND-MADE tags next to them mislead; Submit chips keep theirs
     let tg = null; if (r.category === "hand_made_fake") tg = el("span", "tag", "HAND-MADE"); else if (r.category === "real_bug") tg = el("span", "tag", "REAL");
     if (tg) tg.title = LABEL_NOTE; return tg;
   }
@@ -658,7 +674,7 @@
     const narrow = window.matchMedia("(max-width:640px)").matches;
     const wrap = el("div", "tablewrap"); const tb = el("table", "tbl");
     const hr = el("tr"); const th = (t, cls, lab) => { const h = el("th", cls || "", t); if (lab) h.setAttribute("aria-label", lab); hr.appendChild(h); };
-    th("Label"); th("Status"); th("Paid", "r"); if (!narrow) th("", "txc", "Transaction");
+    th("Label"); th("Status"); th("Settled", "r"); if (!narrow) th("", "txc", "Transaction");
     const hd = el("thead"); hd.appendChild(hr); tb.appendChild(hd);
     const body = el("tbody");
     recs.forEach(r => {
@@ -706,12 +722,17 @@
     const col = el("div", "col");
     const NOTE = { valid: "Valid", not_a_bug: "Not a bug", misuse: "Misuse" };
     items.forEach(it => {
-      const card = el("article", "item");
+      // QE-W2-003/004: only a record whose signature verified AND whose hash is 64 lowercase hex may be copied or triaged
+      const trust = it.sigOk === true && it.hashOk !== false && typeof it.reportHash === "string" && HASH64.test(it.reportHash);
+      const card = el("article", "item" + (trust ? "" : " unverified"));
       const r1 = el("div", "i1"); r1.appendChild(verdictPill(it.verdict));
+      if (!trust) { const up = pill("err", "Unverified record", "alert"); up.title = "This record failed signature or hash verification. It cannot be copied or triaged."; r1.appendChild(up); }
       r1.appendChild(el("h3", "ih", it.errorType ? it.errorType + (it.topFrame ? " at " + it.topFrame : "") : it.topFrame ? "Top frame: " + it.topFrame : "Needs a look")); card.appendChild(r1);
-      if (KNOWN.includes(it.verdict)) card.appendChild(evidenceNode(it.verdict, it.detail, true));
-      const r2 = el("div", "i2"); const hs = el("button", "hashbtn mono sm", short(it.reportHash, 8, 4)); hs.type = "button"; hs.title = "Copy proof hash"; hs.setAttribute("aria-label", "Copy proof hash " + it.reportHash);
-      hs.addEventListener("click", () => copyText(it.reportHash, hs)); r2.appendChild(hs);
+      if (trust && KNOWN.includes(it.verdict)) card.appendChild(evidenceNode(it.verdict, it.detail, true));
+      const r2 = el("div", "i2"); let hs;
+      if (trust) { hs = el("button", "hashbtn mono sm", short(it.reportHash, 8, 4)); hs.type = "button"; hs.title = "Copy proof hash"; hs.setAttribute("aria-label", "Copy proof hash " + it.reportHash); hs.addEventListener("click", () => copyText(it.reportHash, hs)); }
+      else { hs = el("span", "mono sm mute", short(it.reportHash, 8, 4)); hs.title = "Unverified record: not copyable"; }
+      r2.appendChild(hs);
       const cur = it.note && NOTE[it.note.decision] ? it.note.decision : null;
       const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Triage note, no payout"); seg.title = "Notes only, no payout";
       const ta = document.createElement("input"); ta.type = "text"; ta.className = "note-in"; ta.maxLength = 500; ta.placeholder = "Optional note"; ta.setAttribute("aria-label", "Triage note text"); ta.value = it.note && it.note.text ? it.note.text : "";
@@ -725,12 +746,12 @@
         });
         seg.appendChild(b);
       });
-      const sw = el("div", "segwrap"); const tn = el("span", "tt mute"); tn.tabIndex = 0; tn.title = "Triage notes only, no payout. Nothing here moves money: the verdict already decided the settlement."; tn.setAttribute("aria-label", tn.title); tn.appendChild(icon("file")); sw.appendChild(tn); sw.appendChild(seg); r2.appendChild(sw); card.appendChild(r2);
+      const sw = el("div", "segwrap"); const tn = el("span", "tt mute"); tn.tabIndex = 0; tn.title = "Triage notes only, no payout. Nothing here moves money: the verdict already decided the settlement."; tn.setAttribute("aria-label", tn.title); tn.appendChild(icon("file")); sw.appendChild(tn); sw.appendChild(seg); if (trust) r2.appendChild(sw); card.appendChild(r2);
       const d = el("details", "disc"); d.appendChild(el("summary", "", "Details"));
       const dl = el("dl", "kv"); const kv = (k, v) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "mono", v)); };
       kv("Proof hash", it.reportHash); kv("Case", (it.caseId || "-") + " / " + (it.targetCommit || "-")); kv("Time", when(it.timestamp)); kv("Log detail", it.detail);
       if (it.note) kv("Note", NOTE[it.note.decision] + (it.note.text ? " - " + it.note.text : "") + " (" + when(it.note.ts) + ")");
-      d.appendChild(dl); const nr = el("div", "noterow"); nr.appendChild(ta); nr.appendChild(msg); d.appendChild(nr); card.appendChild(d);
+      d.appendChild(dl); if (trust) { const nr = el("div", "noterow"); nr.appendChild(ta); nr.appendChild(msg); d.appendChild(nr); } card.appendChild(d);
       col.appendChild(card);
     });
     p.appendChild(col);

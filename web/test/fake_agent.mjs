@@ -14,6 +14,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const scenario = E.FAKE_SCENARIO || "paid";
 
 log("session_start");
+if (E.FAKE_LINES) appendFileSync(E.AGENT_LOG_PATH, E.FAKE_LINES + "\n"); // raw extra line(s), verbatim (QE-W2-001/005 tests)
 if (scenario === "refuse") {
   log("refuse_budget", { reason: E.FAKE_REFUSE_REASON || "session budget exhausted" });
   console.log(JSON.stringify({ file, status: "refused", reason: E.FAKE_REFUSE_REASON || "session budget exhausted" }));

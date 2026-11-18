@@ -50,30 +50,40 @@ export function parseDetail(detail) {
 }
 
 export const NOTE_DECISIONS = ["valid", "not_a_bug", "misuse", "unreviewed"];
-// Simple cache keyed on mtime+size so /api/inbox does not re-parse unchanged files on every request.
+// QE-W2-004: the parse cache is keyed on a hash of the file CONTENT (re-reading a small file is cheap), so a same-size same-mtime tamper cannot leave a stale parse.
 const cache = new Map();
 function parsedCached(file) {
-  let key = "none";
-  try { const st = statSync(file); key = st.mtimeMs + ":" + st.size; } catch { /* missing file */ }
+  const text = readLogText(file), key = sha256(text);
   const c = cache.get(file);
-  if (c && c.key === key) return c.rows;
-  const rows = parseLines(readLogText(file)); cache.set(file, { key, rows });
-  return rows;
+  if (c && c.key === key) return c;
+  const e = { key, rows: parseLines(text), bytes: Buffer.byteLength(text) }; cache.set(file, e);
+  return e;
 }
-export function noteFileStats(file) { const rows = parsedCached(file); let bytes = 0; try { bytes = statSync(file).size; } catch { /* none */ } return { count: rows.length, bytes }; }
+export function noteFileStats(file) { const c = parsedCached(file); return { count: c.rows.length, bytes: c.bytes }; }
 export function readNotes(file) {
   const m = new Map();
-  for (const { rec } of parsedCached(file)) if (rec && typeof rec.reportHash === "string") m.set(rec.reportHash, { decision: rec.decision, text: rec.text, ts: rec.ts });
+  for (const { rec } of parsedCached(file).rows) if (rec && typeof rec.reportHash === "string") m.set(rec.reportHash, { decision: rec.decision, text: rec.text, ts: rec.ts });
   return m;
 }
 export function appendNote(file, { reportHash, decision, text }) {
   mkdirSync(path.dirname(file), { recursive: true });
   appendFileSync(file, JSON.stringify({ ts: new Date().toISOString(), reportHash, decision, text }) + "\n", { mode: 0o600 });
 }
-export function buildInbox({ file, notesFile }) {
+export const HASH64 = /^[0-9a-f]{64}$/;
+/** Lines (0-based) whose record failed verifyLogText; same verification as /api/log. */
+function brokenLines(text, signerPub) {
+  const v = verifyLogText(text, signerPub || undefined), broken = new Set();
+  for (const p of v.problems) { const m = /^line (\d+):/.exec(p); if (m) broken.add(Number(m[1]) - 1); }
+  return broken;
+}
+// QE-W2-003/004: each item carries sigOk (record verified, as in /api/log) and hashOk (reportHash is 64 lowercase hex); the UI must not offer copy or triage when either is false.
+export function buildInbox({ file, notesFile, signerPub }) {
   const notes = readNotes(notesFile);
-  const items = parsedCached(file).map(x => x.rec).filter(r => r.verdict === "reproduced" || r.verdict === "inconclusive").reverse().map(r => ({
-    seq: r.seq, reportHash: r.reportHash, verdict: r.verdict, ...parseDetail(r.detail), detail: String(r.detail ?? ""),
-    caseId: r.caseId ?? null, targetCommit: r.targetCommit ?? null, timestamp: r.timestamp, note: notes.get(r.reportHash) ?? null }));
+  const text = readLogText(file), broken = brokenLines(text, signerPub);
+  const items = parseLines(text).filter(({ rec }) => rec && (rec.verdict === "reproduced" || rec.verdict === "inconclusive")).reverse().map(({ idx, rec: r }) => {
+    const hashOk = typeof r.reportHash === "string" && HASH64.test(r.reportHash);
+    return { seq: r.seq, reportHash: hashOk ? r.reportHash : String(r.reportHash ?? "").slice(0, 80), hashOk, sigOk: !broken.has(idx), verdict: r.verdict, ...parseDetail(r.detail), detail: String(r.detail ?? ""),
+      caseId: r.caseId ?? null, targetCommit: r.targetCommit ?? null, timestamp: r.timestamp, note: hashOk ? notes.get(r.reportHash) ?? null : null };
+  });
   return { items };
 }

@@ -3,6 +3,8 @@
     {
       "seq": 5,
       "reportHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "hashOk": true,
+      "sigOk": true,
       "verdict": "inconclusive",
       "errorType": null,
       "topFrame": "kh_get_ucl_hash_caseless_node src/ucl_hash.c:230:1",
@@ -15,6 +17,8 @@
     {
       "seq": 1,
       "reportHash": "345ed91c5404ab059efb58fea1fb91df8e19503744930c866432b428b8c4ca83",
+      "hashOk": true,
+      "sigOk": true,
       "verdict": "reproduced",
       "errorType": "heap-buffer-overflow",
       "topFrame": "ucl_parse_value src/ucl_parser.c:1811:10",
@@ -27,6 +31,8 @@
     {
       "seq": 0,
       "reportHash": "386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f",
+      "hashOk": true,
+      "sigOk": true,
       "verdict": "reproduced",
       "errorType": "heap-buffer-overflow",
       "topFrame": "ucl_lex_json_string src/ucl_parser.c:1036:8",

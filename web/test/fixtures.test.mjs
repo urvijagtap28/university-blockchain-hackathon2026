@@ -35,7 +35,7 @@ function log(f, l) {
 }
 function inbox(f, x) {
   keys(f, x, ["items"], "inbox"); t(f, Array.isArray(x.items), "items array");
-  x.items.forEach((it, i) => { shape(f, it, { seq: isNum, reportHash: isStr, verdict: oneOf("reproduced", "inconclusive"), errorType: nullOr(isStr), topFrame: nullOr(isStr), detail: isStr, caseId: nullOr(isStr), targetCommit: nullOr(isStr), timestamp: isStr, note: nullOr(isObj) }, "items[" + i + "]"); if (it.note) shape(f, it.note, { decision: oneOf("valid", "not_a_bug", "misuse", "unreviewed"), text: isStr, ts: isStr }, "note"); });
+  x.items.forEach((it, i) => { shape(f, it, { seq: isNum, reportHash: isStr, hashOk: isBool, sigOk: isBool, verdict: oneOf("reproduced", "inconclusive"), errorType: nullOr(isStr), topFrame: nullOr(isStr), detail: isStr, caseId: nullOr(isStr), targetCommit: nullOr(isStr), timestamp: isStr, note: nullOr(isObj) }, "items[" + i + "]"); if (it.note) shape(f, it.note, { decision: oneOf("valid", "not_a_bug", "misuse", "unreviewed"), text: isStr, ts: isStr }, "note"); });
   const ts = x.items.map(i => i.timestamp); t(f, ts.every((v, i) => i === 0 || ts[i - 1] >= v), "newest first");
 }
 const SSE = {
@@ -80,7 +80,7 @@ for (const f of files) {
   else if (f.startsWith("log.")) log(f, j);
   else if (f.startsWith("inbox.")) inbox(f, j);
   else if (f === "notes.ok.json") keys(f, j, ["ok"], "notes");
-  else if (f === "submit.202.json") keys(f, j, ["jobId"], "202");
+  else if (f === "submit.202.json") { keys(f, { jobId: j.jobId }, ["jobId"], "202"); t(f, j.baselineSeq === undefined || (Number.isSafeInteger(j.baselineSeq) && j.baselineSeq >= 0), "baselineSeq optional, non-negative integer"); }
   else if (f === "submit.429.json") errBody(f, j, { retryAfterSeconds: isNum });
   else if (f.startsWith("submit.")) errBody(f, j, {});
   else bad(f, "no checker for this file");

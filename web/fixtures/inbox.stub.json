@@ -3,6 +3,8 @@
     {
       "seq": 1,
       "reportHash": "345ed91c5404ab059efb58fea1fb91df8e19503744930c866432b428b8c4ca83",
+      "hashOk": true,
+      "sigOk": true,
       "verdict": "reproduced",
       "errorType": null,
       "topFrame": null,
@@ -15,6 +17,8 @@
     {
       "seq": 0,
       "reportHash": "386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f",
+      "hashOk": true,
+      "sigOk": true,
       "verdict": "reproduced",
       "errorType": null,
       "topFrame": null,

@@ -66,6 +66,15 @@ for (const n of ["", "n", "no", "yy", "yes please", null, undefined]) assert.equ
   const t = readFileSync(f, "utf8"); assert.ok(t.includes('"tx":"abc"') && t.includes('"n":"5"') && !/SECRET/.test(t));
 }
 
+{ // QE-W2-006 hardening: more denylisted names, strings truncated to 300 chars, objects/arrays dropped, primitives kept
+  const f = path.join(mkdtempSync(path.join(tmpdir(), "agentlog-")), "d.log");
+  makeLogger(f)("y", { mnemonic: "M1", pk: "P1", token: "T1", password: "W1", secret: "S1", seed: "D1", long: "x".repeat(1000), obj: { a: 1 }, arr: [1, 2], ok: "fine", n: 7, b: true, nul: null });
+  const t = readFileSync(f, "utf8"), o = JSON.parse(t);
+  assert.ok(!/M1|P1|T1|W1|S1|D1/.test(t.replace(/"ts":"[^"]*"/, "")));
+  assert.equal(o.long.length, 300); assert.ok(!("obj" in o) && !("arr" in o));
+  assert.deepEqual([o.ok, o.n, o.b, o.nul], ["fine", 7, true, null]);
+}
+
 // --- integration of the rules in submitReport, mocked fetch + signer
 type R = { status: number; headers?: Record<string, string>; json?: unknown };
 function mk(responses: R[], over: Partial<Deps> = {}, askAtomic = "250000") {

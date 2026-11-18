@@ -38,8 +38,8 @@ async function run(p, name, selectFn) {
   await p.click("#confirm-ok");
   await p.waitFor(`/[0-9a-f]{8}-[0-9a-f]{4}-/.test(document.getElementById('panel-run').textContent)`, 8000, 50);
   const t0 = Date.now();
-  // mid-run snapshot once "Paid" step is done
-  let mid = null; try { await p.waitFor(`[...document.querySelectorAll('#panel-run .stepper li')].some(li=>/^Paid, done/.test(li.getAttribute('aria-label')))`, 40000, 60); mid = await snapRun(p); await p.shot(`s2_${name}_mid`); } catch { /* maybe skipped */ }
+  // mid-run snapshot once "Signed" step is done
+  let mid = null; try { await p.waitFor(`[...document.querySelectorAll('#panel-run .stepper li')].some(li=>/^Signed, done/.test(li.getAttribute('aria-label')))`, 40000, 60); mid = await snapRun(p); await p.shot(`s2_${name}_mid`); } catch { /* maybe skipped */ }
   await waitDone(p, old); await sleep(500);
   const fin = await snapRun(p); await p.shot(`s2_${name}_done`);
   const jobId = fin.textFull.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
@@ -72,7 +72,7 @@ try {
     await p2.click("#confirm-ok"); await sleep(900);
     ev.t409 = { text: await p2.text("#panel-submit"), shot: await p2.shot("s2_409_tab2"), at: Date.now() - t0 };
     await p2.close();
-    let mid = null; try { await p.waitFor(`[...document.querySelectorAll('#panel-run .stepper li')].some(li=>/^Paid, done/.test(li.getAttribute('aria-label')))`, 40000, 60); mid = await snapRun(p); } catch { /* */ }
+    let mid = null; try { await p.waitFor(`[...document.querySelectorAll('#panel-run .stepper li')].some(li=>/^Signed, done/.test(li.getAttribute('aria-label')))`, 40000, 60); mid = await snapRun(p); } catch { /* */ }
     await waitDone(p, old); await sleep(500);
     const fin = await snapRun(p); await p.shot("s2_R2_demo_fake_done");
     const jobId = fin.textFull.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/)?.[0];
