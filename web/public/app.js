@@ -46,6 +46,7 @@
   const NS = "http://www.w3.org/2000/svg";
   const ICONS = {
     upload: ["M12 16V4", "M7 9l5-5 5 5", "M5 20h14"],
+    home: ["M4 11l8-7 8 7", "M6 10v10h12V10"],
     activity: ["M3 12h4l3-8 4 16 3-8h4"],
     ledger: ["M4 5h16", "M4 12h16", "M4 19h16"],
     inbox: ["M4 13l2-8h12l2 8", "M4 13v6h16v-6", "M4 13h5l1 2h4l1-2h5"],
@@ -103,6 +104,14 @@
   let lastW = window.innerWidth;
   window.addEventListener("resize", () => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; closePop(); } });
 
+  // Evidence block: at most three short lines, parsed with strict regexes (evidence.js). Unknown formats show a neutral line; stub details are never styled as evidence.
+  function evidenceNode(verdict, detail, hint) {
+    const E = window.Evidence.parseEvidence(verdict, detail);
+    const d = el("div", "evd evd-" + E.kind); d.setAttribute("data-evidence", E.kind);
+    if (E.kind === "raw") d.appendChild(el("p", "evl", "Detail not in a known format" + (hint ? " (raw text in Details)" : "")));
+    else E.lines.forEach(l => d.appendChild(el("p", "evl ev-" + l.k, l.text)));
+    return d;
+  }
   function txBtn(sig, big) {
     if (typeof sig === "string" && SIG.test(sig)) {
       const a = el("a", big ? "btn primary lnk" : "txl", big ? "View transaction" : "");
@@ -147,7 +156,7 @@
     if (path === "/api/log") {
       if (FX.log === "error") throw new Error("fixture: log unavailable");
       const real = FX.mode === "real";
-      const name = FX.log === "tampered" ? (real ? "log.real.tampered.json" : "log.tampered.json") : FX.log === "empty" ? "log.empty.json" : FX.log === "xss" ? "log.xss.json" : real ? "log.real.json" : "log.stub.json";
+      const name = FX.log === "tampered" ? (real ? "log.real.tampered.json" : "log.tampered.json") : FX.log === "empty" ? "log.empty.json" : FX.log === "returned_only" ? (real ? "log.real.returned_only.json" : "log.stub.returned_only.json") : FX.log === "xss" ? "log.xss.json" : real ? "log.real.json" : "log.stub.json";
       const l = await fx(name); l.mode = FX.mode; return l;
     }
     if (path === "/api/inbox") {
@@ -165,7 +174,7 @@
     // returns {status, body}
     if (FIX) {
       let sc = FX.scenario;
-      if (sc === "auto") sc = sel.demo && sel.demo.category === "hand_made_fake" ? "success_forfeited" : "success_returned";
+      if (sc === "auto") sc = (FX.mode === "real" ? "real_" : "success_") + (sel.demo && sel.demo.category === "hand_made_fake" ? "forfeited" : "returned");
       fxScenario = sc;
       const map = { busy: ["submit.409.json", 409], budget_exhausted: ["submit.422.json", 422], rate_limited: ["submit.429.json", 429], too_large: ["submit.413.json", 413] };
       if (map[sc]) return { status: map[sc][1], body: await fx(map[sc][0]) };
@@ -194,7 +203,7 @@
     if (stream) stream.close();
     if (FIX) {
       let cancelled = false; const timers = [];
-      const file = { success_returned: "sse.success_returned.txt", success_forfeited: "sse.success_forfeited.txt", refused: "sse.refused.txt", settlement_pending: "sse.settlement_pending.txt", error: "sse.error.txt", xss: "sse.xss.txt", dropped: "sse.dropped.txt", dropped_norecord: "sse.dropped_norecord.txt" }[fxScenario] || "sse.success_returned.txt";
+      const file = { success_returned: "sse.success_returned.txt", success_forfeited: "sse.success_forfeited.txt", refused: "sse.refused.txt", settlement_pending: "sse.settlement_pending.txt", error: "sse.error.txt", real_returned: "sse.real_returned.txt", real_forfeited: "sse.real_forfeited.txt", real_inconclusive: "sse.real_inconclusive.txt", real_refused: "sse.real_refused.txt", xss: "sse.xss.txt", dropped: "sse.dropped.txt", dropped_norecord: "sse.dropped_norecord.txt" }[fxScenario] || "sse.success_returned.txt";
       fetch(FX.base + file).then(r => r.text()).then(t => {
         const evs = parseSse(t); let at = 0;
         evs.forEach(e => { at += e.ev === "checking" ? FX.delay * 2 : FX.delay; timers.push(setTimeout(() => { if (!cancelled) onEvent(e.ev, e.d); }, at)); });
@@ -361,7 +370,7 @@
 
   // ---------- Activity (live run + recent) ----------
   const STEPS = [["policy", "Policy"], ["approved", "Approved"], ["signed", "Paid"], ["verdict", "Verdict"], ["settled", "Settled"]];
-  function newRun(jobId) { const steps = {}; STEPS.forEach(([k]) => steps[k] = { st: "pending", text: "" }); return { jobId, reportHash: null, steps, notes: [], outcome: null, error: null, lost: false, done: false, events: [], chain: null, verdict: null }; }
+  function newRun(jobId) { const steps = {}; STEPS.forEach(([k]) => steps[k] = { st: "pending", text: "" }); return { jobId, reportHash: null, steps, notes: [], outcome: null, error: null, lost: false, done: false, events: [], chain: null, verdict: null, verdictDetail: null, facts: {} }; }
   function startRun(jobId) {
     run = newRun(jobId); runDone = false;
     run.baseSeq = logData ? logData.records.reduce((m, r) => Math.max(m, r.seq + 1), 0) : null; // only a record newer than this can belong to this run
@@ -382,9 +391,10 @@
           const atom = AMT.test(String(rec.settledAtomic)) ? String(rec.settledAtomic) : null;
           const kind = atom === "0" ? "returned" : atom !== null ? "forfeited" : "unknown";
           r.recovered = true; r.checking = false; r.outcome = { kind, atomic: atom, tx: rec.txSignature };
+          r.verdictDetail = typeof rec.detail === "string" ? rec.detail : null;
           setVerdictStep(rec.verdict, rec.detail, atom);
           setStep("settled", "done", usd(atom) + " settled (from the signed log)");
-          logData = L; logErr = null; renderBanners(); renderResults(); refreshConfig();
+          logData = L; logErr = null; renderBanners(); renderResults(); renderOverview(); refreshConfig();
           renderRun(); return;
         }
       } catch (_) { /* keep waiting */ }
@@ -405,6 +415,7 @@
     if (t === "started") run.reportHash = d.reportHash;
     else if (t === "decision") {
       decisions.push({ ts: d.ts, action: d.action, detail: d.detail, job: run.jobId }); if (decisions.length > 200) decisions.shift();
+      const fact = window.Evidence.parseDecision(d.action, d.detail); if (fact) run.facts[fact.step] = fact; // only wording the backend emits; unknown wording adds nothing
       if (d.action === "allow") setStep("policy", "done", "Allowed: " + d.detail);
       else if (d.action === "refuse") { setStep("policy", "fail", "Refused: " + d.detail); run.refused = true; }
       else if (d.action === "approve") setStep("approved", "done", d.detail);
@@ -413,7 +424,7 @@
       else if (d.action === "retry") run.notes.push("retry: " + d.detail);
       renderPolicy();
     } else if (t === "checking") run.chain = "active";
-    else if (t === "verdict") { run.verdictEv = d; setVerdictStep(d.verdict, d.detail, undefined); if (d.verdict === "error") run.steps.verdict.text = "error: settled amount not reported yet" + (d.detail ? " (" + d.detail + ")" : ""); }
+    else if (t === "verdict") { run.verdictEv = d; run.verdictDetail = typeof d.detail === "string" ? d.detail : null; setVerdictStep(d.verdict, d.detail, undefined); if (d.verdict === "error") run.steps.verdict.text = "error: settled amount not reported yet" + (d.detail ? " (" + d.detail + ")" : ""); }
     else if (t === "settled") {
       if (run.chain === "active") run.chain = "done";
       setStep("settled", "done", usd(d.settledAtomic) + " settled");
@@ -434,7 +445,10 @@
       if (k === "settled" && run.chain === "active" && st !== "done") st = "active";
       else if (st === "pending" && live && prev) st = "active";
       const li = el("li", "st st-" + st + (i && prevDone ? " link" : "")); li.setAttribute("aria-label", name + ", " + lab[st]); if (st === "active") li.setAttribute("aria-current", "step"); if (s.text) li.title = money(s.text);
-      li.appendChild(add(el("span", "node"), ic[st] ? icon(ic[st], st === "active" ? "spin" : "") : null)); li.appendChild(el("span", "nm", name)); ol.appendChild(li);
+      li.appendChild(add(el("span", "node"), ic[st] ? icon(ic[st], st === "active" ? "spin" : "") : null)); li.appendChild(el("span", "nm", name));
+      const fact = i < 3 ? run.facts[k] : null;
+      if (fact) li.appendChild(el("span", "sub" + (fact.ok ? "" : " no"), (fact.ok ? "\u2713 " : "\u2717 ") + fact.text));
+      ol.appendChild(li);
       prevDone = s.st === "done"; if (s.st !== "done") prev = false;
     });
     return ol;
@@ -478,6 +492,7 @@
         else if (o.kind === "forfeited") { head("forf", "x", "Bond forfeited", false, why); card.appendChild(amountRow(usd(o.atomic), "paid out")); }
         else { head("inc", "alert", "Bond outcome unknown", false, why); card.appendChild(settledHero(o.atomic)); note("Check the chain before assuming either way."); }
       }
+      if (KNOWN.includes(r.verdict)) card.appendChild(evidenceNode(r.verdict, r.verdictDetail, true));
       acts.appendChild(txBtn(o.tx, true)); again(); card.appendChild(acts); return card;
     }
     if (r.lost) {
@@ -531,9 +546,68 @@
     p.appendChild(col);
   }
 
+  // Counters shared by Overview and Ledger. The stub n/a rule for "wrongly forfeited" lives in the Not reproduced info popover.
+  function tilesNode(recs, L) {
+    const c = { reproduced: 0, forfeited: 0, inconclusive: 0, errors: 0, wrong: 0 };
+    const errRows = [];
+    recs.forEach(r => {
+      if (r.verdict === "reproduced") c.reproduced++; else if (r.verdict === "not_reproduced") { c.forfeited++; if (r.category === "real_bug") c.wrong++; }
+      else if (r.verdict === "inconclusive") c.inconclusive++; else { c.errors++; errRows.push(r); }
+    });
+    const g = el("div", "tiles");
+    const tile = (n, l, kind, extra, title) => { const d = el("div", "tile t-" + kind); const h = el("div", "tl"); h.appendChild(el("span", "dotk")); h.appendChild(el("span", "l", l)); if (extra) h.appendChild(extra); d.appendChild(h); d.appendChild(el("div", "n num" + (n === 0 ? " zero" : ""), n)); if (title) d.title = title; g.appendChild(d); };
+    tile(c.reproduced, "Reproduced", "ok");
+    const wrongNote = L.mode === "stub"
+      ? ["Wrongly forfeited: n/a, not meaningful in stub mode: stub verdicts follow the filename."]
+      : ["Wrongly forfeited: " + c.wrong + ". Hand-labeled real bugs that were forfeited.", "\"Real bug\" and \"hand-made fake\" labels, and so this count, are assigned by hand in demo/manifest.json by proof hash. The system does not measure them and they are not in the signed log. Entries with no label were submitted outside the demo set."];
+    tile(c.forfeited, "Not reproduced", "forf", info("Wrongly forfeited", ...wrongNote));
+    tile(c.inconclusive, "Inconclusive", "inc");
+    tile(c.errors, "Error", "err", null, errRows.length ? "Error settlements: " + errRows.map(r => usd(r.settledAtomic)).join(", ") + " (expected $0)" : "");
+    return g;
+  }
+  const LABEL_NOTE = "Label assigned by hand in demo/manifest.json by proof hash; not measured by the system.";
+  function labelTag(r) {
+    let tg = null; if (r.category === "hand_made_fake") tg = el("span", "tag", "HAND-MADE"); else if (r.category === "real_bug") tg = el("span", "tag", "REAL");
+    if (tg) tg.title = LABEL_NOTE; return tg;
+  }
+
+  // ---------- Overview ----------
+  const newest = list => list.slice().sort((a, b) => b.seq - a.seq)[0] || null;
+  function ovCard(r, kind) {
+    const cap = capAtomic(), returned = kind === "returned";
+    const card = el("article", "ocard ovc " + (!returned ? "o-forf" : r.verdict === "inconclusive" ? "o-inc" : "o-ok")); card.setAttribute("data-kind", kind);
+    const h = el("div", "ovh"); const nm = el("span", "ovl", rowName(r)); nm.title = r.label || "Unlabeled submission"; h.appendChild(nm);
+    const tg = labelTag(r); if (tg) h.appendChild(tg); h.appendChild(verdictPill(r.verdict)); card.appendChild(h);
+    const amt = returned ? backAtomic(r.settledAtomic) : r.settledAtomic;
+    card.appendChild(el("div", "num ovamt", amt === null || amt === undefined ? "unknown" : usd(amt)));
+    card.appendChild(el("p", "ovflow", (cap === null ? "Bond" : usd(cap)) + " locked \u2192 " + (returned ? "returned to you" : "paid out")));
+    card.appendChild(evidenceNode(r.verdict, r.detail, false));
+    const tx = txBtn(r.txSignature, true); tx.classList.remove("primary"); card.appendChild(tx);
+    return card;
+  }
+  function renderOverview() {
+    const p = $("panel-overview"); p.replaceChildren();
+    if (logErr) { p.appendChild(errorBox("Could not load the log: " + logErr, loadLog)); return; }
+    if (!logData) { p.appendChild(skeleton(3)); return; }
+    const L = logData, recs = L.records;
+    const col = el("div", "col");
+    if (!recs.length) {
+      const e = el("div", "ovempty"); const b = el("button", "btn primary lg", "Submit a proof"); b.type = "button"; b.addEventListener("click", () => selectTab("submit", true)); e.appendChild(b); col.appendChild(e); p.appendChild(col); return;
+    }
+    col.appendChild(el("p", "ovloop", "Submit, lock, verify, settle, record"));
+    const good = recs.filter(r => r.sigOk === true && r.settlementStatus === "settled" && AMT.test(String(r.settledAtomic)));
+    const ret = newest(good.filter(r => (r.verdict === "reproduced" || r.verdict === "inconclusive") && String(r.settledAtomic) === "0"));
+    const forf = newest(good.filter(r => r.verdict === "not_reproduced" && String(r.settledAtomic) !== "0"));
+    const none = t => { const d = el("div", "ocard ovc none", t); return d; };
+    const g = el("div", "ovg"); g.appendChild(ret ? ovCard(ret, "returned") : none("No returned run yet")); g.appendChild(forf ? ovCard(forf, "forfeited") : none("No forfeited run yet")); col.appendChild(g);
+    col.appendChild(tilesNode(recs, L));
+    const top = el("div", "ltop"); top.appendChild(trustBadge(L.verify)); col.appendChild(top);
+    p.appendChild(col);
+  }
+
   // ---------- Ledger ----------
-  function trustBadge(V) {
-    const b = el("button", "trustbtn"); b.type = "button"; b.id = "trust-btn"; b.setAttribute("aria-haspopup", "dialog");
+  function trustBadge(V, id) {
+    const b = el("button", "trustbtn"); b.type = "button"; if (id) b.id = id; b.setAttribute("aria-haspopup", "dialog");
     let cls, ic, text;
     if (!V.ok) { cls = "bad"; ic = "alert"; const lines = (V.problems || []).map(p => p.line); text = lines.length ? "Line " + lines.slice(0, 3).join(", ") + (lines.length > 3 ? " +" + (lines.length - 3) : "") + " broken" : V.verified + " of " + V.records + " verified"; }
     else if (!V.records) { cls = "neutral"; ic = "shield"; text = "No entries to verify yet"; }
@@ -575,23 +649,9 @@
     if (logErr) { p.appendChild(errorBox("Could not load the log: " + logErr, loadLog)); return; }
     if (!logData) { p.appendChild(skeleton(5)); return; }
     const L = logData, V = L.verify, recs = L.records.slice().sort((a, b) => b.seq - a.seq);
-    const c = { reproduced: 0, forfeited: 0, inconclusive: 0, errors: 0, wrong: 0 };
-    const errRows = [];
-    recs.forEach(r => {
-      if (r.verdict === "reproduced") c.reproduced++; else if (r.verdict === "not_reproduced") { c.forfeited++; if (r.category === "real_bug") c.wrong++; }
-      else if (r.verdict === "inconclusive") c.inconclusive++; else { c.errors++; errRows.push(r); }
-    });
     const col = el("div", "col");
-    const top = el("div", "ltop"); top.appendChild(trustBadge(V)); col.appendChild(top);
-    const g = el("div", "tiles");
-    const tile = (n, l, kind, extra, title) => { const d = el("div", "tile t-" + kind); const h = el("div", "tl"); h.appendChild(el("span", "dotk")); h.appendChild(el("span", "l", l)); if (extra) h.appendChild(extra); d.appendChild(h); d.appendChild(el("div", "n num" + (n === 0 ? " zero" : ""), n)); if (title) d.title = title; g.appendChild(d); };
-    tile(c.reproduced, "Reproduced", "ok");
-    const wrongNote = L.mode === "stub"
-      ? ["Wrongly forfeited: n/a, not meaningful in stub mode: stub verdicts follow the filename."]
-      : ["Wrongly forfeited: " + c.wrong + ". Hand-labeled real bugs that were forfeited.", "\"Real bug\" and \"hand-made fake\" labels, and so this count, are assigned by hand in demo/manifest.json by proof hash. The system does not measure them and they are not in the signed log. Entries with no label were submitted outside the demo set."];
-    tile(c.forfeited, "Not reproduced", "forf", info("Wrongly forfeited", ...wrongNote));
-    tile(c.inconclusive, "Inconclusive", "inc");
-    tile(c.errors, "Error", "err", null, errRows.length ? "Error settlements: " + errRows.map(r => usd(r.settledAtomic)).join(", ") + " (expected $0)" : "");
+    const top = el("div", "ltop"); top.appendChild(trustBadge(V, "trust-btn")); col.appendChild(top);
+    const g = tilesNode(recs, L);
     col.appendChild(g);
     if (!recs.length) { col.appendChild(emptyState("ledger", "No reports yet.", "Submit a proof", () => selectTab("submit", true))); p.appendChild(col); return; }
     const narrow = window.matchMedia("(max-width:640px)").matches;
@@ -600,14 +660,12 @@
     th("Label"); th("Status"); th("Paid", "r"); if (!narrow) th("", "txc", "Transaction");
     const hd = el("thead"); hd.appendChild(hr); tb.appendChild(hd);
     const body = el("tbody");
-    const LABEL_NOTE = "Label assigned by hand in demo/manifest.json by proof hash; not measured by the system.";
     recs.forEach(r => {
       const bad = r.sigOk !== true;
       const tr = el("tr", bad ? "broken" : "");
       const c1 = el("td", "lab"); const eb = el("button", "exp"); eb.type = "button"; eb.setAttribute("aria-expanded", "false"); eb.title = r.label || "Unlabeled submission";
       eb.appendChild(icon("chevron", "sm")); eb.appendChild(el("span", "ln", rowName(r)));
-      let tg = null; if (r.category === "hand_made_fake") tg = el("span", "tag", "HAND-MADE"); else if (r.category === "real_bug") tg = el("span", "tag", "REAL");
-      if (tg) { tg.title = LABEL_NOTE; eb.appendChild(tg); }
+      const tg = labelTag(r); if (tg) eb.appendChild(tg);
       c1.appendChild(eb); tr.appendChild(c1);
       const c2 = el("td"); c2.appendChild(bad ? pill("err", "Not verified", "alert") : verdictPill(r.verdict)); if (r.settlementStatus === "pending") c2.appendChild(el("span", "mute sm", " Checking the chain")); tr.appendChild(c2);
       tr.appendChild(el("td", "r num", r.settledAtomic === null ? "none" : usd(r.settledAtomic)));
@@ -620,6 +678,7 @@
       if (tg) kv("Label", (r.category === "hand_made_fake" ? "HAND-MADE. " : "REAL. ") + LABEL_NOTE);
       if (narrow) { dl.appendChild(el("dt", "", "Transaction")); const dd = el("dd"); dd.appendChild(tx); dl.appendChild(dd); }
       if (bad) dc.appendChild(errorBox("This record's signature did not verify. Do not trust it."));
+      else if (KNOWN.includes(r.verdict)) dc.appendChild(evidenceNode(r.verdict, r.detail, false));
       dc.appendChild(dl); dr.appendChild(dc); body.appendChild(dr);
       eb.addEventListener("click", () => { const o = dr.hidden; dr.hidden = !o; eb.setAttribute("aria-expanded", String(o)); tr.classList.toggle("open", o); });
     });
@@ -649,6 +708,7 @@
       const card = el("article", "item");
       const r1 = el("div", "i1"); r1.appendChild(verdictPill(it.verdict));
       r1.appendChild(el("h3", "ih", it.errorType ? it.errorType + (it.topFrame ? " at " + it.topFrame : "") : it.topFrame ? "Top frame: " + it.topFrame : "Needs a look")); card.appendChild(r1);
+      if (KNOWN.includes(it.verdict)) card.appendChild(evidenceNode(it.verdict, it.detail, true));
       const r2 = el("div", "i2"); const hs = el("button", "hashbtn mono sm", short(it.reportHash, 8, 4)); hs.type = "button"; hs.title = "Copy proof hash"; hs.setAttribute("aria-label", "Copy proof hash " + it.reportHash);
       hs.addEventListener("click", () => copyText(it.reportHash, hs)); r2.appendChild(hs);
       const cur = it.note && NOTE[it.note.decision] ? it.note.decision : null;
@@ -706,18 +766,20 @@
   }
 
   // ---------- tabs ----------
-  const TABS = ["submit", "run", "results", "inbox", "policy"];
-  const TABDEF = [["submit", "Submit", "upload"], ["run", "Activity", "activity"], ["results", "Ledger", "ledger"], ["inbox", "Inbox", "inbox"], ["policy", "Agent", "agent"]];
+  const TABS = ["overview", "submit", "run", "results", "inbox", "policy"];
+  const TABDEF = [["overview", "Overview", "home"], ["submit", "Submit", "upload"], ["run", "Activity", "activity"], ["results", "Ledger", "ledger"], ["inbox", "Inbox", "inbox"], ["policy", "Agent", "agent"]];
   TABDEF.forEach(([id, label, ic], i) => {
-    const b = el("button", "tab"); b.type = "button"; b.id = "tab-" + id; b.setAttribute("role", "tab"); b.setAttribute("aria-controls", "panel-" + id); b.setAttribute("aria-selected", String(i === 0)); b.tabIndex = i === 0 ? 0 : -1;
+    const b = el("button", "tab"); b.type = "button"; b.id = "tab-" + id; b.setAttribute("role", "tab"); b.setAttribute("aria-controls", "panel-" + id); b.setAttribute("aria-selected", String(id === "overview")); b.tabIndex = id === "overview" ? 0 : -1;
     b.appendChild(icon(ic)); b.appendChild(el("span", "", label)); $("tabs").appendChild(b);
   });
-  function selectTab(name, focus) {
-    closePop();
+  let userTabbed = false; // false until the person (or ?tab=) picks a tab; only then does the default stay put
+  function selectTab(name, focus, auto) {
+    closePop(); if (!auto) userTabbed = true;
     TABS.forEach(t => { const on = t === name; const b = $("tab-" + t); b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; $("panel-" + t).hidden = !on; });
     if (focus === true) $("tab-" + name).focus();
     window.scrollTo(0, 0);
-    if (name === "results") loadLog(); else if (name === "inbox") loadInbox(); else if (name === "policy") refreshConfig();
+    if (auto) return;
+    if (name === "results" || name === "overview") loadLog(); else if (name === "inbox") loadInbox(); else if (name === "policy") refreshConfig();
   }
   $("tabs").addEventListener("click", e => { const t = e.target.closest("[role=tab]"); if (t) selectTab(t.id.slice(4)); });
   $("tabs").addEventListener("keydown", e => {
@@ -728,11 +790,15 @@
 
   // ---------- loading ----------
   async function loadConfig() { try { cfg = await api("/api/config"); cfgErr = null; } catch (e) { cfgErr = e.message; } }
-  async function refreshConfig() { await loadConfig(); renderBanners(); renderSubmit(); renderPolicy(); }
-  async function loadLog() { try { logData = await api("/api/log"); logErr = null; } catch (e) { logErr = e.message; logData = null; } renderBanners(); renderResults(); renderRun(); }
+  async function refreshConfig() { await loadConfig(); renderBanners(); renderSubmit(); renderPolicy(); renderOverview(); }
+  async function loadLog() { try { logData = await api("/api/log"); logErr = null; } catch (e) { logErr = e.message; logData = null; } renderBanners(); renderOverview(); renderResults(); renderRun(); }
   async function refreshLog() { return loadLog(); }
   async function loadInbox() { try { inboxData = await api("/api/inbox"); inboxErr = null; } catch (e) { inboxErr = e.message; } renderInbox(); }
-  async function loadAll() { renderBanners(); await loadConfig(); renderBanners(); renderSubmit(); renderPolicy(); await Promise.all([loadLog(), loadInbox()]); }
+  async function loadAll() {
+    renderBanners(); await loadConfig(); renderBanners(); renderSubmit(); renderPolicy(); await Promise.all([loadLog(), loadInbox()]);
+    // Default screen: Overview when the log has at least one record, otherwise Submit. Never overrides a choice the person already made.
+    if (!userTabbed && !run) selectTab(logData && logData.records.length ? "overview" : "submit", false, true);
+  }
 
   // dialogs
   $("confirm-info").textContent = "Returned if reproduced or inconclusive. Forfeited if not.";
@@ -750,7 +816,7 @@
     d.appendChild(el("p", "mono sm", "mode=stub|real, log=ok|tampered|empty|xss|error, inbox=ok|empty|xss, xss=1, busy=1, scenario=success_returned|success_forfeited|refused|settlement_pending|error|xss|busy|budget_exhausted|rate_limited|too_large|dropped|dropped_norecord, delay=ms. Current: mode=" + FX.mode + ", scenario=" + FX.scenario + "."));
     fb.appendChild(d);
   }
-  renderSubmit(); renderRun(); renderResults(); renderInbox(); renderPolicy();
+  renderOverview(); renderSubmit(); renderRun(); renderResults(); renderInbox(); renderPolicy();
   const startTab = Q.get("tab"); if (TABS.includes(startTab)) selectTab(startTab);
   loadAll().then(() => { if (FIX && Q.get("autorun") !== null && cfg) { const i = Number(Q.get("autorun") || 0); sel = { demo: cfg.demoInputs[i], file: null, fileErr: null }; renderSubmit(); doSubmit(); } });
   window.__app = FIX ? { selectTab, getState: () => ({ cfg, logData, run }), pick(i) { sel = { demo: cfg.demoInputs[i], file: null, fileErr: null }; renderSubmit(); }, doSubmit } : undefined;

@@ -19,7 +19,8 @@
 </header>
 <main>
   <noscript><p class="bar-msg fail">This app needs JavaScript.</p></noscript>
-  <section role="tabpanel" id="panel-submit" aria-labelledby="tab-submit" tabindex="-1"></section>
+  <section role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" tabindex="-1"></section>
+  <section role="tabpanel" id="panel-submit" aria-labelledby="tab-submit" tabindex="-1" hidden></section>
   <section role="tabpanel" id="panel-run" aria-labelledby="tab-run" tabindex="-1" hidden></section>
   <section role="tabpanel" id="panel-results" aria-labelledby="tab-results" tabindex="-1" hidden></section>
   <section role="tabpanel" id="panel-inbox" aria-labelledby="tab-inbox" tabindex="-1" hidden></section>
@@ -41,6 +42,7 @@
   <div class="drawer-h"><h2 id="trust-title">Log verification</h2><button id="trust-close" type="button" class="btn icon-btn" aria-label="Close"></button></div>
   <div id="trust-body" class="drawer-b"></div>
 </dialog>
+<script src="evidence.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
