@@ -375,3 +375,30 @@ test("demo input submit: id only, no body; unknown id and body+id rejected", asy
     assert.equal(JSON.parse(readFileSync(dump, "utf8")).env.AGENT_TEST_FILENAME, "real_bug_1.bin");
   } finally { await stop(t); }
 });
+
+// ---- WEB_FIXES: QE-F-003, QE-W-001 ----
+test("QE-F-003: 422 message shows dollars, not atomic units", async () => {
+  const t = await start({ budget: "0.10" });
+  try {
+    const r = await submit(t, "x"); assert.equal(r.status, 422);
+    assert.match(r.json.message, /\$0\.10 of \$0\.10 remains, below the \$0\.25 per-report cap/); assert.doesNotMatch(r.json.message, /atomic/);
+  } finally { await stop(t); }
+});
+
+test("QE-W-001: triage notes capped by count and by bytes (413 JSON), inbox cache sees appended notes", async () => {
+  const t = await start({ child: { FAKE_VERDICT: "reproduced" } });
+  try {
+    await runToEnd(t, "aaa");
+    const h = sha("aaa"), nf = path.join(t.dir, "notes.jsonl");
+    const note = text => req(t, "POST", "/api/notes", { body: JSON.stringify({ reportHash: h, decision: "valid", text }), headers: { "content-type": "application/json" } });
+    assert.equal((await note("first")).status, 200);
+    assert.equal((await req(t, "GET", "/api/inbox")).json.items[0].note.text, "first");
+    assert.equal((await note("second")).status, 200);
+    assert.equal((await req(t, "GET", "/api/inbox")).json.items[0].note.text, "second"); // cache invalidated by the append
+    const line = JSON.stringify({ ts: "t", reportHash: h, decision: "valid", text: "x" }) + "\n";
+    writeFileSync(nf, line.repeat(500));
+    const r = await note("over count"); assert.equal(r.status, 413); assert.equal(r.json.error, "notes_full"); assert.match(r.headers["content-type"], /json/);
+    writeFileSync(nf, (JSON.stringify({ ts: "t", reportHash: h, decision: "valid", text: "y".repeat(100000) }) + "\n").repeat(3));
+    assert.equal((await note("over bytes")).status, 413);
+  } finally { await stop(t); }
+});

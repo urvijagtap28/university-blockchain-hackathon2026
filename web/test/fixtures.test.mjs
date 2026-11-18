@@ -56,7 +56,7 @@ function sse(f, txt) {
     const ev = lines[0].slice(7); let d; try { d = JSON.parse(lines[1].slice(6)); } catch { bad(f, "bad json in " + ev); return; }
     names.push(ev); t(f, !!SSE[ev], "unknown event " + ev); if (SSE[ev]) SSE[ev](d);
   });
-  t(f, names[0] === "started", "first event is started"); t(f, names[names.length - 1] === "done", "last event is done");
+  t(f, names[0] === "started", "first event is started"); t(f, f.includes("dropped") || names[names.length - 1] === "done", "last event is done (dropped-stream fixtures end early on purpose)");
 }
 function errBody(f, b, extra) { shape(f, b, { error: isStr, message: isStr, ...extra }, "errbody"); }
 

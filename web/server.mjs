@@ -9,13 +9,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { SessionBudget } from "./lib/budget.mjs";
 import { Job, SECRET_ENV_NAMES, childEnv, runJob } from "./lib/jobs.mjs";
-import { NOTE_DECISIONS, appendNote, buildInbox, buildLogView, countLines, parseLines, readLogText, sha256 } from "./lib/records.mjs";
+import { NOTE_DECISIONS, appendNote, noteFileStats, buildInbox, buildLogView, countLines, parseLines, readLogText, sha256 } from "./lib/records.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MAX_BYTES = 65536;
 const SANDBOX = ["no network", "1 CPU, 1 GB memory", "60 s wall-clock cap", "read-only filesystem except scratch", "non-root user", "no secrets in the container"];
 const CAVEAT = "The fixed image is a later libucl version, not the per-bug fix commit. So reproduced means the input triggers the expected ASan error on the pinned vulnerable build and the crash is gone in a later libucl.";
 const MIME = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", mjs: "text/javascript; charset=utf-8", json: "application/json; charset=utf-8", svg: "image/svg+xml", png: "image/png", ico: "image/x-icon", txt: "text/plain; charset=utf-8", woff2: "font/woff2" };
+const dollars = a => "$" + (Number(a) / 1e6).toFixed(2);
+const MAX_NOTES = 500, MAX_NOTES_BYTES = 262144; // QE-W-001: triage notes file cap
 const usdAtomic = s => BigInt(Math.round(Number(s) * 1e6));
 
 export function assertLoopback(host) {
@@ -131,7 +133,7 @@ export function createApp(o) {
     if (bytes.length === 0 || bytes.length > MAX_BYTES) return err(res, bytes.length ? 413 : 400, bytes.length ? "too_large" : "bad_input", `proof must be 1..${MAX_BYTES} bytes`);
     // From here to the spawn there is no await: check-and-set is atomic.
     if (st.current) return err(res, 409, "busy", "another submission is running; wait for it to finish");
-    if (!budget.canReserve()) return err(res, 422, "session_budget_exhausted", `session budget exhausted: remaining ${budget.remaining} atomic USDC is below the ${cap} cap`);
+    if (!budget.canReserve()) return err(res, 422, "session_budget_exhausted", `Session budget exhausted: only ${dollars(budget.remaining)} of ${dollars(budget.budget)} remains, below the ${dollars(cap)} per-report cap.`);
     const wait429 = st.lastEndAt + spacingMs - Date.now();
     if (wait429 > 0) return err(res, 429, "rate_limited", "submits must be spaced out (server allows one paid request per 10 s per wallet)", { retryAfterSeconds: Math.ceil(wait429 / 1000) });
     budget.reserve();
@@ -173,6 +175,8 @@ export function createApp(o) {
     if (!j || typeof j !== "object" || typeof j.reportHash !== "string" || !/^[0-9a-f]{64}$/.test(j.reportHash)) return err(res, 400, "bad_input", "reportHash must be a 64-char hex sha256");
     if (!NOTE_DECISIONS.includes(j.decision)) return err(res, 400, "bad_input", `decision must be one of ${NOTE_DECISIONS.join(", ")}`);
     if (typeof j.text !== "string" || [...j.text].length > 500) return err(res, 400, "bad_input", "text must be a string of at most 500 characters");
+    const nf = noteFileStats(notesFile);
+    if (nf.count >= MAX_NOTES || nf.bytes >= MAX_NOTES_BYTES) return err(res, 413, "notes_full", `triage notes file is full (${MAX_NOTES} notes or ${MAX_NOTES_BYTES / 1024} KB); delete or archive web/data/notes.jsonl to add more`);
     if (!parseLines(readLogText(logFile)).some(x => x.rec.reportHash === j.reportHash)) return err(res, 400, "bad_input", "no verdict-log record for that reportHash");
     appendNote(notesFile, { reportHash: j.reportHash, decision: j.decision, text: j.text });
     send(res, 200, { ok: true });
@@ -235,6 +239,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const app = createApp({ mode, runDir: env.WEB_RUN_DIR || path.join(ROOT, "web", "run", mode), serverPort: Number(env.WEB_SERVER_PORT || 4021) });
     const p = await app.listen(port);
     console.log(`web app (${mode} mode) listening on http://127.0.0.1:${p}`);
-    for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => { try { app.state.child?.kill("SIGKILL"); } catch { /* gone */ } process.exit(0); });
+    // Kill the agent child on SIGINT/SIGTERM/normal exit. SIGKILL of this process cannot be handled: the child is then orphaned (QE-W-002, documented).
+    const killChild = () => { try { app.state.child?.kill("SIGKILL"); } catch { /* gone */ } };
+    process.on("exit", killChild);
+    for (const s of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(s, () => { killChild(); process.exit(0); });
   } catch (e) { console.error("web server: " + (e?.message ?? e)); process.exit(2); }
 }

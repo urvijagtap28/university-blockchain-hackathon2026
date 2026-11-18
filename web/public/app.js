@@ -4,7 +4,11 @@
    Fixture mode (no backend): open index.html?fixtures=1 (see FIXTURES below). */
 (function () {
   const Q = new URLSearchParams(location.search);
-  const FIX = Q.get("fixtures") === "1";
+  // Fixture mode only when opened from file:// or when /fixtures/ is really served next to the page (dev). On the live server it is not,
+  // so a crafted ?fixtures=1 link is ignored there and cannot show fabricated results (QE-W-004).
+  const FIX = Q.get("fixtures") === "1" && (location.protocol === "file:" || (() => {
+    try { const x = new XMLHttpRequest(); x.open("HEAD", new URL("../fixtures/config.stub.json", location.href).href, false); x.send(); return x.status === 200; } catch (_) { return false; }
+  })());
   const FX = {
     mode: Q.get("mode") === "real" ? "real" : "stub",
     log: Q.get("log") || "ok",          // ok | tampered | empty | xss | error
@@ -114,16 +118,22 @@
     if (stream) stream.close();
     if (FIX) {
       let cancelled = false; const timers = [];
-      const file = { success_returned: "sse.success_returned.txt", success_forfeited: "sse.success_forfeited.txt", refused: "sse.refused.txt", settlement_pending: "sse.settlement_pending.txt", error: "sse.error.txt", xss: "sse.xss.txt" }[fxScenario] || "sse.success_returned.txt";
+      const file = { success_returned: "sse.success_returned.txt", success_forfeited: "sse.success_forfeited.txt", refused: "sse.refused.txt", settlement_pending: "sse.settlement_pending.txt", error: "sse.error.txt", xss: "sse.xss.txt", dropped: "sse.dropped.txt", dropped_norecord: "sse.dropped_norecord.txt" }[fxScenario] || "sse.success_returned.txt";
       fetch(FX.base + file).then(r => r.text()).then(t => {
         const evs = parseSse(t); let at = 0;
         evs.forEach(e => { at += e.ev === "checking" ? FX.delay * 2 : FX.delay; timers.push(setTimeout(() => { if (!cancelled) onEvent(e.ev, e.d); }, at)); });
+        if (fxScenario === "dropped" || fxScenario === "dropped_norecord") timers.push(setTimeout(() => { if (!cancelled) onLost(); }, at + FX.delay)); // simulated connection drop, no done event
       }).catch(() => onLost());
       stream = { close() { cancelled = true; timers.forEach(clearTimeout); } };
       return;
     }
     const es = new EventSource("/api/jobs/" + encodeURIComponent(jobId) + "/events");
-    ["started", "decision", "checking", "verdict", "settled", "error", "done"].forEach(t => es.addEventListener(t, m => { let d = {}; try { d = JSON.parse(m.data); } catch (_) { } onEvent(t, d); }));
+    ["started", "decision", "checking", "verdict", "settled", "error", "done"].forEach(t => es.addEventListener(t, m => {
+      // The browser fires a plain Event named "error" when the connection drops; it has no data and must NOT be treated as a server error event (QE-F-001).
+      if (t === "error" && !(m && typeof m.data === "string" && m.data)) return;
+      let d = {}; try { d = JSON.parse(m.data); } catch (_) { if (t === "error") return; }
+      onEvent(t, d);
+    }));
     es.onerror = () => { if (es.readyState === 2 || !runDone) { es.close(); onLost(); } };
     stream = { close() { es.close(); } };
   }
@@ -245,8 +255,39 @@
   const STEPS = [["policy", "Policy check"], ["approved", "Approved"], ["signed", "Payment signed"], ["chain", "Checking the chain"], ["verdict", "Verdict"], ["settled", "Settled"]];
   function newRun(jobId) { const steps = {}; STEPS.forEach(([k]) => steps[k] = { st: "pending", text: "" }); return { jobId, reportHash: null, steps, notes: [], outcome: null, error: null, lost: false, done: false, events: [] }; }
   function startRun(jobId) {
-    run = newRun(jobId); runDone = false; renderRun(); selectTab("run");
-    openStream(jobId, onEvent, () => { if (!runDone) { run.lost = true; renderRun(); } });
+    run = newRun(jobId); runDone = false;
+    run.baseSeq = logData ? logData.records.reduce((m, r) => Math.max(m, r.seq + 1), 0) : null; // only a record newer than this can belong to this run
+    renderRun(); selectTab("run");
+    const mine = run;
+    openStream(jobId, onEvent, () => { if (!runDone && run === mine && !mine.lost) { mine.lost = true; renderRun(); recover(mine); } });
+  }
+  // After a dropped stream: look for the signed record of THIS proof hash (bounded retries). Never invents an outcome.
+  async function recover(r) {
+    r.checking = true; renderRun();
+    for (let i = 0; i < 12 && run === r; i++) {
+      await new Promise(res => setTimeout(res, FIX ? FX.delay : 2500));
+      if (run !== r) return;
+      try {
+        const L = await api("/api/log");
+        const rec = r.reportHash && (FIX || r.baseSeq !== null) ? L.records.filter(x => x.reportHash === r.reportHash && (FIX || x.seq >= r.baseSeq)).sort((a, b) => b.seq - a.seq)[0] : null;
+        if (rec) {
+          const atom = AMT.test(String(rec.settledAtomic)) ? String(rec.settledAtomic) : null;
+          const kind = atom === "0" ? "returned" : atom !== null ? "forfeited" : "unknown";
+          r.recovered = true; r.checking = false; r.outcome = { kind, atomic: atom, tx: rec.txSignature };
+          setVerdictStep(rec.verdict, rec.detail, atom);
+          setStep("settled", "done", usd(atom) + " settled (from the signed log)");
+          logData = L; logErr = null; renderBanners(); renderResults(); refreshConfig();
+          renderRun(); return;
+        }
+      } catch (_) { /* keep waiting */ }
+    }
+    if (run === r) { r.checking = false; r.gaveUp = true; renderRun(); }
+  }
+  function setVerdictStep(v, detail, atomic) {
+    if (v === "error" || !KNOWN.includes(v)) {
+      const m = atomic === "0" ? "error: $0 settled, bond returned" : (atomic === null || atomic === undefined) ? "error: outcome unknown, check the log" : "error: " + usd(atomic) + " settled, check the log";
+      setStep("verdict", "err", m + (detail ? " (" + detail + ")" : ""));
+    } else setStep("verdict", "done", word(v) + (detail ? ": " + detail : ""));
   }
   function setStep(k, st, text) { run.steps[k] = { st, text }; }
   function onEvent(t, d) {
@@ -262,12 +303,13 @@
       else if (d.action === "sign") setStep("signed", "done", d.detail);
       else if (d.action === "retry") run.notes.push("retry: " + d.detail);
     } else if (t === "checking") setStep("chain", "active", (d.message || "checking the chain") + " (not a failure; waiting for settlement to be confirmed)");
-    else if (t === "verdict") setStep("verdict", d.verdict === "error" ? "fail" : "done", word(d.verdict) + (d.detail ? ": " + d.detail : ""));
+    else if (t === "verdict") { run.verdictEv = d; setVerdictStep(d.verdict, d.detail, undefined); if (d.verdict === "error") run.steps.verdict.text = "error: settled amount not reported yet" + (d.detail ? " (" + d.detail + ")" : ""); }
     else if (t === "settled") {
       if (run.steps.chain.st === "active") setStep("chain", "done", "Settlement confirmed");
       setStep("settled", "done", usd(d.settledAtomic) + " settled");
       run.outcome = { kind: d.bondOutcome, atomic: d.settledAtomic, tx: d.txSignature };
-    } else if (t === "error") { run.error = { message: d.message, atomic: d.settledAtomic }; }
+      if (run.verdictEv && run.verdictEv.verdict === "error") setVerdictStep("error", run.verdictEv.detail, d.settledAtomic);
+    } else if (t === "error") { run.error = { message: d.message, atomic: d.settledAtomic }; if (run.verdictEv && run.verdictEv.verdict === "error") setVerdictStep("error", run.verdictEv.detail, d.settledAtomic); }
     else if (t === "done") { run.done = true; runDone = true; if (stream) stream.close(); refreshConfig(); refreshLog(); inboxData = null; if (FIX) { } }
     if (t === "done") STEPS.forEach(([k]) => { if (run.steps[k].st === "pending" || run.steps[k].st === "active") run.steps[k] = { st: "skip", text: k === "chain" && run.steps.settled.st === "done" ? "no waiting needed: settlement was confirmed immediately" : "not reached" }; });
     renderRun();
@@ -278,14 +320,19 @@
     if (!run) { p.appendChild(emptyBox("No run yet. Submit an input on the Submit screen.")); return; }
     p.appendChild(el("p", "mono fn", "job " + run.jobId + (run.reportHash ? " | report hash " + run.reportHash : "")));
     const ol = el("ol", "steps"); ol.setAttribute("aria-live", "polite");
-    const lab = { pending: "WAITING", active: "IN PROGRESS", done: "DONE", fail: "FAILED", skip: "SKIPPED" };
+    const lab = { pending: "WAITING", active: "IN PROGRESS", done: "DONE", fail: "FAILED", err: "ERROR", skip: "SKIPPED" };
     STEPS.forEach(([k, name]) => {
       const s = run.steps[k]; const li = el("li", "s-" + s.st); li.appendChild(el("span", "mk", lab[s.st]));
       const b = el("div", "tx"); b.appendChild(el("strong", "", name)); if (s.text) { b.appendChild(el("br")); b.appendChild(el("span", "", s.text)); } li.appendChild(b); ol.appendChild(li);
     });
     p.appendChild(ol);
     run.notes.forEach(n => p.appendChild(el("p", "fn", n)));
-    if (run.lost) p.appendChild(errorBox("Lost the live connection before the run finished. The outcome is UNKNOWN here: check Results and trust for the signed record."));
+    if (run.lost && !run.recovered) {
+      p.appendChild(errorBox("Lost the live connection before the run finished. The outcome is UNKNOWN here: check Results and trust for the signed record."));
+      if (run.checking) p.appendChild(el("p", "fn", "Checking the chain: looking for the signed record of this report (not a failure; a payment may already have been signed)."));
+      if (run.gaveUp) p.appendChild(el("p", "fn", "No signed record for this report has appeared yet. Outcome still UNKNOWN: open Results and trust, or check the chain."));
+    }
+    if (run.recovered) p.appendChild(el("p", "fn", "The live connection was lost. The outcome below was read back from the signed verdict log (matched by report hash), not from the live stream."));
     if (run.outcome) {
       const o = run.outcome; const kind = o.kind;
       const box = el("div", "panel");
@@ -300,7 +347,7 @@
       const b = el("div", "banner fail"); b.setAttribute("role", "alert");
       b.appendChild(el("div", "", run.refused ? "Refused by policy, no payment was made." : "Error"));
       b.appendChild(el("div", "mono", run.error.message));
-      b.appendChild(el("div", "", "Settled amount: " + (run.error.atomic === null || run.error.atomic === undefined ? "none (no payment was made)" : usd(run.error.atomic) + (run.error.atomic === "0" ? " (the error path settles $0)" : ""))));
+      b.appendChild(el("div", "", "Settled amount: " + (run.error.atomic === null || run.error.atomic === undefined ? (run.refused ? "none (no payment was made)" : "not reported: outcome unknown, check the log") : usd(run.error.atomic) + (run.error.atomic === "0" ? " (the error path settles $0, bond returned)" : ""))));
       p.appendChild(b);
     }
     if (run.done && !run.error && !run.outcome) p.appendChild(emptyBox("Run finished without a settled event. Check Results and trust."));
@@ -330,7 +377,8 @@
     box(c.forfeited, "Not reproduced", "bond forfeited ($0.25 settled)");
     box(c.inconclusive, "Inconclusive", "bond returned ($0 settled)");
     box(c.errors, "Errors", "settled: " + (errRows.length ? errRows.map(r => usd(r.settledAtomic)).join(", ") : "none") + " (expected $0)");
-    box(c.wrong + " *", "Wrongly forfeited", "hand-labeled real bugs that were forfeited");
+    if (L.mode === "stub") box("n/a", "Wrongly forfeited", "not meaningful in stub mode: stub verdicts follow the filename");
+    else box(c.wrong + " *", "Wrongly forfeited", "hand-labeled real bugs that were forfeited");
     p.appendChild(g);
     p.appendChild(el("p", "fn", "* \"Real bug\" and \"hand-made fake\" labels, and so this count, are assigned by hand in demo/manifest.json by proof hash. The system does not measure them and they are not in the signed log. Entries with no label were submitted outside the demo set."));
 
@@ -358,7 +406,7 @@
 
     p.appendChild(el("h2", "", "Trust"));
     const t = el("div", "panel");
-    const h = el("div", "outcome " + (V.ok ? "ret" : "forf"), V.verified + " of " + V.records + " log entries verified"); t.appendChild(h);
+    const h = el("div", "outcome " + (V.ok && V.records ? "ret" : V.ok ? "unk" : "forf"), V.records ? V.verified + " of " + V.records + " log entries verified" : "No entries to verify yet"); t.appendChild(h);
     if (!V.ok) {
       const b = el("div", "banner fail"); b.setAttribute("role", "alert"); b.appendChild(el("div", "", "BROKEN ENTRIES: " + (V.records - V.verified) + " of " + V.records + " did not verify."));
       const ul = el("ul", "list"); V.problems.forEach(pr => ul.appendChild(el("li", "", "BROKEN log line " + pr.line + ": " + pr.message))); b.appendChild(ul); t.appendChild(b);
@@ -471,7 +519,7 @@
 
   if (FIX) {
     const fb = $("fixbar"); fb.hidden = false;
-    fb.textContent = "FIXTURE MODE: no backend. Data comes from web/fixtures. Params: mode=stub|real, log=ok|tampered|empty|xss|error, inbox=ok|empty|xss, xss=1, busy=1, scenario=" + "success_returned|success_forfeited|refused|settlement_pending|error|xss|busy|budget_exhausted|rate_limited|too_large, delay=ms. Current: mode=" + FX.mode + ", scenario=" + FX.scenario + ".";
+    fb.textContent = "FIXTURE MODE: no backend. Data comes from web/fixtures. Params: mode=stub|real, log=ok|tampered|empty|xss|error, inbox=ok|empty|xss, xss=1, busy=1, scenario=" + "success_returned|success_forfeited|refused|settlement_pending|error|xss|busy|budget_exhausted|rate_limited|too_large|dropped|dropped_norecord, delay=ms. Current: mode=" + FX.mode + ", scenario=" + FX.scenario + ".";
   }
   renderSubmit(); renderRun(); renderResults(); renderInbox(); renderPolicy();
   const startTab = Q.get("tab"); if (TABS.includes(startTab)) selectTab(startTab);

@@ -1,6 +1,6 @@
 // Verdict-log reading/verification, inbox parsing, notes. The signed log is the source of truth.
 import { createHash } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { verifyLogText } from "../../server/src/verdictlog.ts";
 
@@ -50,9 +50,20 @@ export function parseDetail(detail) {
 }
 
 export const NOTE_DECISIONS = ["valid", "not_a_bug", "misuse", "unreviewed"];
+// Simple cache keyed on mtime+size so /api/inbox does not re-parse unchanged files on every request.
+const cache = new Map();
+function parsedCached(file) {
+  let key = "none";
+  try { const st = statSync(file); key = st.mtimeMs + ":" + st.size; } catch { /* missing file */ }
+  const c = cache.get(file);
+  if (c && c.key === key) return c.rows;
+  const rows = parseLines(readLogText(file)); cache.set(file, { key, rows });
+  return rows;
+}
+export function noteFileStats(file) { const rows = parsedCached(file); let bytes = 0; try { bytes = statSync(file).size; } catch { /* none */ } return { count: rows.length, bytes }; }
 export function readNotes(file) {
   const m = new Map();
-  for (const { rec } of parseLines(readLogText(file))) if (rec && typeof rec.reportHash === "string") m.set(rec.reportHash, { decision: rec.decision, text: rec.text, ts: rec.ts });
+  for (const { rec } of parsedCached(file)) if (rec && typeof rec.reportHash === "string") m.set(rec.reportHash, { decision: rec.decision, text: rec.text, ts: rec.ts });
   return m;
 }
 export function appendNote(file, { reportHash, decision, text }) {
@@ -61,7 +72,7 @@ export function appendNote(file, { reportHash, decision, text }) {
 }
 export function buildInbox({ file, notesFile }) {
   const notes = readNotes(notesFile);
-  const items = parseLines(readLogText(file)).map(x => x.rec).filter(r => r.verdict === "reproduced" || r.verdict === "inconclusive").reverse().map(r => ({
+  const items = parsedCached(file).map(x => x.rec).filter(r => r.verdict === "reproduced" || r.verdict === "inconclusive").reverse().map(r => ({
     seq: r.seq, reportHash: r.reportHash, verdict: r.verdict, ...parseDetail(r.detail), detail: String(r.detail ?? ""),
     caseId: r.caseId ?? null, targetCommit: r.targetCommit ?? null, timestamp: r.timestamp, note: notes.get(r.reportHash) ?? null }));
   return { items };
