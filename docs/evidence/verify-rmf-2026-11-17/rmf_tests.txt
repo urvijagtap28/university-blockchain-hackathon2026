@@ -1,0 +1,112 @@
+$ python3 -I verifier/test_verify.py
+[PASS] no-docker: --case empty
+        inconclusive? inconclusive | detail: invalid case id '': must be 1-12 digits | docker calls: 0
+[PASS] no-docker: --case path traversal
+        inconclusive? inconclusive | detail: invalid case id '../x': must be 1-12 digits | docker calls: 0
+[PASS] no-docker: --case shell metacharacters
+        inconclusive? inconclusive | detail: invalid case id '42;ls': must be 1-12 digits | docker calls: 0
+[PASS] no-docker: --case very long (5000 digits)
+        inconclusive? inconclusive | detail: invalid case id '9999999999999999999999999999999... (5000 chars): must be 1-12 digits | docker calls: 0
+[PASS] no-docker: --case very long (5000 chars, mixed)
+        inconclusive? inconclusive | detail: invalid case id 'A/A/A/A/A/A/A/A/A/A/A/A/A/A/A/A... (5000 chars): must be 1-12 digits | docker calls: 0
+[PASS] no-docker: --case trailing space
+        inconclusive? inconclusive | detail: invalid case id '42482847 ': must be 1-12 digits | docker calls: 0
+[PASS] no-docker: --case negative
+        inconclusive? inconclusive | detail: invalid case id '-1': must be 1-12 digits | docker calls: 0
+[PASS] no-docker: --case full-width unicode digits
+        inconclusive? inconclusive | detail: invalid case id '\uff14\uff12\uff14\uff18\uff12\... (8 chars): must be 1-12 digits | docker calls: 0
+[PASS] no-docker: --case newline injection
+        inconclusive? inconclusive | detail: invalid case id '42482847\nls': must be 1-12 digits | docker calls: 0
+[PASS] no-docker: --case 999 (well-formed, not in cases.json)
+        inconclusive? inconclusive | detail: unknown case '999': not in cases.json | docker calls: 0
+[PASS] no-docker: tampered cases.json (tag instead of digest)
+        inconclusive? inconclusive | detail: verifier config error: cases.json: case 42482847 vul image is not a pinned n132/arvo digest | docker calls: 0
+[PASS] no-docker: missing cases.json
+        inconclusive? inconclusive | detail: verifier config error: cannot read cases.json (FileNotFoundError) | docker calls: 0
+[PASS] no-docker: VERIFY_TMPDIR not a directory
+        inconclusive? inconclusive | detail: verifier config error: VERIFY_TMPDIR is set but is not an existing directory | docker calls: 0
+[PASS] fake-docker: VERIFY_TMPDIR staging location and cleanup
+        verdict=not_reproduced; 3 mounts, all inside VERIFY_TMPDIR and present during run: True; VERIFY_TMPDIR empty afterwards: True; example src: /tmp/verify-test-7am59yi4/verify_tmpdir_test/verify-43pxsd6p/input
+[PASS] fake-docker: VERIFY_TMPDIR unset keeps tempfile default
+        verdict=not_reproduced; all mounts under /tmp: True
+[PASS] fake-docker: exit 137 in verdict mode -> inconclusive
+        inconclusive: case 42482847, 2 B input: vul run1: killed (exit 137: SIGKILL, usually out of memory or amd64 emulation on a non-amd64 host); vul run2: killed (exit 137: SIGKILL, usually out of memory or amd64 emulation on a non-amd64 host); vul run3: killed (exit 137: SIGKILL, usually out of memory or amd64 emulation on a non-amd64 host)
+[PASS] fake-docker: exit 137 in --self-test -> environment failure
+        ok=False: host Linux x86_64: environment cannot run the harness: vul image (linux/amd64) killed (exit 137: SIGKILL, usually out of memory or amd64 emulation on a non-amd64 host)
+[PASS] fake-docker: --self-test with clean runs -> pass
+        ok=True: host Linux x86_64: case 42482847 harmless input: vul clean, fix clean; harness runs here
+[PASS] fake-docker: timeout path: kill returns error -> docker rm -f still called
+        calls=[('run', '...', 'budget'), ('kill', 'verify-1d4427432c7846b0', 3.0), ('rm', 'verify-1d4427432c7846b0', 2)]; returned rc=None, info='run exceeded 55 s, container killed'
+[PASS] fake-docker: timeout path: kill times out -> docker rm -f still called
+        calls=[('run', '...', 'budget'), ('kill', 'verify-c58b0f8e9ab945ff', 3.0), ('rm', 'verify-c58b0f8e9ab945ff', 2)]; returned rc=None, info='run exceeded 55 s, container killed'
+[PASS] fake-docker: digest-only image references
+        cases.json refs=12 all digest; images used by verify.py in these tests=21 all digest; 'n132/arvo:' in verify.py: False; in cases.json: False
+[PASS] reproduced: default case, ARVO input 42482847 (3.7s)
+        {"verdict": "reproduced", "detail": "case 42482847, 2 B input: vul 3/3 heap-buffer-overflow at ucl_lex_json_string src/ucl_parser.c:1036:8; fixed build clean"}
+[PASS] reproduced: --case 42482848, ARVO input (3.1s)
+        {"verdict": "reproduced", "detail": "case 42482848, 36 B input: vul 3/3 heap-buffer-overflow at ucl_parse_value src/ucl_parser.c:1811:10; fixed build clean"}
+[PASS] reproduced: --case 42486194, ARVO input (3.0s)
+        {"verdict": "reproduced", "detail": "case 42486194, 4385 B input: vul 3/3 heap-buffer-overflow at ucl_expand_variable src/ucl_parser.c:550:5; fixed build clean"}
+[PASS] reproduced: --case 42490132, ARVO input (3.1s)
+        {"verdict": "reproduced", "detail": "case 42490132, 36 B input: vul 3/3 heap-buffer-overflow at ucl_strnstr src/ucl_util.c:2183:12; fixed build clean"}
+[PASS] reproduced: --case 42497487, ARVO input (3.2s)
+        {"verdict": "reproduced", "detail": "case 42497487, 14 B input: vul 3/3 heap-buffer-overflow at ucl_check_variable src/ucl_parser.c:376:6; fixed build clean"}
+[PASS] reproduced: --case 42512369, ARVO input (3.3s)
+        {"verdict": "reproduced", "detail": "case 42512369, 2421 B input: vul 3/3 heap-buffer-overflow at ucl_hash_search src/ucl_hash.c:460:15; fixed build clean"}
+[PASS] not_reproduced: harmless.ucl (1.7s)
+        {"verdict": "not_reproduced", "detail": "case 42482847, 47 B input: vul 3/3 clean"}
+[PASS] not_reproduced: hand_made_fake_asan_claim.txt (hand-made fake) (1.8s)
+        {"verdict": "not_reproduced", "detail": "case 42482847, 111 B input: vul 3/3 clean"}
+[PASS] not_reproduced: hand_made_fake_config.ucl (hand-made fake) (1.8s)
+        {"verdict": "not_reproduced", "detail": "case 42482847, 111 B input: vul 3/3 clean"}
+[PASS] not_reproduced: hand_made_fake_deep_nesting.ucl (hand-made fake) (1.9s)
+        {"verdict": "not_reproduced", "detail": "case 42482847, 6000 B input: vul 3/3 clean"}
+[PASS] not_reproduced: hand_made_fake_empty.bin (hand-made fake) (1.7s)
+        {"verdict": "not_reproduced", "detail": "case 42482847, 0 B input: vul 3/3 clean"}
+[PASS] not_reproduced: hand_made_fake_large_config.ucl (hand-made fake) (1.9s)
+        {"verdict": "not_reproduced", "detail": "case 42482847, 40322 B input: vul 3/3 clean"}
+[PASS] not_reproduced: hand_made_fake_near_miss.ucl (hand-made fake) (1.8s)
+        {"verdict": "not_reproduced", "detail": "case 42482847, 3 B input: vul 3/3 clean"}
+[PASS] not_reproduced: hand_made_fake_random.bin (hand-made fake) (1.8s)
+        {"verdict": "not_reproduced", "detail": "case 42482847, 4096 B input: vul 3/3 clean"}
+[PASS] not_reproduced: exactly 65536 B (at the limit) (1.8s)
+        {"verdict": "not_reproduced", "detail": "case 42482847, 65536 B input: vul 3/3 clean"}
+[PASS] inconclusive: 42512369 input vs default case (real SEGV, wrong error type) (2.5s)
+        {"verdict": "inconclusive", "detail": "case 42482847, 2421 B input: vul run1: SEGV at kh_get_ucl_hash_caseless_node src/ucl_hash.c:230:1; vul run2: SEGV at kh_get_ucl_hash_caseless_node src/ucl_hash.c:230:1; vul run3: SEGV at kh_get_ucl_hash_caseless_node src/ucl_hash.c:230:1"}
+[PASS] inconclusive: 65537 B input (over limit) (0.1s)
+        {"verdict": "inconclusive", "detail": "input is 65537 bytes, over the 65536 byte limit"}
+[PASS] inconclusive: missing file (0.0s)
+        {"verdict": "inconclusive", "detail": "input file not found"}
+[PASS] inconclusive: unknown case (0.1s)
+        {"verdict": "inconclusive", "detail": "unknown case '999': not in cases.json"}
+[PASS] inconclusive: usage error (no args) (0.1s)
+        {"verdict": "inconclusive", "detail": "usage: python verify.py <input_file> [--case <id>]"}
+[PASS] inconclusive: --case with no value (0.1s)
+        {"verdict": "inconclusive", "detail": "usage: python verify.py <input_file> [--case <id>]"}
+[PASS] inconclusive: --case given twice (0.1s)
+        {"verdict": "inconclusive", "detail": "usage: python verify.py <input_file> [--case <id>]"}
+[PASS] inconclusive (CLI): --case empty (0.1s)
+        {"verdict": "inconclusive", "detail": "invalid case id '': must be 1-12 digits"}
+[PASS] inconclusive (CLI): --case path traversal (0.1s)
+        {"verdict": "inconclusive", "detail": "invalid case id '../x': must be 1-12 digits"}
+[PASS] inconclusive (CLI): --case shell metacharacters (0.1s)
+        {"verdict": "inconclusive", "detail": "invalid case id '42;ls': must be 1-12 digits"}
+[PASS] inconclusive (CLI): --case very long (5000 digits) (0.0s)
+        {"verdict": "inconclusive", "detail": "invalid case id '9999999999999999999999999999999... (5000 chars): must be 1-12 digits"}
+[PASS] inconclusive (CLI): --case very long (5000 chars, mixed) (0.1s)
+        {"verdict": "inconclusive", "detail": "invalid case id 'A/A/A/A/A/A/A/A/A/A/A/A/A/A/A/A... (5000 chars): must be 1-12 digits"}
+[PASS] inconclusive (CLI): --case trailing space (0.1s)
+        {"verdict": "inconclusive", "detail": "invalid case id '42482847 ': must be 1-12 digits"}
+[PASS] inconclusive (CLI): --case negative (0.1s)
+        {"verdict": "inconclusive", "detail": "invalid case id '-1': must be 1-12 digits"}
+[PASS] inconclusive (CLI): --case full-width unicode digits (0.0s)
+        {"verdict": "inconclusive", "detail": "invalid case id '\\uff14\\uff12\\uff14\\uff18\\uff12\\... (8 chars): must be 1-12 digits"}
+[PASS] inconclusive: timeout (VERIFY_CAP_SECONDS=6) (1.2s)
+        {"verdict": "inconclusive", "detail": "case 42482847, 2 B input: vul run1: heap-buffer-overflow at ucl_lex_json_string src/ucl_parser.c:1036:8; vul run2: run exceeded 0 s, container killed"}
+[PASS] reproduced: VERIFY_TMPDIR set (real Docker) (3.1s)
+        {"verdict": "reproduced", "detail": "case 42482847, 2 B input: vul 3/3 heap-buffer-overflow at ucl_lex_json_string src/ucl_parser.c:1036:8; fixed build clean"}
+[PASS] VERIFY_TMPDIR left empty after real run: []
+[PASS] --self-test on this host (1.5s, exit 0)
+        {"self_test": "pass", "detail": "host Linux x86_64: case 42482847 harmless input: vul clean, fix clean; harness runs here"}
+SUMMARY: 34/34 end-to-end passed; no-docker tests all passed; fake-docker tests all passed
+exit=0
