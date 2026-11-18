@@ -19,9 +19,23 @@ if (scenario === "refuse") {
   console.log(JSON.stringify({ file, status: "refused", reason: E.FAKE_REFUSE_REASON || "session budget exhausted" }));
   process.exit(0);
 }
+const NET = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", PAYTO = "8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib";
 log("allow_url", { url: E.AGENT_ALLOWED_URL });
-log("approval_auto", {});
-log("payment_signed", {});
+if (E.FAKE_REALISTIC) {
+  // replays the field set of the real agent's decision log lines (agent/src/agent.ts, incl. the D-020 additive reserve fields); bigints are strings like makeLogger writes them
+  const h = hash.slice(0, 16);
+  log("reserve", { reportHash: h, askAtomic: "250000", remainingAtomic: "1750000", capAtomic: "250000", scheme: "upto", network: NET, maxTimeoutSeconds: 300 });
+  log("approval_auto", { reportHash: h, askAtomic: "250000", thresholdAtomic: "100000", autoApproveAtomic: "250000" });
+  log("payment_signed", { reportHash: h, askAtomic: "250000", payTo: PAYTO, network: NET });
+} else if (E.FAKE_HOSTILE) {
+  const x = "<img src=x onerror=alert(1)>";
+  log("reserve", { askAtomic: "250000", capAtomic: "250000", remainingAtomic: x, scheme: x, network: "solana:" + "A".repeat(5000), maxTimeoutSeconds: "300", privateKey: "SECRETKEYTEXT", extra: x });
+  log("approval_auto", { askAtomic: "250000", thresholdAtomic: "9".repeat(40) });
+  log("payment_signed", { askAtomic: "250000", payTo: "5".repeat(88), secret: "SECRETKEYTEXT" });
+} else {
+  log("approval_auto", {});
+  log("payment_signed", {});
+}
 await sleep(Number(E.FAKE_SLEEP_MS || 0));
 if (scenario === "hang") await sleep(600000);
 if (scenario === "paid") {

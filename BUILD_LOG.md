@@ -596,3 +596,29 @@ Files: web/public/{evidence.js,app.js,styles.css,index.html}, web/fixtures/*, we
 - Screenshots (1280 and 1600 px, fixtures over http://127.0.0.1:8765/public): /private/tmp/claude-501/-Users-liezeil-university-blockchain-hackathon2026/e452d3df-a6f8-484f-b1ba-ed7167e32680/scratchpad/ov/shots/*_1280.png (ov_real_both, ov_real_one, ov_stub_both, ov_empty, ov_tampered, act_real_returned/forfeited/inconclusive/refused, act_stub_returned/forfeited, ledger_real_open, inbox_real). No horizontal scroll at either width. Looked at ov_real_both, ov_real_one, ov_stub_both, ov_empty, act_real_returned, act_real_refused, inbox_real; no defects left. Others (ledger open, tampered, stub forfeited) read via text dump only.
 - Words (panel, 1280): Overview 65 two cards / 51 one / 3 empty; Activity 65 / 55 / 66 / 37 refused.
 - UNVERIFIED: mobile (skipped by scope), real backend, screen readers, 760-900 px top bar with 6 tabs.
+
+## 2026-11-17 WEB_BACKEND: D-019/D-020 decision-event facts (key-free; no devnet, no paid request; ports 4050-4059 plus the existing QE script range 4034+ only)
+Agent decision log audit (agent/src/agent.ts, agent/src/log.ts; sample: agent/decisions.log). fact -> present before? -> log field:
+| fact | before D-020 | log event.field |
+| 402 amount | yes | reserve/approval_*/payment_signed .askAtomic |
+| 402 scheme | NO (only implied: agent refuses non-upto) | now reserve.scheme (D-020) |
+| 402 network | yes, only after signing | payment_signed.network; now also reserve.network |
+| 402 payTo | yes, only after signing | payment_signed.payTo |
+| 402 maxTimeoutSeconds | NO | now reserve.maxTimeoutSeconds when it is a safe integer (D-020) |
+| cap check passed | NO (only refuse_cap on failure; cap not logged on pass) | implied by reserve; reserve.capAtomic added (D-020); UI derives ask<=cap |
+| reserve / budget left | yes | reserve.remainingAtomic |
+| approval route / threshold | yes for auto|not_needed (thresholdAtomic, autoApproveAtomic); granted only askAtomic | approval_auto|approval_not_needed|approval_granted |
+| refusal numbers | yes | refuse_cap askAtomic+capAtomic; refuse_budget askAtomic+remainingAtomic |
+| retry reasons | yes | retry/retry_denied .why (already mapped, no facts) |
+Changes: agent/src/agent.ts one log line (additive); web/lib/jobs.mjs (mapDecision, sanitizeFacts); web/public/evidence.js (factLines), app.js (multi sub-lines); tests + fixtures + AGENTS docs (D-020).
+Verification (real output):
+- node --check on jobs.mjs app.js evidence.js web.test.mjs fixtures.test.mjs fake_agent.mjs xss_server.mjs facts_e2e.mjs: all ok.
+- env -i node --test web/test/web.test.mjs web/test/evidence.test.mjs: tests 42 pass 42 fail 0 (new: 4 backend facts tests incl. hostile and SSE replay, 3 factLines tests).
+- env -i node web/test/fixtures.test.mjs: 37 fixtures, 1821 checks, 0 failures (hostile.facts.txt is asserted to be REJECTED by the contract checker).
+- cd agent && node test/unit.ts: agent unit ok (new block: reserve carries capAtomic/scheme/network/maxTimeoutSeconds, field absent when the 402 lacks it, key-like field in the 402 never in the written log).
+- env -i node web/test/qe/f001_cdp.mjs: all passed.
+- env -i node web/test/qe/web_security.mjs: SUMMARY 74/75 PASS; FAIL: notes.growth-cap (known).
+- XSS CDP probe with hostile facts (xss_server.mjs 4052 dir facts, fake agent logs HTML/500-char/88-char-base58/secret-like fact values): xss null, bad=0, injectedId false on every page; run panel shows only "Read 402: 0.25 USDC", cap tick, endpoint allowed; SECRETKEYTEXT and onerror text from the agent log do not reach the SSE (asserted in web.test.mjs).
+- E2E key-free (env -i node web/test/qe/facts_e2e.mjs 4053; fake agent replaying the real agent log field set): SSE shows 5 decision events, facts on reserve/approve/sign, none on allowlist/settle; verdict/settled from the signed record.
+- Screenshots 1280 px (fixtures, headless Chrome), looked at: /private/tmp/claude-501/-Users-liezeil-university-blockchain-hackathon2026/e452d3df-a6f8-484f-b1ba-ed7167e32680/scratchpad/shots/{returned,forfeited,refused,hostile,old_returned}.png. Stepper under Policy: "Read 402: 0.25 USDC, upto, devnet, 300 s" / "Within the $0.25 per-report cap" / "Budget left: $1.75" / "Endpoint allowed (localhost:4021)"; refused: endpoint ok line plus "Failed: per-report cap (402 asked $0.30, cap $0.25)" and "No payment was made". Defect found and fixed: a refusal replaced the endpoint-allowed line; now both show.
+UNVERIFIED: facts from a real paid run (needs the real stack, QE functional run); the screenshots are fixtures and illustrative; 1600 px and mobile not checked; the real agent was exercised only via mocks (unit.ts) and the fake agent replay.

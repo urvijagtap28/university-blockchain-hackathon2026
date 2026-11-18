@@ -177,4 +177,20 @@ const settled = (v: string, amt: string): R => ({ status: 200, json: { verdict: 
   const m = mk([ok402, settled("not_reproduced", "900000")]);
   await submitReport(m.deps, body, URL_OK); assert.equal(m.deps.budget.remaining, usdToAtomic("2.00") - 250000n);
 }
+{ // D-020: the reserve log line carries the 402 terms + cap (additive), and no key text appears in any log line
+  const lines: { e: string; d: any }[] = [];
+  const m = mk([ok402, settled("reproduced", "0")], { log: (e, d) => { lines.push({ e, d }); } });
+  (m.deps.x402 as any).getPaymentRequiredResponse = () => ({ accepts: [{ scheme: "upto", network: "solana:dev", amount: "250000", payTo: "PAYTO", maxTimeoutSeconds: 300, extra: { privateKey: "SECRETKEYTEXT" } }] });
+  assert.equal((await submitReport(m.deps, body, URL_OK)).status, "done");
+  const r = lines.find(l => l.e === "reserve")!.d;
+  assert.equal(r.askAtomic, 250000n); assert.equal(r.remainingAtomic, usdToAtomic("2.00") - 250000n); assert.equal(r.capAtomic, 250000n);
+  assert.equal(r.scheme, "upto"); assert.equal(r.network, "solana:dev"); assert.equal(r.maxTimeoutSeconds, 300);
+  const f = mkdtempSync(path.join(tmpdir(), "agentlog-")) + "/d.log"; const lg = makeLogger(f);
+  for (const l of lines) lg(l.e, l.d);
+  const txt = readFileSync(f, "utf8"); assert.ok(txt.includes('"capAtomic":"250000"') && txt.includes('"maxTimeoutSeconds":300') && !/SECRETKEYTEXT|privateKey/i.test(txt));
+  // no maxTimeoutSeconds in the 402 -> the field is simply absent
+  const m2 = mk([ok402, settled("reproduced", "0")], { log: (e, d) => { lines.push({ e: "m2" + e, d }); } });
+  assert.equal((await submitReport(m2.deps, body, URL_OK)).status, "done");
+  assert.ok(!("maxTimeoutSeconds" in lines.find(l => l.e === "m2reserve")!.d));
+}
 console.log("agent unit ok");

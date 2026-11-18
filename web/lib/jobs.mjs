@@ -22,13 +22,43 @@ export function childEnv(src, { allowedUrl, logPath, testFilename }) {
 }
 
 const clip = s => String(s ?? "").slice(0, 300);
+
+// D-019/D-020: optional `facts` on decision events. Built ONLY from fields the agent's decision log lines carry, per event, with strict
+// types: atomic amounts as digit strings (<= 15 digits), enums, a bounded CAIP-2 network id, a base58 public address (32-50 chars, so a
+// 64-byte secret key cannot match), a bounded integer. Anything else (unknown fields, wrong types, hostile strings) is dropped.
+const ATOMIC = /^\d{1,15}$/;
+const FACT_SPEC = {
+  askAtomic: v => atomicOf(v), capAtomic: v => atomicOf(v), remainingAtomic: v => atomicOf(v), thresholdAtomic: v => atomicOf(v), autoApproveAtomic: v => atomicOf(v),
+  scheme: v => (v === "upto" || v === "exact") ? v : null,
+  network: v => (typeof v === "string" && /^[a-z0-9-]{3,8}:[A-Za-z0-9_-]{1,44}$/.test(v)) ? v : null,
+  payTo: v => (typeof v === "string" && /^[1-9A-HJ-NP-Za-km-z]{32,50}$/.test(v)) ? v : null,
+  maxTimeoutSeconds: v => (Number.isSafeInteger(v) && v >= 1 && v <= 86400) ? v : null,
+};
+function atomicOf(v) { const s = typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? String(v) : v; return typeof s === "string" && ATOMIC.test(s) ? s : null; }
+// which agent log fields each event may contribute (anything else on the line is ignored)
+const FACT_FIELDS = {
+  reserve: ["askAtomic", "capAtomic", "remainingAtomic", "scheme", "network", "maxTimeoutSeconds"],
+  approval_auto: ["askAtomic", "thresholdAtomic", "autoApproveAtomic"], approval_not_needed: ["askAtomic", "thresholdAtomic", "autoApproveAtomic"], approval_granted: ["askAtomic"],
+  payment_signed: ["askAtomic", "network", "payTo"],
+  refuse_cap: ["askAtomic", "capAtomic"], refuse_budget: ["askAtomic", "remainingAtomic"],
+};
+const ROUTE = { approval_auto: "auto", approval_not_needed: "below_threshold", approval_granted: "human" };
+export function sanitizeFacts(event, o) {
+  const f = {};
+  for (const k of FACT_FIELDS[event] ?? []) { const v = FACT_SPEC[k](o?.[k]); if (v !== null) f[k] = v; }
+  if (ROUTE[event]) f.route = ROUTE[event];
+  return Object.keys(f).length ? f : null;
+}
+
 export function mapDecision(o) {
   const e = String(o.event ?? "");
+  const withFacts = m => { const f = sanitizeFacts(e, o); return f ? { ...m, facts: f } : m; };
   if (e === "allow_url") return { action: "allow", detail: `allowlist: ${clip(o.url)}` };
-  if (e.startsWith("refuse_")) return { action: "refuse", detail: clip(o.reason ?? e) };
-  if (e === "approval_auto" || e === "approval_granted" || e === "approval_not_needed") return { action: "approve", detail: e === "approval_granted" ? "approved" : "approved (confirmed in the web UI, up to the per-report cap)" };
+  if (e === "reserve") return withFacts({ action: "allow", detail: "budget reserved for the 402 ask" });
+  if (e.startsWith("refuse_")) return withFacts({ action: "refuse", detail: clip(o.reason ?? e) });
+  if (e === "approval_auto" || e === "approval_granted" || e === "approval_not_needed") return withFacts({ action: "approve", detail: e === "approval_granted" ? "approved" : "approved (confirmed in the web UI, up to the per-report cap)" });
   if (e === "approval_rejected") return { action: "reject", detail: "approval rejected: nothing paid" };
-  if (e === "payment_signed") return { action: "sign", detail: "x402 upto authorization signed (maximum is the per-report cap)" };
+  if (e === "payment_signed") return withFacts({ action: "sign", detail: "x402 upto authorization signed (maximum is the per-report cap)" });
   if (e === "server_429" || e === "retry") return { action: "retry", detail: `retry: ${clip(o.why ?? "server rate limit")}` };
   if (e === "retry_denied") return { action: "refuse", detail: `retry denied: ${clip(o.why)}` };
   if (e === "payment_unknown") return { action: "settle", detail: "payment outcome not confirmed by the agent; checking the signed log" };

@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { base58 } from "../../server/node_modules/@scure/base/lib/esm/index.js";
 import { createApp, assertLoopback } from "../server.mjs";
-import { childEnv } from "../lib/jobs.mjs";
+import { childEnv, mapDecision, sanitizeFacts } from "../lib/jobs.mjs";
 import { parseDetail } from "../lib/records.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -401,4 +401,54 @@ test("QE-W-001: triage notes capped by count and by bytes (413 JSON), inbox cach
     writeFileSync(nf, (JSON.stringify({ ts: "t", reportHash: h, decision: "valid", text: "y".repeat(100000) }) + "\n").repeat(3));
     assert.equal((await note("over bytes")).status, 413);
   } finally { await stop(t); }
+});
+
+// ---- D-019/D-020: optional `facts` on decision events
+const NETID = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", PAYTO = "8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib";
+test("facts: present for reserve/approval/sign lines, only whitelisted fields, atomic amounts as strings", () => {
+  const r = mapDecision({ event: "reserve", reportHash: "abcd", askAtomic: "250000", remainingAtomic: "1750000", capAtomic: "250000", scheme: "upto", network: NETID, maxTimeoutSeconds: 300, junk: "x" });
+  assert.deepEqual(r, { action: "allow", detail: "budget reserved for the 402 ask", facts: { askAtomic: "250000", capAtomic: "250000", remainingAtomic: "1750000", scheme: "upto", network: NETID, maxTimeoutSeconds: 300 } });
+  assert.deepEqual(mapDecision({ event: "approval_auto", askAtomic: "250000", thresholdAtomic: "100000", autoApproveAtomic: "250000" }).facts, { askAtomic: "250000", thresholdAtomic: "100000", autoApproveAtomic: "250000", route: "auto" });
+  assert.equal(mapDecision({ event: "approval_granted", askAtomic: "250000", by: "human" }).facts.route, "human");
+  assert.deepEqual(mapDecision({ event: "payment_signed", askAtomic: "250000", payTo: PAYTO, network: NETID }).facts, { askAtomic: "250000", network: NETID, payTo: PAYTO });
+  assert.deepEqual(mapDecision({ event: "refuse_cap", reason: "402 asks 0.300000 USDC, above per-report cap 0.250000", askAtomic: "300000", capAtomic: "250000" }).facts, { askAtomic: "300000", capAtomic: "250000" });
+  assert.deepEqual(mapDecision({ event: "refuse_budget", reason: "r", askAtomic: "250000", remainingAtomic: "0" }).facts, { askAtomic: "250000", remainingAtomic: "0" });
+  assert.equal(sanitizeFacts("reserve", { askAtomic: 250000 }).askAtomic, "250000"); // a safe integer is accepted and stringified
+  assert.equal(sanitizeFacts("reserve", { askAtomic: -1 }), null);
+});
+test("facts: absent when the log line carries none (old agent logs): the event has no facts key", () => {
+  for (const o of [{ event: "approval_auto" }, { event: "payment_signed" }, { event: "reserve" }, { event: "allow_url", url: "http://localhost:4021/report" }, { event: "settle_result", settledAtomic: "0" }, { event: "refuse_url", reason: "x" }]) {
+    const m = mapDecision(o); if (o.event === "approval_auto") assert.deepEqual(m.facts, { route: "auto" }); else assert.ok(!("facts" in m), JSON.stringify(m));
+  }
+  assert.deepEqual(mapDecision({ event: "allow_url", url: "http://localhost:4021/report" }), { action: "allow", detail: "allowlist: http://localhost:4021/report" });
+});
+test("facts: hostile values are dropped (HTML, very long, key-like, wrong types, unknown fields)", () => {
+  const x = "<img src=x onerror=alert(1)>";
+  const f = sanitizeFacts("reserve", { askAtomic: "250000", capAtomic: "<b>1</b>", remainingAtomic: "9".repeat(40), scheme: x, network: "solana:" + "A".repeat(5000), maxTimeoutSeconds: "300", privateKey: "SECRETKEYTEXT", SVM_PRIVATE_KEY: "SECRETKEYTEXT", extra: x });
+  assert.deepEqual(f, { askAtomic: "250000" });
+  assert.equal(sanitizeFacts("payment_signed", { payTo: "5".repeat(88), network: "solana:" + x }), null); // an 88-char base58 string (secret-key shaped) is not a public address
+  assert.equal(sanitizeFacts("payment_signed", { payTo: "has space and <tags>" }), null);
+  assert.equal(sanitizeFacts("reserve", { maxTimeoutSeconds: 1e9 }), null);
+  assert.equal(sanitizeFacts("reserve", { askAtomic: 1.5, capAtomic: [1], remainingAtomic: { a: 1 } }), null);
+  assert.equal(sanitizeFacts("settle_result", { askAtomic: "1" }), null); // events not in the table never carry facts
+  assert.equal(sanitizeFacts("reserve", null), null);
+});
+test("facts over SSE: a realistic agent log replay carries facts; hostile log values never reach the stream; no secret text", async () => {
+  const t = await start({ child: { FAKE_REALISTIC: "1" } });
+  try {
+    const j = await runToEnd(t, "hello");
+    const d = j.events.filter(e => e.type === "decision").map(e => e.data);
+    assert.deepEqual(d.map(x => x.action), ["allow", "allow", "approve", "sign", "settle"]);
+    assert.equal(d[1].facts.scheme, "upto"); assert.equal(d[1].facts.maxTimeoutSeconds, 300); assert.equal(d[1].facts.remainingAtomic, "1750000");
+    assert.equal(d[2].facts.route, "auto"); assert.equal(d[3].facts.payTo, PAYTO); assert.ok(!("facts" in d[0]) && !("facts" in d[4]));
+    assert.ok(!j.raw.includes(SECRET_KEY) && !j.raw.includes(SECRET_RPC));
+  } finally { await stop(t); }
+  const h = await start({ child: { FAKE_HOSTILE: "1" } });
+  try {
+    const j = await runToEnd(h, "hello");
+    const d = j.events.filter(e => e.type === "decision").map(e => e.data);
+    assert.deepEqual(d[1].facts, { askAtomic: "250000", capAtomic: "250000" });
+    assert.deepEqual(d[2].facts, { askAtomic: "250000", route: "auto" }); assert.deepEqual(d[3].facts, { askAtomic: "250000" });
+    for (const bad of ["<img", "onerror", "SECRETKEYTEXT", "AAAAAAAAAA", "5555555555"]) assert.ok(!j.raw.includes(bad), bad);
+  } finally { await stop(h); }
 });

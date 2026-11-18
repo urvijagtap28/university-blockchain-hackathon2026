@@ -103,7 +103,8 @@ async function attempt(d: Deps, body: Uint8Array, url: string, reportHash: strin
   if (!budget.tryReserve(ask)) {
     return refuse("refuse_budget", `session budget exhausted: need ${atomicToUsd(ask)}, remaining ${atomicToUsd(budget.remaining)}`, { askAtomic: ask, remainingAtomic: budget.remaining });
   }
-  log("reserve", { reportHash, askAtomic: ask, remainingAtomic: budget.remaining });
+  // D-020: additive log fields only (402 terms from the parsed option and the cap already checked above); no logic depends on them.
+  log("reserve", { reportHash, askAtomic: ask, remainingAtomic: budget.remaining, capAtomic: cfg.perReportCap, scheme: chosen.scheme, network: chosen.network, ...(Number.isSafeInteger(chosen.maxTimeoutSeconds) ? { maxTimeoutSeconds: chosen.maxTimeoutSeconds } : {}) });
 
   // 6. human approval above threshold
   const route = approvalRoute(ask, cfg);

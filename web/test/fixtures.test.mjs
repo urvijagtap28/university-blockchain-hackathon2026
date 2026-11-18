@@ -40,7 +40,18 @@ function inbox(f, x) {
 }
 const SSE = {
   started: o => shape("sse", o, { jobId: isStr, reportHash: isStr }, "started"),
-  decision: o => shape("sse", o, { ts: isStr, action: oneOf("allow", "refuse", "approve", "reject", "sign", "retry", "settle"), detail: isStr }, "decision"),
+  decision: o => {
+    // `facts` is OPTIONAL (D-019/D-020): backward compatible, so a transcript without it is still valid
+    const { facts, ...rest } = o;
+    shape("sse", rest, { ts: isStr, action: oneOf("allow", "refuse", "approve", "reject", "sign", "retry", "settle"), detail: isStr }, "decision");
+    if (facts !== undefined) {
+      t("sse", isObj(facts), "facts must be an object");
+      const spec = { askAtomic: atomic, capAtomic: atomic, remainingAtomic: atomic, thresholdAtomic: atomic, autoApproveAtomic: atomic, scheme: oneOf("upto", "exact"),
+        network: v => isStr(v) && /^[a-z0-9-]{3,8}:[A-Za-z0-9_-]{1,44}$/.test(v), payTo: v => isStr(v) && /^[1-9A-HJ-NP-Za-km-z]{32,50}$/.test(v),
+        maxTimeoutSeconds: v => Number.isSafeInteger(v) && v >= 1 && v <= 86400, route: oneOf("auto", "below_threshold", "human") };
+      if (isObj(facts)) { t("sse", Object.keys(facts).length > 0, "facts must not be empty (omit it instead)"); for (const [k, v] of Object.entries(facts)) t("sse", !!spec[k] && spec[k](v), "facts." + k + " unknown or wrong type: " + JSON.stringify(v)); }
+    }
+  },
   checking: o => shape("sse", o, { message: v => v === "checking the chain" }, "checking"),
   verdict: o => shape("sse", o, { verdict: oneOf("reproduced", "not_reproduced", "inconclusive", "error"), detail: isStr }, "verdict"),
   settled: o => shape("sse", o, { settledAtomic: atomic, txSignature: nullOr(isStr), bondOutcome: oneOf("returned", "forfeited", "unknown") }, "settled"),
@@ -60,7 +71,7 @@ function sse(f, txt) {
 }
 function errBody(f, b, extra) { shape(f, b, { error: isStr, message: isStr, ...extra }, "errbody"); }
 
-const files = fs.readdirSync(dir).filter(n => n !== "README.txt").sort();
+const files = fs.readdirSync(dir).filter(n => n !== "README.txt" && !n.startsWith("hostile.")).sort();
 for (const f of files) {
   const raw = fs.readFileSync(path.join(dir, f), "utf8");
   if (f.endsWith(".txt")) { sse(f, raw); continue; }
@@ -80,5 +91,7 @@ t("log.tampered.json", rd("log.tampered.json").verify.ok === false && rd("log.ta
 t("log.empty.json", rd("log.empty.json").records.length === 0, "empty");
 t("log.xss.json", rd("log.xss.json").records.some(r => r.txSignature && !SIGRE.test(r.txSignature)), "xss log has a non-base58 signature");
 t("log.stub.json", rd("log.stub.json").records.every(r => SIGRE.test(r.txSignature)), "stub log signatures are base58");
+// hostile.* transcripts carry facts that VIOLATE the contract (HTML, huge strings, key-like text); they must be rejected by this checker
+{ const before = fails, log0 = console.log; console.log = () => {}; sse("hostile.facts", fs.readFileSync(path.join(dir, "hostile.facts.txt"), "utf8")); console.log = log0; const caught = fails - before; fails = before; t("hostile.facts.txt", caught >= 4, "contract checker must reject hostile facts (rejected " + caught + ")"); }
 console.log(files.length + " fixtures, " + checks + " checks, " + fails + " failures");
 process.exit(fails ? 1 : 0);

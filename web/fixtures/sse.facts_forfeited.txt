@@ -1,0 +1,27 @@
+event: started
+data: {"jobId":"fixture-job-1","reportHash":"386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"allow","detail":"allowlist: http://localhost:4021/report"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"allow","detail":"budget reserved for the 402 ask","facts":{"askAtomic":"250000","capAtomic":"250000","remainingAtomic":"1750000","scheme":"upto","network":"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1","maxTimeoutSeconds":300}}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"approve","detail":"approved (confirmed in the web UI, up to the per-report cap)","facts":{"askAtomic":"250000","thresholdAtomic":"100000","autoApproveAtomic":"250000","route":"auto"}}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:02.000Z","action":"sign","detail":"x402 upto authorization signed (maximum is the per-report cap)","facts":{"askAtomic":"250000","network":"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1","payTo":"8uZAqWQTRPqsbFwvzDbsreAzLWTmSxk9En7aM78AuVib"}}
+
+event: verdict
+data: {"verdict":"not_reproduced","detail":"case 42482847, 47 B input: vul 3/3 clean"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:05.000Z","action":"settle","detail":"settle response received; the amount shown comes from the signed log"}
+
+event: settled
+data: {"settledAtomic":"250000","txSignature":"5YQLCw1qrfLCV5tbBvh4nfu2Y65HYDLtBV26uRvCMVRip51sCKoW55zEGxqQjTik6nM31TVnRLFh65hqmZipeXGS","bondOutcome":"forfeited"}
+
+event: done
+data: {"recordSeq":4}
+

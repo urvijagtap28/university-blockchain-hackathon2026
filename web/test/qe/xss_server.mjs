@@ -1,5 +1,5 @@
 // QE_WEB_SECURITY: serves the real web/public UI with XSS payloads in demo labels, verdict detail and notes. 127.0.0.1 only, fake agent, canary env.
-// Usage: env -i node web/test/qe/xss_server.mjs <port> <run-dir>   (prints READY when seeded)
+// Usage: env -i node web/test/qe/xss_server.mjs <port> <run-dir>   [facts] (prints READY when seeded; "facts" makes the fake agent log hostile fact fields, D-019)
 import { generateKeyPairSync, createHash } from "node:crypto";
 import { writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
@@ -17,7 +17,7 @@ const sha = createHash("sha256").update("xss-demo-proof").digest("hex");
 const demo = [{ id: "real_bug_1", label: P[0] + P[1], category: "real_bug", handMade: false, sizeBytes: 14, abs: f, sha }];
 const app = createApp({ mode: "stub", runDir: dir, logFile, notesFile: path.join(dir, "notes.jsonl"), env: { AGENT_SVM_PRIVATE_KEY: "CANARY" + "Z".repeat(50) }, signerPub: base58.encode(pub), buyerAddr: P[2], payTo: P[3],
   agentCmd: [process.execPath, path.join(HERE, "..", "fake_agent.mjs")], agentCwd: dir, spacingMs: 0, demoInputs: demo,
-  extraChildEnv: { FAKE_LOG_FILE: logFile, FAKE_LOG_KEY: kp, FAKE_VERDICT: "reproduced", FAKE_SETTLED: "0", FAKE_DETAIL: P.join(" | ") + " heap-buffer-overflow at ucl_lex <img src=x onerror=window.__xss=1> ucl_parser.c:1036" } });
+  extraChildEnv: { FAKE_LOG_FILE: logFile, FAKE_LOG_KEY: kp, ...(process.argv[4] === "facts" ? { FAKE_HOSTILE: "1" } : {}), FAKE_VERDICT: "reproduced", FAKE_SETTLED: "0", FAKE_DETAIL: P.join(" | ") + " heap-buffer-overflow at ucl_lex <img src=x onerror=window.__xss=1> ucl_parser.c:1036" } });
 await app.listen(port);
 const base = `http://127.0.0.1:${port}`, H = { host: `127.0.0.1:${port}`, origin: base, "x-csrf-token": app.token };
 const r = await fetch(base + "/api/submit", { method: "POST", headers: { ...H, "x-demo-input-id": "real_bug_1" } }); const j = await r.json();

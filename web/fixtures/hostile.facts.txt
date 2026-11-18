@@ -1,0 +1,18 @@
+event: started
+data: {"jobId":"fixture-job-1","reportHash":"386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"allow","detail":"allowlist: http://localhost:4021/report","facts":{}}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"allow","detail":"budget reserved for the 402 ask","facts":{"askAtomic":"250000","capAtomic":"250000","remainingAtomic":"<b>1750000</b>","scheme":"<img src=x onerror=window.__pwned=1>","network":"<img src=x onerror=window.__pwned=1>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx","maxTimeoutSeconds":"300"}}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"sign","detail":"x402 upto authorization signed (maximum is the per-report cap)","facts":{"payTo":"5555555555555555555555555555555555555555555555555555555555555555555555555555555555555555","unknownKey":"<img src=x onerror=window.__pwned=1>"}}
+
+event: error
+data: {"message":"x","settledAtomic":null}
+
+event: done
+data: {"recordSeq":null}
+

@@ -1,0 +1,15 @@
+event: started
+data: {"jobId":"fixture-job-1","reportHash":"386cf314bb05acdaaabdf4da1caf140167271a26bd08bf34c3a7427d4bc4431f"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"allow","detail":"allowlist: http://localhost:4021/report"}
+
+event: decision
+data: {"ts":"2026-11-17T18:50:01.000Z","action":"refuse","detail":"402 asks 0.300000 USDC, above per-report cap 0.250000","facts":{"askAtomic":"300000","capAtomic":"250000"}}
+
+event: error
+data: {"message":"Refused by agent policy: 402 asks 0.300000 USDC, above per-report cap 0.250000","settledAtomic":null}
+
+event: done
+data: {"recordSeq":null}
+

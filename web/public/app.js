@@ -203,7 +203,7 @@
     if (stream) stream.close();
     if (FIX) {
       let cancelled = false; const timers = [];
-      const file = { success_returned: "sse.success_returned.txt", success_forfeited: "sse.success_forfeited.txt", refused: "sse.refused.txt", settlement_pending: "sse.settlement_pending.txt", error: "sse.error.txt", real_returned: "sse.real_returned.txt", real_forfeited: "sse.real_forfeited.txt", real_inconclusive: "sse.real_inconclusive.txt", real_refused: "sse.real_refused.txt", xss: "sse.xss.txt", dropped: "sse.dropped.txt", dropped_norecord: "sse.dropped_norecord.txt" }[fxScenario] || "sse.success_returned.txt";
+      const file = { success_returned: "sse.success_returned.txt", success_forfeited: "sse.success_forfeited.txt", refused: "sse.refused.txt", settlement_pending: "sse.settlement_pending.txt", error: "sse.error.txt", real_returned: "sse.real_returned.txt", real_forfeited: "sse.real_forfeited.txt", real_inconclusive: "sse.real_inconclusive.txt", real_refused: "sse.real_refused.txt", facts_returned: "sse.facts_returned.txt", facts_forfeited: "sse.facts_forfeited.txt", facts_refused: "sse.facts_refused.txt", xss: "sse.xss.txt", hostile_facts: "hostile.facts.txt", dropped: "sse.dropped.txt", dropped_norecord: "sse.dropped_norecord.txt" }[fxScenario] || "sse.success_returned.txt";
       fetch(FX.base + file).then(r => r.text()).then(t => {
         const evs = parseSse(t); let at = 0;
         evs.forEach(e => { at += e.ev === "checking" ? FX.delay * 2 : FX.delay; timers.push(setTimeout(() => { if (!cancelled) onEvent(e.ev, e.d); }, at)); });
@@ -415,8 +415,9 @@
     if (t === "started") run.reportHash = d.reportHash;
     else if (t === "decision") {
       decisions.push({ ts: d.ts, action: d.action, detail: d.detail, job: run.jobId }); if (decisions.length > 200) decisions.shift();
-      const fact = window.Evidence.parseDecision(d.action, d.detail); if (fact) run.facts[fact.step] = fact; // only wording the backend emits; unknown wording adds nothing
-      if (d.action === "allow") setStep("policy", "done", "Allowed: " + d.detail);
+      // sub-lines: only the backend's own wording plus the optional, re-validated `facts`; unknown wording or absent facts add nothing
+      window.Evidence.factLines(d.action, d.detail, d.facts).forEach(l => { (run.facts[l.step] = run.facts[l.step] || {})[l.slot] = l; });
+      if (d.action === "allow") { if (/^allowlist: /.test(d.detail) || run.steps.policy.st !== "done") setStep("policy", "done", "Allowed: " + d.detail); }
       else if (d.action === "refuse") { setStep("policy", "fail", "Refused: " + d.detail); run.refused = true; }
       else if (d.action === "approve") setStep("approved", "done", d.detail);
       else if (d.action === "reject") setStep("approved", "fail", "Not approved: " + d.detail);
@@ -446,8 +447,8 @@
       else if (st === "pending" && live && prev) st = "active";
       const li = el("li", "st st-" + st + (i && prevDone ? " link" : "")); li.setAttribute("aria-label", name + ", " + lab[st]); if (st === "active") li.setAttribute("aria-current", "step"); if (s.text) li.title = money(s.text);
       li.appendChild(add(el("span", "node"), ic[st] ? icon(ic[st], st === "active" ? "spin" : "") : null)); li.appendChild(el("span", "nm", name));
-      const fact = i < 3 ? run.facts[k] : null;
-      if (fact) li.appendChild(el("span", "sub" + (fact.ok ? "" : " no"), (fact.ok ? "\u2713 " : "\u2717 ") + fact.text));
+      const fl = i < 3 && run.facts[k] ? window.Evidence.SLOT_ORDER.map(sl => run.facts[k][sl]).filter(Boolean) : [];
+      fl.forEach(fact => li.appendChild(el("span", "sub" + (fact.ok ? "" : " no"), (fact.ok ? "\u2713 " : "\u2717 ") + fact.text)));
       ol.appendChild(li);
       prevDone = s.st === "done"; if (s.st !== "done") prev = false;
     });

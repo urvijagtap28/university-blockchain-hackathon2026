@@ -116,5 +116,38 @@
     }
     return null;
   }
-  g.Evidence = { parseEvidence, parseDecision };
+  // ---- D-019/D-020: optional `facts` on decision events. Every field is re-validated here (the backend already sanitized it; a
+  // client must not trust it blindly). Absent or invalid fields add nothing. Money is formatted as dollars, never raw atomic.
+  const AT = /^\d{1,15}$/;
+  const at = v => (typeof v === "string" && AT.test(v) ? BigInt(v) : null);
+  const dollars = b => (b / 1000000n) + "." + (b % 1000000n / 10000n).toString().padStart(2, "0"); // whole cents, truncated
+  const NET = { "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1": "devnet", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "mainnet" };
+  const SLOT_ORDER = ["terms", "cap", "budget", "allow", "fail", "approve", "sign"];
+  /** factLines(action, detail, facts) -> [{step, slot, ok, text}], zero or more: the wording-derived line (parseDecision) plus fact lines. */
+  function factLines(action, detail, facts) {
+    const out = [];
+    const w = parseDecision(action, detail);
+    const f = facts && typeof facts === "object" && !Array.isArray(facts) ? facts : {};
+    const ask = at(f.askAtomic), cap = at(f.capAtomic), left = at(f.remainingAtomic);
+    if (w) {
+      let text = w.text;
+      if (action === "refuse" && ask !== null) {
+        if (w.text === "Failed: per-report cap" && cap !== null) text += " (402 asked $" + dollars(ask) + ", cap $" + dollars(cap) + ")";
+        else if (w.text === "Failed: session budget" && left !== null) text += " ($" + dollars(left) + " left, 402 asked $" + dollars(ask) + ")";
+      }
+      out.push({ step: w.step, slot: action === "refuse" ? "fail" : w.step === "policy" ? "allow" : w.step === "approved" ? "approve" : "sign", ok: w.ok, text });
+    }
+    if (action === "allow") {
+      const parts = [];
+      if (ask !== null) parts.push(dollars(ask) + " USDC");
+      if (f.scheme === "upto" || f.scheme === "exact") parts.push(f.scheme);
+      if (typeof f.network === "string" && /^[a-z0-9-]{3,8}:[A-Za-z0-9_-]{1,44}$/.test(f.network)) parts.push(NET[f.network] || f.network);
+      if (Number.isSafeInteger(f.maxTimeoutSeconds) && f.maxTimeoutSeconds >= 1 && f.maxTimeoutSeconds <= 86400) parts.push(f.maxTimeoutSeconds + " s");
+      if (parts.length) out.push({ step: "policy", slot: "terms", ok: true, text: "Read 402: " + parts.join(", ") });
+      if (ask !== null && cap !== null && ask > 0n && ask <= cap) out.push({ step: "policy", slot: "cap", ok: true, text: "Within the $" + dollars(cap) + " per-report cap" });
+      if (left !== null) out.push({ step: "policy", slot: "budget", ok: true, text: "Budget left: $" + dollars(left) });
+    }
+    return out;
+  }
+  g.Evidence = { parseEvidence, parseDecision, factLines, SLOT_ORDER };
 })(typeof window !== "undefined" ? window : globalThis);

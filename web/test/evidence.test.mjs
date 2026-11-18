@@ -76,3 +76,27 @@ test("parseDecision only for wording the backend or fixtures emit", () => {
   assert.equal(pd("allow", "<img src=x onerror=alert(1)>"), null);
   assert.equal(pd("approve", "whatever"), null); assert.equal(pd("sign", undefined), null); assert.equal(pd("settle", "settled 0 atomic"), null);
 });
+
+// D-019/D-020: factLines (wording line + optional facts lines)
+const fl = (a, d, f) => J(ctx.Evidence.factLines(a, d, f));
+const NETID = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1";
+test("factLines: reserve facts give terms, cap tick, budget left; money as dollars, never atomic", () => {
+  const r = fl("allow", "budget reserved for the 402 ask", { askAtomic: "250000", capAtomic: "250000", remainingAtomic: "1750000", scheme: "upto", network: NETID, maxTimeoutSeconds: 300 });
+  assert.deepEqual(r.map(x => x.text), ["Read 402: 0.25 USDC, upto, devnet, 300 s", "Within the $0.25 per-report cap", "Budget left: $1.75"]);
+  assert.ok(r.every(x => x.ok && x.step === "policy") && !JSON.stringify(r).includes("250000"));
+});
+test("factLines: absent or partial facts add only what is present; hostile facts add nothing", () => {
+  assert.deepEqual(fl("allow", "allowlist: http://localhost:4021/report", undefined).map(x => x.text), ["Endpoint allowed (localhost:4021)"]);
+  assert.deepEqual(fl("allow", "budget reserved for the 402 ask", {}), []);
+  assert.deepEqual(fl("allow", "budget reserved for the 402 ask", { remainingAtomic: "500000" }).map(x => x.text), ["Budget left: $0.50"]);
+  assert.deepEqual(fl("allow", "budget reserved for the 402 ask", { askAtomic: "300000", capAtomic: "250000" }).map(x => x.text), ["Read 402: 0.30 USDC"]); // over cap: no tick
+  const x = "<img src=x onerror=alert(1)>";
+  assert.deepEqual(fl("allow", "budget reserved for the 402 ask", { askAtomic: x, capAtomic: "1e9", remainingAtomic: -5, scheme: x, network: x, maxTimeoutSeconds: "300" }), []);
+  assert.deepEqual(fl("allow", "budget reserved for the 402 ask", "string"), []); assert.deepEqual(fl("allow", "budget reserved for the 402 ask", [1]), []);
+  assert.deepEqual(fl("sign", "x402 upto authorization signed (maximum is the per-report cap)", { askAtomic: "250000" }).map(x => x.text), ["upto authorization signed"]);
+});
+test("factLines: refusals say which check failed, with the numbers when present", () => {
+  assert.deepEqual(fl("refuse", "402 asks 0.300000 USDC, above per-report cap 0.250000", { askAtomic: "300000", capAtomic: "250000" }).map(x => [x.ok, x.text]), [[false, "Failed: per-report cap (402 asked $0.30, cap $0.25)"]]);
+  assert.equal(fl("refuse", "session budget exhausted: need $0.25, remaining $0.00", { askAtomic: "250000", remainingAtomic: "0" })[0].text, "Failed: session budget ($0.00 left, 402 asked $0.25)");
+  assert.equal(fl("refuse", "session budget exhausted: need $0.25, remaining $0.00")[0].text, "Failed: session budget");
+});

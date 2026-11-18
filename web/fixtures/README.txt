@@ -16,3 +16,7 @@ PRODUCT PASS 2 additions (illustrative unless stated):
 - log.{real,stub}.returned_only.json (log=returned_only): two reproduced records, no forfeited one (Overview one-card state).
 - sse.real_{returned,forfeited,inconclusive,refused}.txt (scenario=real_*; mode=real picks real_returned / real_forfeited automatically): decision wording is what web/lib/jobs.mjs mapDecision emits today. Verdict details are verify.py format; ILLUSTRATIVE transcripts, not recorded.
 - sse.success_forfeited.txt detail is now "stub: default" (what the stub verifier writes).
+
+D-019/D-020 additions (ILLUSTRATIVE, not recorded from a run; shapes follow the optional `facts` field in INTERFACES.md):
+- sse.facts_{returned,forfeited,refused}.txt (scenario=facts_*): decision events with `facts` as web/lib/jobs.mjs now sends them. The verdict/settled tail of returned/forfeited is copied from sse.real_*.
+- hostile.facts.txt (scenario=hostile_facts): facts that VIOLATE the contract (HTML, 500-char network, 88-char payTo, unknown key). fixtures.test.mjs asserts the contract checker rejects it; the UI must show only the valid parts (0.25 USDC, cap tick) and execute nothing.
