@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Local-only web backend for the Prove-It Bond demo (D-016, contract: AGENTS/INTERFACES.md "Web app contract").
+// Local-only web backend for the BugBond demo (D-016, contract: AGENTS/INTERFACES.md "Web app contract").
 // Node built-ins only. Binds 127.0.0.1. Holds no payment or log-signing keys; the child agent gets only AGENT_* and SVM_RPC_URL.
 // Start it with scripts/web.sh (which also starts the facilitator and the x402 server). Not meant to be run bare.
 import http from "node:http";

@@ -102,7 +102,7 @@ async function main() {
   const web = startProc("web", "node", [path.join(ROOT, "web", "server.mjs")], { cwd: ROOT, env: webEnv, logFile: path.join(RUN, "web.log") });
   await waitFor("web", web, async () => (await fetch(`http://127.0.0.1:${WEB_PORT}/api/config`, { signal: AbortSignal.timeout(3000) })).ok, 30);
   console.log(`  web pid ${web.pid} ready\n`);
-  console.log(`Prove-It Bond web app (${MODE === "stub" ? "STUB verifier: verdicts are NOT real" : "REAL verifier"}):\n\n    http://127.0.0.1:${WEB_PORT}/\n\nLocal-only. The demo wallet pays on your behalf (devnet). Ctrl-C stops everything by PID.`);
+  console.log(`BugBond web app (${MODE === "stub" ? "STUB verifier: verdicts are NOT real" : "REAL verifier"}):\n\n    http://127.0.0.1:${WEB_PORT}/\n\nLocal-only. The demo wallet pays on your behalf (devnet). Ctrl-C stops everything by PID.`);
   console.log(`Logs and the signed verdict log: web/run/${MODE}/`);
   // stay up until a child dies or we are signalled
   for (;;) { await sleep(2000); const dead = procs.find(p => p.exited); if (dead) fail(`${dead.name} exited (code ${dead.code}); stopping everything`); }
