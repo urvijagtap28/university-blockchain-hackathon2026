@@ -825,13 +825,6 @@
   $("trust-close").addEventListener("click", () => $("trust").close());
   $("trust").addEventListener("click", e => { if (e.target === $("trust")) $("trust").close(); });
 
-  if (FIX) {
-    const fb = $("fixbar"); fb.hidden = false;
-    fb.appendChild(el("strong", "", "FIXTURE MODE")); fb.appendChild(document.createTextNode(" no backend. "));
-    const d = el("details"); d.appendChild(el("summary", "", "Params"));
-    d.appendChild(el("p", "mono sm", "mode=stub|real, log=ok|tampered|unverified|empty|xss|error, inbox=ok|empty|xss, xss=1, busy=1, scenario=success_returned|success_forfeited|refused|settlement_pending|error|xss|busy|budget_exhausted|rate_limited|too_large|dropped|dropped_norecord, delay=ms. Current: mode=" + FX.mode + ", scenario=" + FX.scenario + "."));
-    fb.appendChild(d);
-  }
   renderOverview(); renderSubmit(); renderRun(); renderResults(); renderPolicy();
   const startTab = Q.get("tab"); if (startTab === "results" || startTab === "policy") selectTab(startTab);
   loadAll().then(() => { if (FIX && Q.get("autorun") === "all" && cfg) { queue = cfg.demoInputs.slice(); nextInQueue(); } else if (FIX && Q.get("autorun") !== null && cfg) { const i = Number(Q.get("autorun") || 0); sel = { demo: cfg.demoInputs[i], file: null, fileErr: null }; renderSubmit(); doSubmit(); } });
