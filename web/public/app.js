@@ -1,5 +1,5 @@
 "use strict";
-/* Prove-It Bond local web app. Plain JS, no framework, no external requests.
+/* BugBond local web app. Plain JS, no framework, no external requests.
    All report- or log-derived text goes through textContent. Never innerHTML.
    Fixture mode (no backend): open index.html?fixtures=1 (see FIXTURES below). */
 (function () {
