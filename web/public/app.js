@@ -41,10 +41,10 @@
   const capAtomic = () => (cfg && cfg.policy && Number.isFinite(Number(cfg.policy.perReportCapUsd))) ? Math.round(Number(cfg.policy.perReportCapUsd) * 1e6) : null;
   const backAtomic = settled => { const c = capAtomic(); return (c !== null && AMT.test(String(settled)) && Number(settled) <= c) ? String(c - Number(settled)) : null; };
   // Compact display name for a demo input or ledger row. The full label stays in title/aria-label.
-  const chipName = d => String(d.id || d.label || "").replace(/^fake_/, "").split("_").map((w, i) => w.toLowerCase() === "arvo" ? "ARVO" : w.toLowerCase() === "asan" ? "ASan" : i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(" ");
+  const chipName = d => String(d.id || d.label || "").replace(/^(hand_made_)?fake_/, "").split("_").map((w, i) => w.toLowerCase() === "arvo" ? "ARVO" : w.toLowerCase() === "asan" ? "ASan" : i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(" ");
   // One plain-English line per demo input, so a first-time viewer knows what is being submitted. Falls back to the manifest label.
   const DESC = { fake_near_miss: "Looks like the real crash, but the string is closed. Should not crash.", fake_random: "4,096 random bytes. A robustness check.", fake_asan_claim: "Text that claims a crash, with no working proof." };
-  const descFor = d => DESC[d.id] || (d.category === "real_bug" ? "Real crash input from libucl's public bug history (ARVO)." : d.handMade ? "Hand-made fake report." : "");
+  const descFor = d => DESC[String(d.id || "").replace(/^hand_made_/, "")] || (d.category === "real_bug" ? "Real crash input from libucl's public bug history (ARVO)." : d.handMade ? "Hand-made fake report." : "");
   // QE-W2-007: bounded, no quadratic regex: clip first, cut at the first "(" or "," with indexOf.
   const rowName = r => {
     if (!r.label) return "Unlabeled";
