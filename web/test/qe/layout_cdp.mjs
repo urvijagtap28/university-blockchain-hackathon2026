@@ -37,7 +37,7 @@ const allText = () => ev(`document.documentElement.textContent`);
 const BAD = /\bnull\b|\bundefined\b|\bNaN\b|\[object Object\]/;
 const closeAll = () => ev(`['confirm','ledger','agent','trust'].forEach(i => { const d = document.getElementById(i); if (d.open) d.close(); })`);
 const STUB_LINE = "Rehearsal: stub verdicts follow the filename, not a sandbox.";
-const REAL_LINE = /^A crash that reproduces reaches a maintainer\. A clean run forfeits the \$0\.25 bond\.$/;
+const REAL_LINE = /^Bug reports that have to prove themselves\.$/;
 
 // ---------- 1. headline honesty ----------
 await go("mode=stub");
@@ -146,13 +146,13 @@ for (let i = 0; i < 160; i++) {
 console.log("batch order:", seq.map(x => x.n).join(" > "));
 ok(seq.length === 5 && !overlap && maxLive <= 1, `Run all runs the 5 inputs one at a time (never concurrent): ${seq.length} runs, overlap=${overlap}, max live chips ${maxLive}`);
 ok(JSON.stringify(seq.map(x => x.n)) === JSON.stringify(rowsBefore), "batch order follows the Reports list: " + JSON.stringify(rowsBefore));
-await sleep(600); ok(await ev(`document.getElementById('run-all').textContent`) === "Run all 5", "button returns to 'Run all 5' after the batch");
+await sleep(600); ok(await ev(`document.getElementById('run-all').textContent`) === "Submit all 5", "button returns to 'Run all 5' after the batch");
 // stop on the first refusal / error and show it
 for (const [sc, re] of [["refused", /Batch stopped: .* was refused/], ["error", /Batch stopped: .* ended with an error|Batch stopped: .* did not finish with a settled verdict/]]) {
   await go("mode=real&scenario=" + sc);
   await ev(`document.getElementById('run-all').click()`); await sleep(200); await ev(`document.getElementById('confirm-ok').click()`); await sleep(4500);
   const m = JSON.parse(await ev(`JSON.stringify({ msg: document.getElementById('panel-submit').innerText, run: window.__app.getState().run?.name, btn: document.getElementById('run-all').textContent })`));
-  ok(re.test(m.msg) && /4 not submitted/.test(m.msg) && /Run all 5/.test(m.btn), `scenario ${sc}: batch stops on the first ${sc}, shows why, 4 not submitted, run name stays ${m.run}`);
+  ok(re.test(m.msg) && /4 not submitted/.test(m.msg) && /Submit all 5/.test(m.btn), `scenario ${sc}: batch stops on the first ${sc}, shows why, 4 not submitted, run name stays ${m.run}`);
   ok(!BAD.test(m.msg) && !/\b\d{4,} atomic\b/.test(m.msg), `scenario ${sc}: batch-stopped message has no raw atomic amounts or null/undefined`);
   if (sc === "refused") await shot("batch_stopped_refused.png");
 }
@@ -188,7 +188,7 @@ await go("mode=stub&scenario=refused"); await ev(`window.__app.pick(0); window._
 ok(/No payment was made/.test(await ev(`document.getElementById('panel-run').textContent`)), "'No payment was made' appears on a server/policy refusal");
 await go("mode=stub&scenario=success_returned"); await ev(`window.__app.pick(0); window.__app.doSubmit()`); await sleep(3500);
 ok(!/No payment was made/.test(await ev(`document.getElementById('panel-run').textContent`)), "'No payment was made' does not appear on a normal outcome");
-ok(await ev(`[...document.querySelectorAll('#panel-run .stepper .nm')].map(e => e.textContent).join(',')`) === "Policy,Approved,Signed,Verdict,Settled", "stepper steps are Policy, Approved, Signed, Verdict, Settled (no 'Paid')");
+ok(await ev(`[...document.querySelectorAll('#panel-run .stepper .nm')].map(e => e.textContent).join(',')`) === "Agent checks its rules,You approve,Bond locked (x402),Sandbox replays the proof,Money settles on Solana", "stepper steps use plain names (no 'Paid')");
 await ev(`document.getElementById('tab-results').click()`); await sleep(300);
 ok(await ev(`[...document.querySelectorAll('#panel-results th')].map(e => e.textContent).join(',')`) === "Label,Status,Settled,", "Ledger columns Label, Status, Settled (no 'Paid')"); await closeAll();
 // Ledger: one settle link per report, only base58

@@ -42,6 +42,9 @@
   const backAtomic = settled => { const c = capAtomic(); return (c !== null && AMT.test(String(settled)) && Number(settled) <= c) ? String(c - Number(settled)) : null; };
   // Compact display name for a demo input or ledger row. The full label stays in title/aria-label.
   const chipName = d => String(d.id || d.label || "").replace(/^fake_/, "").split("_").map((w, i) => w.toLowerCase() === "arvo" ? "ARVO" : w.toLowerCase() === "asan" ? "ASan" : i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(" ");
+  // One plain-English line per demo input, so a first-time viewer knows what is being submitted. Falls back to the manifest label.
+  const DESC = { fake_near_miss: "Looks like the real crash, but the string is closed. Should not crash.", fake_random: "4,096 random bytes. A robustness check.", fake_asan_claim: "Text that claims a crash, with no working proof." };
+  const descFor = d => DESC[d.id] || (d.category === "real_bug" ? "Real crash input from libucl's public bug history (ARVO)." : d.handMade ? "Hand-made fake report." : "");
   // QE-W2-007: bounded, no quadratic regex: clip first, cut at the first "(" or "," with indexOf.
   const rowName = r => {
     if (!r.label) return "Unlabeled";
@@ -255,7 +258,7 @@
     } else if (cfg.mode !== "real") { mp = ["err", "Unknown mode", "alert"]; mtext = "Unknown mode"; mnote = ["UNKNOWN RUN MODE (" + cfg.mode + "): do not treat anything here as evidence."]; }
     else if (logData && !verifyOk) { mp = ["err", "Checks failed", "alert"]; mtext = "Checks failed"; mnote = ["The signed log did not verify. Do not trust these results."]; }
     else if (logData) {
-      mp = ["ok", "Real", "shield"]; mtext = "Real mode";
+      mp = ["ok", "Real sandbox", "shield"]; mtext = "Real mode";
       mnote = ["Real verifier. The log re-verification passed (" + V.verified + " of " + V.records + " entries). That covers the log, not whether the verdicts are right: a human triages reproduced reports.", "UNVERIFIED viewer: the real-mode view has only been tested against fixtures until a real run is rendered and compared with RESULTS.md."];
     } else { mp = ["neutral", "Real, unchecked", "alert"]; mtext = "Real mode, log not checked"; mnote = ["The signed log could not be checked (" + (logErr || "not loaded yet") + "). Not labeled as verified real results."]; }
     const mb = el("button", "pillbtn"); mb.type = "button"; mb.setAttribute("aria-label", "Run mode: " + mtext); const mpill = pill(mp[0], mp[1], mp[2]); mpill.classList.add("tp"); mb.appendChild(mpill);
@@ -263,11 +266,11 @@
     // wallet pill
     const wAddr = typeof cfg.wallet.buyerAddress === "string" ? cfg.wallet.buyerAddress : null, wPay = typeof cfg.wallet.payTo === "string" ? cfg.wallet.payTo : null;
     const wb = el("button", "pillbtn"); wb.type = "button"; wb.setAttribute("aria-label", "Demo wallet " + (wAddr || "not configured"));
-    const wp = el("span", "pill p-neutral mono tp"); wp.appendChild(icon("wallet")); wp.appendChild(el("span", "wfull", wAddr ? short(wAddr) : "No wallet")); wp.appendChild(el("span", "wshort", wAddr ? wAddr.slice(0, 4) : "None")); wb.appendChild(wp);
+    const wp = el("span", "pill p-neutral mono tp"); wp.appendChild(icon("wallet")); wp.appendChild(el("span", "wfull", wAddr ? "Agent wallet " + short(wAddr) : "No wallet")); wp.appendChild(el("span", "wshort", wAddr ? wAddr.slice(0, 4) : "None")); wb.appendChild(wp);
     tr.appendChild(popover(wb, ["Demo wallet pays on your behalf. This is not a third-party sender.", add(el("p", "mono sm"), el("span", "", "payer " + (wAddr || "not configured"))), add(el("p", "mono sm"), el("span", "", "receiver " + (wPay || "not configured")))]));
     // budget meter
     const b = el("div", "budget"); b.title = "Session budget: " + usd(cfg.session.spentAtomic) + " spent, " + usd(cfg.session.reservedAtomic) + " reserved, " + usd(cfg.session.remainingAtomic) + " left of " + usd(cfg.session.budgetAtomic);
-    b.appendChild(meter(cfg.session, true)); b.appendChild(el("span", "num", usd(cfg.session.remainingAtomic))); b.appendChild(el("span", "bl", "left")); tr.appendChild(b);
+    b.appendChild(meter(cfg.session, true)); b.appendChild(el("span", "num", usd(cfg.session.remainingAtomic))); b.appendChild(el("span", "bl", "budget left")); tr.appendChild(b);
     // bars (the same set is repeated inside every dialog, because a modal dialog covers the page header)
     statusBars(true).forEach(b => w.appendChild(b));
   }
@@ -317,28 +320,31 @@
     if (cfgErr) { p.appendChild(emptyState("alert", "Config not loaded.")); return; }
     if (!cfg) { p.appendChild(skeleton(4)); return; }
     const busy = cfg.busy || !!(run && !run.done && !run.lost) || !!queue;
-    const all = el("button", "btn primary sm", queue ? "Running…" : "Run all " + cfg.demoInputs.length); all.type = "button"; all.id = "run-all"; all.disabled = busy || !cfg.demoInputs.length;
+    const all = el("button", "btn primary sm", queue ? "Running…" : "Submit all " + cfg.demoInputs.length); all.type = "button"; all.id = "run-all"; all.disabled = busy || !cfg.demoInputs.length;
     all.addEventListener("click", () => { sel = { demo: null, file: null, fileErr: null }; pendingQueue = cfg.demoInputs.slice(); openConfirm(); });
-    p.appendChild(paneHead("Reports", info("Quote, limits and caveats", ...quoteInfo()), all));
+    p.appendChild(paneHead("1 · Submit", info("Quote, limits and caveats", ...quoteInfo()), all));
+    p.appendChild(el("p", "pane-lede", "You are the AI agent. Pick a bug report and submit it with a " + capUsdText() + " bond."));
     const list = el("ul", "reps"); list.setAttribute("aria-label", "Demo inputs");
-    const row = (name, tag, stateNode, onRun, live) => {
-      const li = el("li", "rep" + (live ? " live" : "")); const t = el("div", "rep-t"); t.appendChild(el("span", "rep-n", name)); if (tag) t.appendChild(tag); li.appendChild(t);
+    const row = (name, tag, stateNode, onRun, live, desc, kind) => {
+      const li = el("li", "rep" + (live ? " live" : "") + (kind ? " k-" + kind : "")); const t = el("div", "rep-t"); t.appendChild(el("span", "rep-n", name)); if (tag) t.appendChild(tag); li.appendChild(t);
+      if (desc) li.appendChild(el("p", "rep-d", desc));
       li.appendChild(stateNode);
-      const b = el("button", "btn sm", "Run"); b.type = "button"; b.disabled = busy; b.setAttribute("aria-label", "Run " + name); b.addEventListener("click", onRun); li.appendChild(b); list.appendChild(li);
+      const b = el("button", "btn sm", "Submit"); b.type = "button"; b.disabled = busy; b.setAttribute("aria-label", "Submit " + name); b.addEventListener("click", onRun); li.appendChild(b); list.appendChild(li);
     };
     cfg.demoInputs.forEach(d => {
       const rec = logRecFor(d), live = !!(run && run.demoId === d.id && !run.done);
       const st = el("div", "rep-s");
-      if (live) st.appendChild(pill("chk", "Running", "spin")); else if (rec) { st.appendChild(verdictPill(rec.verdict)); st.appendChild(el("span", "num mute", rec.settledAtomic === null ? "" : String(rec.settledAtomic) === "0" ? "bond back" : "-" + usd(rec.settledAtomic))); } else st.appendChild(el("span", "mute", "not run yet"));
+      if (live) st.appendChild(pill("chk", "Running", "spin")); else if (rec) { st.appendChild(el("span", "lastrun", "Last run")); st.appendChild(verdictPill(rec.verdict)); st.appendChild(el("span", "num mute", rec.settledAtomic === null ? "" : String(rec.settledAtomic) === "0" ? "bond back" : "lost " + usd(rec.settledAtomic))); } else st.appendChild(el("span", "mute", "not submitted yet"));
       if (live) st.firstChild.querySelector(".ic").classList.add("spin");
+      const kind = d.category === "real_bug" ? "real" : d.handMade ? "fake" : null;
       // Stub verdicts follow the filename, so a REAL / HAND-MADE tag beside one would mislead: tags show in real mode, or in stub mode only while no verdict is shown.
       const showTag = cfg.mode !== "stub" || (!rec && !live);
-      row(chipName(d), !showTag ? null : d.handMade ? el("span", "tag", "HAND-MADE") : el("span", "tag real", "REAL"), st, () => { sel = { demo: d, file: null, fileErr: null }; pendingQueue = null; openConfirm(); }, live);
+      row(chipName(d), !showTag ? null : d.handMade ? el("span", "tag", "HAND-MADE") : el("span", "tag real", "REAL"), st, () => { sel = { demo: d, file: null, fileErr: null }; pendingQueue = null; openConfirm(); }, live, descFor(d), kind);
     });
     if (sel.file) row(sel.file.name, el("span", "tag", "YOURS"), el("div", "rep-s mute", sel.file.size < 1024 ? sel.file.size + " B" : (sel.file.size / 1024).toFixed(1) + " KB"), () => { pendingQueue = null; openConfirm(); }, false);
     p.appendChild(list);
     const zone = el("label", "drop sm"); const fi = document.createElement("input"); fi.type = "file"; fi.id = "file-input"; fi.className = "vh"; fi.setAttribute("aria-label", "Choose a proof file");
-    const zMain = el("span", "drop-main", "Drop your own proof file"); add(zone, fi, icon("upload"), zMain);
+    const zMain = el("span", "drop-main", "Or drop your own proof file"); add(zone, fi, icon("upload"), zMain);
     const zErr = el("p", "field-err"); zErr.setAttribute("role", "alert"); zErr.textContent = sel.fileErr || "";
     const takeFile = f => {
       if (!f) return;
@@ -370,7 +376,7 @@
     const cap = capAtomic(), rem = Number(cfg.session.remainingAtomic);
     $("confirm-title").textContent = pendingQueue ? "Approve up to " + n + " payments" : "Approve payment";
     $("confirm-amt").textContent = usd(n * cap);
-    $("confirm-info").textContent = pendingQueue ? "worst case: " + n + " \u00d7 " + capUsdText() + ". Reports run one at a time, at least 11.5 s apart. Each bond is returned if reproduced or inconclusive, forfeited if not." : "worst case. Returned if reproduced or inconclusive, forfeited if not.";
+    $("confirm-info").textContent = pendingQueue ? "worst case: " + n + " \u00d7 " + capUsdText() + ". Reports run one at a time, at least 11.5 s apart. Each bond comes back if the crash reproduces (or the result is unclear); the project keeps it if not." : "locked now. You get it back if the crash reproduces (or the result is unclear). The project keeps it if it does not.";
     $("confirm-budget").textContent = usd(rem) + " left of " + usd(cfg.session.budgetAtomic) + (pendingQueue ? " (" + usd(rem - n * cap) + " after)" : "");
     const real = cfg.mode === "real";
     const what = pendingQueue ? pendingQueue.length + " demo inputs, one after another" + (real ? " (REAL and HAND-MADE)" : "") : sel.demo ? (real && sel.demo.handMade ? "HAND-MADE: " : "") + chipName(sel.demo) : sel.file.name + " (" + sel.file.size + " bytes)";
@@ -411,7 +417,8 @@
   }
 
   // ---------- Activity (live run + recent) ----------
-  const STEPS = [["policy", "Policy"], ["approved", "Approved"], ["signed", "Signed"], ["verdict", "Verdict"], ["settled", "Settled"]];
+  const STEPS = [["policy", "Agent checks its rules"], ["approved", "You approve"], ["signed", "Bond locked (x402)"], ["verdict", "Sandbox verdict"], ["settled", "Money settles on Solana"]];
+  const stepName = (k, name) => k === "verdict" ? (cfg && cfg.mode === "stub" ? "Stub verdict (no sandbox)" : "Sandbox replays the proof") : name;
   function newRun(jobId) { const steps = {}; STEPS.forEach(([k]) => steps[k] = { st: "pending", text: "" }); return { jobId, reportHash: null, steps, notes: [], outcome: null, error: null, lost: false, done: false, events: [], chain: null, verdict: null, verdictDetail: null, facts: {} }; }
   function startRun(jobId, baseSeq, submitMs) {
     run = newRun(jobId); runDone = false;
@@ -497,7 +504,7 @@
       if (k === "settled" && run.chain === "active" && st !== "done") st = "active";
       else if (st === "pending" && live && prev) st = "active";
       const li = el("li", "st st-" + st + (i && prevDone ? " link" : "")); li.setAttribute("aria-label", name + ", " + lab[st]); if (st === "active") li.setAttribute("aria-current", "step"); if (s.text) li.title = money(s.text);
-      li.appendChild(add(el("span", "node"), ic[st] ? icon(ic[st], st === "active" ? "spin" : "") : null)); li.appendChild(el("span", "nm", name));
+      li.appendChild(add(el("span", "node"), ic[st] ? icon(ic[st], st === "active" ? "spin" : "") : null)); li.appendChild(el("span", "nm", stepName(k, name)));
       const fl = i < 3 && run.facts[k] ? window.Evidence.SLOT_ORDER.map(sl => run.facts[k][sl]).filter(Boolean) : [];
       fl.forEach(fact => li.appendChild(el("span", "sub" + (fact.ok ? "" : " no"), (fact.ok ? "\u2713 " : "\u2717 ") + fact.text)));
       ol.appendChild(li);
@@ -542,8 +549,8 @@
         head("err", "alert", "Error"); card.appendChild(o.atomic === "0" ? returnedHero(o.atomic) : settledHero(o.atomic)); note(money(r.steps.verdict.text));
       } else {
         const inc = r.verdict === "inconclusive", why = reasonFor(r.verdict);
-        if (o.kind === "returned") { head(inc ? "inc" : "ok", inc ? "dash" : "check", "Bond returned", false, why); card.appendChild(returnedHero(o.atomic)); }
-        else if (o.kind === "forfeited") { head("forf", "x", "Bond forfeited", false, why); card.appendChild(amountRow(usd(o.atomic), "paid out")); }
+        if (o.kind === "returned") { head(inc ? "inc" : "ok", inc ? "dash" : "check", "Bond returned", false, inc ? "Result unclear, so the bond comes back" : "The crash reproduced. It goes to the maintainer."); card.appendChild(returnedHero(o.atomic)); }
+        else if (o.kind === "forfeited") { head("forf", "x", "Bond forfeited", false, "No crash, so the report never reaches the maintainer."); card.appendChild(amountRow(usd(o.atomic), "kept by the project")); }
         else { head("inc", "alert", "Bond outcome unknown", false, why); card.appendChild(settledHero(o.atomic)); note("Check the chain before assuming either way."); }
       }
       if (KNOWN.includes(r.verdict)) card.appendChild(evidenceNode(r.verdict, r.verdictDetail, true));
@@ -573,12 +580,12 @@
   function renderRun() {
     const p = $("panel-run"); p.replaceChildren();
     const cap = cfg && cfg.policy ? usdNum(cfg.policy.perReportCapUsd) : "$0.25";
-    p.appendChild(paneHead("Console", run && !run.done && !run.lost ? pill("chk", "Live", "spin") : null));
+    p.appendChild(paneHead("2 · Watch it run", run && !run.done && !run.lost ? pill("chk", "Live", "spin") : null));
     const term = el("div", "term");
-    const ps = el("div", "ps"); ps.appendChild(el("span", "prompt", "$")); ps.appendChild(el("span", "ps-t", run ? run.name : "waiting for a report")); if (!run) ps.appendChild(el("span", "cursor")); term.appendChild(ps);
+    const ps = el("div", "ps"); ps.appendChild(el("span", "prompt", "$")); ps.appendChild(el("span", "ps-t", run ? run.name : "waiting for you to submit a report")); if (!run) ps.appendChild(el("span", "cursor")); term.appendChild(ps);
     if (!run) {
       const h = el("ul", "hints");
-      ["Lock a " + cap + " bond", "Sandbox replays the proof", "Crash: bond back. No crash: bond forfeited."].forEach(t => { const li = el("li"); li.appendChild(icon("ring", "sm")); li.appendChild(el("span", "", t)); h.appendChild(li); });
+      ["Press Submit on any report", "Approve the " + cap + " bond", "Watch each step happen live, then open the transaction on Solana Explorer"].forEach(t => { const li = el("li"); li.appendChild(icon("ring", "sm")); li.appendChild(el("span", "", t)); h.appendChild(li); });
       term.appendChild(h);
     } else {
       term.appendChild(stepper()); term.appendChild(outcomeCard());
@@ -630,27 +637,41 @@
     const cap = cfg && cfg.policy ? usdNum(cfg.policy.perReportCapUsd) : null;
     let t = "";
     if (cfg && cfg.mode === "stub") t = "Rehearsal: stub verdicts follow the filename, not a sandbox.";
-    else if (cfg && cfg.mode === "real") t = !logData ? "The signed log is not checked. Do not trust these results." : (!logData.verify || logData.verify.ok !== true) ? "The signed log did not verify. Do not trust these results." : "A crash that reproduces reaches a maintainer. A clean run forfeits the " + (cap || "$0.25") + " bond.";
+    else if (cfg && cfg.mode === "real") t = !logData ? "The signed log is not checked. Do not trust these results." : (!logData.verify || logData.verify.ok !== true) ? "The signed log did not verify. Do not trust these results." : "Bug reports that have to prove themselves.";
     else if (cfg) t = "Unknown run mode: do not treat anything here as evidence.";
     return el("h2", "", t);
+  }
+  // Three-step explainer under the headline. Stub mode says plainly that nothing is run.
+  function howItWorks() {
+    const cap = cfg && cfg.policy ? usdNum(cfg.policy.perReportCapUsd) : "$0.25", stub = cfg && cfg.mode === "stub";
+    const ol = el("ol", "how"); ol.setAttribute("aria-label", "How it works");
+    [["Submit + lock a bond", "An AI agent submits a bug report with a proof file and locks a " + cap + " USDC bond on Solana (x402)."],
+     [stub ? "Stub verdict" : "Sandbox replays it", stub ? "Rehearsal: the verdict comes from the file name. Nothing is run." : "A locked-down sandbox runs the proof 3 times on the buggy libucl build, then once on a later fixed build."],
+     ["Bond back or kept", "Real crash: bond returned and the report reaches the maintainer. No crash: the project keeps the bond."]].forEach(([t, d], i) => {
+      const li = el("li", "how-i"); li.appendChild(el("span", "how-n", String(i + 1))); const b = el("div"); b.appendChild(el("p", "how-t", t)); b.appendChild(el("p", "how-d", d)); li.appendChild(b); ol.appendChild(li);
+    });
+    return ol;
   }
   function renderOverview() {
     const h = $("headline"), p = $("panel-overview"); h.replaceChildren(); p.replaceChildren();
     h.appendChild(headlineNode());
-    p.appendChild(paneHead("For a maintainer", info("What this pane is", "Reproduced reports only: the sandbox saw the expected ASan error on the vulnerable build and a clean fixed build. The sandbox is a filter, not a judge: a crash on the vulnerable build is not proof of a valid bug, inconclusive runs are not listed here, and a human still triages these.")));
+    h.appendChild(howItWorks());
+    p.appendChild(paneHead("3 · Maintainer inbox", info("What this pane is", "Reproduced reports only: the sandbox saw the expected ASan error on the vulnerable build and a clean fixed build. The sandbox is a filter, not a judge: a crash on the vulnerable build is not proof of a valid bug, inconclusive runs are not listed here, and a human still triages these.")));
     if (logErr) { p.appendChild(errorBox("Could not load the log: " + logErr, loadLog)); return; }
     if (!logData) { p.appendChild(skeleton(3)); return; }
     const L = logData, recs = L.records, good = recs.filter(r => r.sigOk === true);
     const rep = good.filter(r => r.verdict === "reproduced"), forf = good.filter(r => r.verdict === "not_reproduced" && r.settlementStatus === "settled" && AMT.test(String(r.settledAtomic)));
     const inc = good.filter(r => r.verdict === "inconclusive").length, fSum = forf.reduce((a, r) => a + Number(r.settledAtomic), 0);
     const sum = el("div", "sumline");
+    sum.appendChild(el("span", "sumk", "In the signed log"));
     sum.appendChild(el("span", "num", recs.length + (recs.length === 1 ? " report" : " reports")));
     sum.appendChild(el("span", "num", rep.length + " reproduced"));
-    sum.appendChild(el("span", "num", usd(fSum) + " forfeited"));
+    sum.appendChild(el("span", "num", usd(fSum) + " kept from fakes"));
     if (inc) sum.appendChild(el("span", "num", inc + " inconclusive"));
     sum.appendChild(trustBadge(L.verify)); h.appendChild(sum);
     const list = el("ul", "mnt");
     if (!rep.length && !recs.some(r => r.sigOk !== true && r.verdict === "reproduced")) list.appendChild(el("li", "mnt-empty", "Nothing yet. Reports that do not reproduce never show up here."));
+    p.insertBefore(el("p", "pane-lede", "Only reports whose crash reproduced. Fakes never get here."), p.children[1] || null);
     rep.slice().sort((a, b) => b.seq - a.seq).forEach(r => {
       const li = el("li", "mnt-i"); const t = el("div", "rep-t"); const nm = el("span", "rep-n", rowName(r)); nm.title = r.label || "Unlabeled submission"; t.appendChild(nm); const tg = labelTag(r); if (tg) t.appendChild(tg); li.appendChild(t);
       li.appendChild(evidenceNode(r.verdict, r.detail, false)); li.appendChild(txBtn(r.txSignature, false)); list.appendChild(li);
@@ -670,7 +691,7 @@
     let cls, ic, text;
     if (!V.ok) { cls = "bad"; ic = "alert"; const lines = (V.problems || []).map(p => p.line); text = lines.length ? "Line " + lines.slice(0, 3).join(", ") + (lines.length > 3 ? " +" + (lines.length - 3) : "") + " broken" : V.verified + " of " + V.records + " verified"; }
     else if (!V.records) { cls = "neutral"; ic = "shield"; text = "No entries to verify yet"; }
-    else { cls = "ok"; ic = "shield"; text = V.verified + " of " + V.records + " verified"; }
+    else { cls = "ok"; ic = "shield"; text = "Log signed: " + V.verified + " of " + V.records; }
     b.className = "trustbtn t-" + cls; b.appendChild(icon(ic)); b.appendChild(el("span", "", text)); b.appendChild(icon("chevron", "sm"));
     b.addEventListener("click", () => openTrust());
     return b;
@@ -795,7 +816,7 @@
   async function loadAll() { renderBanners(); await loadConfig(); renderBanners(); renderSubmit(); renderPolicy(); await loadLog(); }
 
   // dialogs
-  $("confirm-info").textContent = "Returned if reproduced or inconclusive. Forfeited if not.";
+  $("confirm-info").textContent = "You get it back if the crash reproduces (or the result is unclear). The project keeps it if not.";
   $("confirm-cancel").addEventListener("click", () => { pendingQueue = null; $("confirm").close(); });
   $("confirm-ok").addEventListener("click", () => { const q = pendingQueue; pendingQueue = null; $("confirm").close(); if (q) { queue = q; lastEndMs = 0; nextInQueue(); } else doSubmit(); });
   $("confirm").addEventListener("close", () => { pendingQueue = null; });
