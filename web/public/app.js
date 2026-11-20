@@ -647,7 +647,7 @@
     const ol = el("ol", "how"); ol.setAttribute("aria-label", "How it works");
     [["Submit + lock a bond", "An AI agent submits a bug report with a proof file and locks a " + cap + " USDC bond on Solana (x402)."],
      [stub ? "Stub verdict" : "Sandbox replays it", stub ? "Rehearsal: the verdict comes from the file name. Nothing is run." : "A locked-down sandbox runs the proof 3 times on the buggy libucl build, then once on a later fixed build."],
-     ["Bond back or kept", "Real crash: bond returned and the report reaches the maintainer. No crash: the project keeps the bond."]].forEach(([t, d], i) => {
+     ["Bond back or kept", "Crash reproduced: bond back, report goes to the maintainer. Sandbox can't tell: bond back. No crash: the project keeps the bond."]].forEach(([t, d], i) => {
       const li = el("li", "how-i"); li.appendChild(el("span", "how-n", String(i + 1))); const b = el("div"); b.appendChild(el("p", "how-t", t)); b.appendChild(el("p", "how-d", d)); li.appendChild(b); ol.appendChild(li);
     });
     return ol;
@@ -671,7 +671,7 @@
     sum.appendChild(trustBadge(L.verify)); h.appendChild(sum);
     const list = el("ul", "mnt");
     if (!rep.length && !recs.some(r => r.sigOk !== true && r.verdict === "reproduced")) list.appendChild(el("li", "mnt-empty", "Nothing yet. Reports that do not reproduce never show up here."));
-    p.insertBefore(el("p", "pane-lede", "Only reports whose crash reproduced. Fakes never get here."), p.children[1] || null);
+    p.insertBefore(el("p", "pane-lede", "Only reports whose crash reproduced. A person still reviews each one."), p.children[1] || null);
     rep.slice().sort((a, b) => b.seq - a.seq).forEach(r => {
       const li = el("li", "mnt-i"); const t = el("div", "rep-t"); const nm = el("span", "rep-n", rowName(r)); nm.title = r.label || "Unlabeled submission"; t.appendChild(nm); const tg = labelTag(r); if (tg) t.appendChild(tg); li.appendChild(t);
       li.appendChild(evidenceNode(r.verdict, r.detail, false)); li.appendChild(txBtn(r.txSignature, false)); list.appendChild(li);
